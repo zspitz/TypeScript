@@ -1,0 +1,9 @@
+{
+    "inputFiles": [
+        "import-foo.ts"
+    ],
+    "availableExtensions": ["codegen-simple"],
+    "compilerOptions": {
+        "extensions": ["codegen-simple"]
+    }
+}

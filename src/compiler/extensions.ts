@@ -1,10 +1,50 @@
 namespace ts {
 
-    export namespace ExtensionKind {
+    export interface BaseProviderStatic {
+        readonly ["extension-kind"]: ExtensionKind;
     }
-    export type ExtensionKind = string;
+
+    export interface CodegenProviderStatic extends BaseProviderStatic {
+        readonly ["extension-kind"]: "codegen";
+        new (context: {
+            ts: typeof ts,
+            args: any,
+            getCommonSourceDirectory: () => string,
+            getCurrentDirectory: () => string,
+            /**
+             * NOTE: These compiler options have not yet been verified, so may produce diagnostic messages
+             */
+            getCompilerOptions: () => CompilerOptions,
+            /**
+             * addSourceFile causes the file to be added to the program,
+             * resulting in processRootFile to be called on the provided SourceFile
+             */
+            addSourceFile: (file: SourceFile) => void
+        }): CodegenProvider
+    }
+
+    export interface CodegenProvider {
+        /**
+         * Called each time a file is added to the filesByName set in a program
+         *  - should trigger when a generated file is added, this way your
+         *    generated code can cause code to generate
+         */
+        sourceFileFound?(file: SourceFile): void;
+        /**
+         * Called when all processing is complete and the program is about to be returned,
+         * giving you the opportunity to finalize your emitted set of generated files
+         */
+        processingComplete?(program: Program): void; 
+    }
+
+    export namespace ExtensionKind {
+        export type Codegen = "codegen";
+        export const Codegen: "codegen" = "codegen";
+    }
+    export type ExtensionKind = ExtensionKind.Codegen;
 
     export interface ExtensionCollectionMap {
+        "codegen"?: CodegenExtension[];
         [index: string]: Extension[] | undefined;
     }
 
@@ -17,7 +57,12 @@ namespace ts {
         extension: {};
     }
 
-    export type Extension = ExtensionBase;
+    export interface CodegenExtension extends ExtensionBase {
+        kind: ExtensionKind.Codegen;
+        extension: CodegenProviderStatic;
+    }
+
+    export type Extension = ExtensionBase | CodegenExtension;
 
     export interface ExtensionCache {
         getCompilerExtensions(): ExtensionCollectionMap;
@@ -74,6 +119,30 @@ namespace ts {
         if (!enabled) return;
         const longTask = createTaskName(qualifiedName, task);
         completeProfile(/*enabled*/true, longTask, getExtensionRootName(qualifiedName));
+    }
+
+    function verifyType(thing: any, type: string, diagnostics: Diagnostic[], extName: string, extMember: string, extKind: string) {
+        if (typeof thing !== type) {
+            diagnostics.push(createCompilerDiagnostic(
+                Diagnostics.Extension_0_exported_member_1_has_extension_kind_2_but_was_type_3_when_type_4_was_expected,
+                extName,
+                extMember,
+                extKind,
+                typeof thing,
+                type
+            ));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Holds validation methods run on extensions upon import. Returns true on validation success, or false on validation fail
+     */
+    const extensionValidators: MapLike<(res: {name: string, result: any, error: any}, key: string, potentialExtension: any, diagnostics: Diagnostic[]) => boolean> = {
+        [ExtensionKind.Codegen]: (res, key, potentialExtension, diagnostics) => {
+            return verifyType(potentialExtension, "function", diagnostics, res.name, key, "codegen");
+        }
     }
 
     export function createExtensionCache(options: CompilerOptions, host: ExtensionHost, resolvedExtensionNames?: Map<string>): ExtensionCache {
@@ -171,6 +240,10 @@ namespace ts {
                         kind: annotatedKind as ExtensionKind,
                         extension: potentialExtension
                     };
+                    if (extensionValidators[ext.kind]) {
+                        const validated = extensionValidators[ext.kind](res, key, potentialExtension, diagnostics);
+                        if (!validated) return aggregate;
+                    }
                     aggregate.push(ext);
                 });
                 return aggregate;

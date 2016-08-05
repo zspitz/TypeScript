@@ -1163,7 +1163,20 @@ namespace ts {
         // used to track cases when two file names differ only in casing
         const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createFileMap<SourceFile>(fileName => fileName.toLowerCase()) : undefined;
 
-        if (!tryReuseStructureFromOldProgram()) {
+        extensionCache = extensionCache || createExtensionCache(options, host);
+
+        let codegenExtensions: {ext: CodegenProvider, name: string}[];
+
+        const useNewStructure = !tryReuseStructureFromOldProgram();
+        if (useNewStructure) {
+            codegenExtensions = filter(map(extensionCache.getCompilerExtensions()["codegen"], ext => {
+                try {
+                    return {ext: new ext.extension({ts, args: ext.args, getCommonSourceDirectory, getCurrentDirectory, getCompilerOptions, addSourceFile}), name: ext.name};
+                }
+                catch (e) {
+                    programDiagnostics.add(createExtensionDiagnostic(ext.name, `CodegenProvider construction failed: ${(e as Error).message}`, /*sourceFile*/undefined, /*start*/undefined, /*length*/undefined, DiagnosticCategory.Error));
+                }
+            }), ext => ext !== undefined);
             forEach(rootNames, name => processRootFile(name, /*isDefaultLib*/ false));
 
             // load type declarations specified via 'types' argument or implicitly from types/ and node_modules/@types folders
@@ -1200,8 +1213,6 @@ namespace ts {
         // unconditionally set oldProgram to undefined to prevent it from being captured in closure
         oldProgram = undefined;
 
-        extensionCache = extensionCache || createExtensionCache(options, host);
-
         program = {
             getRootFileNames: () => rootNames,
             getSourceFile,
@@ -1237,7 +1248,35 @@ namespace ts {
         performance.mark("afterProgram");
         performance.measure("Program", "beforeProgram", "afterProgram");
 
+        if (useNewStructure) {
+            ts.forEach(codegenExtensions, ({ext, name}) => {
+                if (!ext.processingComplete) return;
+                try {
+                    ext.processingComplete(program);
+                }
+                catch (e) {
+                    programDiagnostics.add(createExtensionDiagnostic(name, `Codegen Extension errored on processingComplete with error: ${(e as Error).message}`));
+                }
+            });
+        }
+
         return program;
+
+        function getCompilerOptions() {
+            return options;
+        }
+
+        function getCurrentDirectory() {
+            return host.getCurrentDirectory();
+        }
+
+        function addSourceFile(file: SourceFile) {
+            Debug.assert(!filesByName.contains(file.path), `File ${file.path} already exists inside the program!`);
+            file.path = toPath(file.fileName, currentDirectory, getCanonicalFileName);
+            sourceFilesFoundSearchingNodeModules[file.path] = (currentNodeModulesDepth > 0);
+            filesByName.set(file.path, file);
+            processFileForDependencies(file);
+        }
 
         function getCommonSourceDirectory() {
             if (typeof commonSourceDirectory === "undefined") {
@@ -1990,38 +2029,53 @@ namespace ts {
             if (file) {
                 sourceFilesFoundSearchingNodeModules[path] = (currentNodeModulesDepth > 0);
                 file.path = path;
-
-                if (host.useCaseSensitiveFileNames()) {
-                    // for case-sensitive file systems check if we've already seen some file with similar filename ignoring case
-                    const existingFile = filesByNameIgnoreCase.get(path);
-                    if (existingFile) {
-                        reportFileNamesDifferOnlyInCasingError(fileName, existingFile.fileName, refFile, refPos, refEnd);
-                    }
-                    else {
-                        filesByNameIgnoreCase.set(path, file);
-                    }
-                }
-
-                skipDefaultLib = skipDefaultLib || file.hasNoDefaultLib;
-
-                const basePath = getDirectoryPath(fileName);
-                if (!options.noResolve) {
-                    processReferencedFiles(file, basePath, isDefaultLib);
-                    processTypeReferenceDirectives(file);
-                }
-
-                // always process imported modules to record module name resolutions
-                processImportedModules(file, basePath);
-
-                if (isDefaultLib) {
-                    files.unshift(file);
-                }
-                else {
-                    files.push(file);
-                }
+                processFileForDependencies(file, isDefaultLib, refFile, refPos, refEnd);
             }
 
             return file;
+        }
+
+        function processFileForDependencies(file: SourceFile, isDefaultLib?: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number) {
+            const path = file.path;
+            const fileName = file.fileName;
+            if (host.useCaseSensitiveFileNames()) {
+                // for case-sensitive file systems check if we've already seen some file with similar filename ignoring case
+                const existingFile = filesByNameIgnoreCase.get(path);
+                if (existingFile) {
+                    reportFileNamesDifferOnlyInCasingError(fileName, existingFile.fileName, refFile, refPos, refEnd);
+                }
+                else {
+                    filesByNameIgnoreCase.set(path, file);
+                }
+            }
+
+            skipDefaultLib = skipDefaultLib || file.hasNoDefaultLib;
+
+            ts.forEach(codegenExtensions, ({ext, name}) => {
+                if (!ext.sourceFileFound) return;
+                try {
+                    ext.sourceFileFound(file);
+                }
+                catch (e) {
+                    programDiagnostics.add(createExtensionDiagnostic(name, `Codegen extension errored on sourceFileFound with error: ${(e as Error).message}`));
+                }
+            });
+
+            const basePath = getDirectoryPath(fileName);
+            if (!options.noResolve) {
+                processReferencedFiles(file, basePath, isDefaultLib);
+                processTypeReferenceDirectives(file);
+            }
+
+            // always process imported modules to record module name resolutions
+            processImportedModules(file, basePath);
+
+            if (isDefaultLib) {
+                files.unshift(file);
+            }
+            else {
+                files.push(file);
+            }
         }
 
         function processReferencedFiles(file: SourceFile, basePath: string, isDefaultLib: boolean) {
