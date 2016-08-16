@@ -529,8 +529,8 @@ interface NumberConstructor {
 /** An object that represents a number of any kind. All JavaScript numbers are 64-bit floating-point numbers. */
 declare const Number: NumberConstructor;
 
-interface TemplateStringsArray extends Array<string> {
-    readonly raw: string[];
+interface TemplateStringsArray extends ReadonlyArray<string> {
+    readonly raw: ReadonlyArray<string>
 }
 
 interface Math {
@@ -1124,6 +1124,11 @@ interface Array<T> {
       * Removes the last element from an array and returns it.
       */
     pop(): T | undefined;
+    /**
+      * Combines two or more arrays.
+      * @param items Additional items to add to the end of array1.
+      */
+    concat(...items: T[][]): T[];
     /**
       * Combines two or more arrays.
       * @param items Additional items to add to the end of array1.
@@ -4348,7 +4353,7 @@ interface NumberConstructor {
     /**
       * The value of the largest integer n such that n and n + 1 are both exactly representable as
       * a Number value.
-      * The value of Number.MIN_SAFE_INTEGER is 9007199254740991 2^53 − 1.
+      * The value of Number.MAX_SAFE_INTEGER is 9007199254740991 2^53 − 1.
       */
     readonly MAX_SAFE_INTEGER: number;
 
