@@ -4,7 +4,7 @@
 
 namespace ts {
     /** The version of the TypeScript compiler release */
-    export const version = "2.0.0";
+    export const version = "2.1.0";
 
     const emptyArray: any[] = [];
 
@@ -107,13 +107,7 @@ namespace ts {
     }
 
     function moduleHasNonRelativeName(moduleName: string): boolean {
-        if (isRootedDiskPath(moduleName)) {
-            return false;
-        }
-
-        const i = moduleName.lastIndexOf("./", 1);
-        const startsWithDotSlashOrDotDotSlash = i === 0 || (i === 1 && moduleName.charCodeAt(0) === CharacterCodes.dot);
-        return !startsWithDotSlashOrDotDotSlash;
+        return !(isRootedDiskPath(moduleName) || isExternalModuleNameRelative(moduleName));
     }
 
     interface ModuleResolutionState {
@@ -866,9 +860,9 @@ namespace ts {
         function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile {
             let text: string;
             try {
-                const ioReadStart = performance.mark();
+                const start = performance.mark();
                 text = sys.readFile(fileName, options.charset);
-                performance.measure("ioReadTime", ioReadStart);
+                performance.measure("I/O Read", start);
             }
             catch (e) {
                 if (onError) {
@@ -935,7 +929,7 @@ namespace ts {
 
         function writeFile(fileName: string, data: string, writeByteOrderMark: boolean, onError?: (message: string) => void) {
             try {
-                const ioWriteStart = performance.mark();
+                const start = performance.mark();
                 ensureDirectoriesExist(getDirectoryPath(normalizePath(fileName)));
 
                 if (isWatchSet(options) && sys.createHash && sys.getModifiedTime) {
@@ -945,7 +939,7 @@ namespace ts {
                     sys.writeFile(fileName, data, writeByteOrderMark);
                 }
 
-                performance.measure("ioWriteTime", ioWriteStart);
+                performance.measure("I/O Write", start);
             }
             catch (e) {
                 if (onError) {
@@ -974,9 +968,9 @@ namespace ts {
             readFile: fileName => sys.readFile(fileName),
             trace: (s: string) => sys.write(s + newLine),
             directoryExists: directoryName => sys.directoryExists(directoryName),
-            realpath,
             getEnvironmentVariable: name => getEnvironmentVariable(name, /*host*/ undefined),
             getDirectories: (path: string) => sys.getDirectories(path),
+            realpath
         };
     }
 
@@ -991,6 +985,29 @@ namespace ts {
         }
 
         return sortAndDeduplicateDiagnostics(diagnostics);
+    }
+
+    export interface FormatDiagnosticsHost {
+        getCurrentDirectory(): string;
+        getCanonicalFileName(fileName: string): string;
+        getNewLine(): string;
+    }
+
+    export function formatDiagnostics(diagnostics: Diagnostic[], host: FormatDiagnosticsHost): string {
+        let output = "";
+
+        for (const diagnostic of diagnostics) {
+            if (diagnostic.file) {
+                const { line, character } = getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start);
+                const fileName = diagnostic.file.fileName;
+                const relativeFileName = convertToRelativePath(fileName, host.getCurrentDirectory(), fileName => host.getCanonicalFileName(fileName));
+                output += `${ relativeFileName }(${ line + 1 },${ character + 1 }): `;
+            }
+
+            const category = DiagnosticCategory[diagnostic.category].toLowerCase();
+            output += `${ category } TS${ diagnostic.code }: ${ flattenDiagnosticMessageText(diagnostic.messageText, host.getNewLine()) }${ host.getNewLine() }`;
+        }
+        return output;
     }
 
     export function flattenDiagnosticMessageText(messageText: string | DiagnosticMessageChain, newLine: string): string {
@@ -1039,19 +1056,15 @@ namespace ts {
         return resolutions;
     }
 
-    function getInferredTypesRoot(options: CompilerOptions, rootFiles: string[], host: CompilerHost) {
-        return computeCommonSourceDirectoryOfFilenames(rootFiles, host.getCurrentDirectory(), f => host.getCanonicalFileName(f));
-    }
-
     /**
-      * Given a set of options and a set of root files, returns the set of type directive names
+      * Given a set of options, returns the set of type directive names
       *   that should be included for this program automatically.
       * This list could either come from the config file,
       *   or from enumerating the types root + initial secondary types lookup location.
       * More type directives might appear in the program later as a result of loading actual source files;
       *   this list is only the set of defaults that are implicitly included.
       */
-    export function getAutomaticTypeDirectiveNames(options: CompilerOptions, rootFiles: string[], host: CompilerHost): string[] {
+    export function getAutomaticTypeDirectiveNames(options: CompilerOptions, host: ModuleResolutionHost): string[] {
         // Use explicit type list from tsconfig.json
         if (options.types) {
             return options.types;
@@ -1064,7 +1077,10 @@ namespace ts {
             if (typeRoots) {
                 for (const root of typeRoots) {
                     if (host.directoryExists(root)) {
-                        result = result.concat(host.getDirectories(root));
+                        for (const typeDirectivePath of host.getDirectories(root)) {
+                            // Return just the type directive names
+                            result = result.concat(getBaseFileName(normalizePath(typeDirectivePath)));
+                        }
                     }
                 }
             }
@@ -1083,7 +1099,6 @@ namespace ts {
         let resolvedTypeReferenceDirectives: Map<ResolvedTypeReferenceDirective> = {};
         let fileProcessingDiagnostics = createDiagnosticCollection();
 
-        const programStart = performance.mark();
         // The below settings are to track if a .js file should be add to the program if loaded via searching under node_modules.
         // This works as imported modules are discovered recursively in a depth first manner, specifically:
         // - For each root file, findSourceFile is called.
@@ -1100,6 +1115,8 @@ namespace ts {
 
         // Track source files that are source files found by searching under node_modules, as these shouldn't be compiled.
         const sourceFilesFoundSearchingNodeModules: Map<boolean> = {};
+
+        const start = performance.mark();
 
         host = host || createCompilerHost(options);
 
@@ -1138,11 +1155,11 @@ namespace ts {
             forEach(rootNames, name => processRootFile(name, /*isDefaultLib*/ false));
 
             // load type declarations specified via 'types' argument or implicitly from types/ and node_modules/@types folders
-            const typeReferences: string[] = getAutomaticTypeDirectiveNames(options, rootNames, host);
+            const typeReferences: string[] = getAutomaticTypeDirectiveNames(options, host);
 
             if (typeReferences) {
-                const inferredRoot = getInferredTypesRoot(options, rootNames, host);
-                const containingFilename = combinePaths(inferredRoot, "__inferred type names__.ts");
+                // This containingFilename needs to match with the one used in managed-side
+                const containingFilename = combinePaths(host.getCurrentDirectory(), "__inferred type names__.ts");
                 const resolutions = resolveTypeReferenceDirectiveNamesWorker(typeReferences, containingFilename);
                 for (let i = 0; i < typeReferences.length; i++) {
                     processTypeReferenceDirective(typeReferences[i], resolutions[i]);
@@ -1198,7 +1215,7 @@ namespace ts {
 
         verifyCompilerOptions();
 
-        performance.measure("programTime", programStart);
+        performance.measure("Program", start);
 
         return program;
 
@@ -1441,14 +1458,16 @@ namespace ts {
             // checked is to not pass the file to getEmitResolver.
             const emitResolver = getDiagnosticsProducingTypeChecker().getEmitResolver((options.outFile || options.out) ? undefined : sourceFile);
 
-            const emitStart = performance.mark();
+            performance.emit("beforeEmit");
+            const start = performance.mark();
 
             const emitResult = emitFiles(
                 emitResolver,
                 getEmitHost(writeFileCallback),
                 sourceFile);
 
-            performance.measure("emitTime", emitStart);
+            performance.measure("Emit", start);
+            performance.emit("afterEmit");
 
             return emitResult;
         }
@@ -2195,6 +2214,9 @@ namespace ts {
                         programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Pattern_0_can_have_at_most_one_Asterisk_character, key));
                     }
                     if (isArray(options.paths[key])) {
+                        if (options.paths[key].length === 0) {
+                            programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Substitutions_for_pattern_0_shouldn_t_be_an_empty_array, key));
+                        }
                         for (const subst of options.paths[key]) {
                             const typeOfSubst = typeof subst;
                             if (typeOfSubst === "string") {
@@ -2247,7 +2269,7 @@ namespace ts {
             const languageVersion = options.target || ScriptTarget.ES3;
             const outFile = options.outFile || options.out;
 
-            const firstExternalModuleSourceFile = forEach(files, f => isExternalModule(f) ? f : undefined);
+            const firstNonAmbientExternalModuleSourceFile = forEach(files, f => isExternalModule(f) && !isDeclarationFile(f) ? f : undefined);
             if (options.isolatedModules) {
                 if (options.module === ModuleKind.None && languageVersion < ScriptTarget.ES6) {
                     programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Option_isolatedModules_can_only_be_used_when_either_option_module_is_provided_or_option_target_is_ES2015_or_higher));
@@ -2259,10 +2281,10 @@ namespace ts {
                     programDiagnostics.add(createFileDiagnostic(firstNonExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_compile_namespaces_when_the_isolatedModules_flag_is_provided));
                 }
             }
-            else if (firstExternalModuleSourceFile && languageVersion < ScriptTarget.ES6 && options.module === ModuleKind.None) {
+            else if (firstNonAmbientExternalModuleSourceFile && languageVersion < ScriptTarget.ES6 && options.module === ModuleKind.None) {
                 // We cannot use createDiagnosticFromNode because nodes do not have parents yet
-                const span = getErrorSpanForNode(firstExternalModuleSourceFile, firstExternalModuleSourceFile.externalModuleIndicator);
-                programDiagnostics.add(createFileDiagnostic(firstExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none));
+                const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator);
+                programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_use_imports_exports_or_module_augmentations_when_module_is_none));
             }
 
             // Cannot specify module gen that isn't amd or system with --out
@@ -2270,9 +2292,9 @@ namespace ts {
                 if (options.module && !(options.module === ModuleKind.AMD || options.module === ModuleKind.System)) {
                     programDiagnostics.add(createCompilerDiagnostic(Diagnostics.Only_amd_and_system_modules_are_supported_alongside_0, options.out ? "out" : "outFile"));
                 }
-                else if (options.module === undefined && firstExternalModuleSourceFile) {
-                    const span = getErrorSpanForNode(firstExternalModuleSourceFile, firstExternalModuleSourceFile.externalModuleIndicator);
-                    programDiagnostics.add(createFileDiagnostic(firstExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system, options.out ? "out" : "outFile"));
+                else if (options.module === undefined && firstNonAmbientExternalModuleSourceFile) {
+                    const span = getErrorSpanForNode(firstNonAmbientExternalModuleSourceFile, firstNonAmbientExternalModuleSourceFile.externalModuleIndicator);
+                    programDiagnostics.add(createFileDiagnostic(firstNonAmbientExternalModuleSourceFile, span.start, span.length, Diagnostics.Cannot_compile_modules_using_option_0_unless_the_module_flag_is_amd_or_system, options.out ? "out" : "outFile"));
                 }
             }
 

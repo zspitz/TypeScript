@@ -1318,7 +1318,7 @@ namespace ts {
     export function isExternalModuleNameRelative(moduleName: string): boolean {
         // TypeScript 1.0 spec (April 2014): 11.2.1
         // An external module name is "relative" if the first term is "." or "..".
-        return moduleName.substr(0, 2) === "./" || moduleName.substr(0, 3) === "../" || moduleName.substr(0, 2) === ".\\" || moduleName.substr(0, 3) === "..\\";
+        return /^\.\.?($|[\\/])/.test(moduleName);
     }
 
     export function isInstantiatedModule(node: ModuleDeclaration, preserveConstEnums: boolean) {
@@ -1624,7 +1624,7 @@ namespace ts {
                 continue;
             }
             return parent.kind === SyntaxKind.BinaryExpression &&
-                (<BinaryExpression>parent).operatorToken.kind === SyntaxKind.EqualsToken &&
+                isAssignmentOperator((<BinaryExpression>parent).operatorToken.kind) &&
                 (<BinaryExpression>parent).left === node ||
                 (parent.kind === SyntaxKind.ForInStatement || parent.kind === SyntaxKind.ForOfStatement) &&
                 (<ForInStatement | ForOfStatement>parent).initializer === node;
@@ -2669,7 +2669,6 @@ namespace ts {
                               !host.isSourceFileFromExternalLibrary(sourceFile) &&
                               (!isExternalModule(sourceFile) ||
                                !!getEmitModuleKind(options)));
-
             if (bundledSources.length) {
                 const jsFilePath = options.outFile || options.out;
                 const emitFileNames: EmitFileNames = {
@@ -3522,12 +3521,7 @@ namespace ts {
                         // export { x, y }
                         for (const specifier of (<ExportDeclaration>node).exportClause.elements) {
                             const name = (specifier.propertyName || specifier.name).text;
-                            if (!exportSpecifiers[name]) {
-                                exportSpecifiers[name] = [specifier];
-                            }
-                            else {
-                                exportSpecifiers[name].push(specifier);
-                            }
+                            getOrUpdateProperty(exportSpecifiers, name, () => []).push(specifier);
                         }
                     }
                     break;
@@ -3966,6 +3960,7 @@ namespace ts {
             || kind === SyntaxKind.MethodDeclaration
             || kind === SyntaxKind.MethodSignature
             || kind === SyntaxKind.ModuleDeclaration
+            || kind === SyntaxKind.NamespaceExportDeclaration
             || kind === SyntaxKind.NamespaceImport
             || kind === SyntaxKind.Parameter
             || kind === SyntaxKind.PropertyAssignment
@@ -4055,6 +4050,13 @@ namespace ts {
 
     export function isJsxClosingElement(node: Node): node is JsxClosingElement {
         return node.kind === SyntaxKind.JsxClosingElement;
+    }
+
+    export function isJsxTagNameExpression(node: Node): node is JsxTagNameExpression {
+        const kind = node.kind;
+        return kind === SyntaxKind.ThisKeyword
+            || kind === SyntaxKind.Identifier
+            || kind === SyntaxKind.PropertyAccessExpression;
     }
 
     export function isJsxChild(node: Node): node is JsxChild {
@@ -4363,14 +4365,5 @@ namespace ts {
 
     export function isParameterPropertyDeclaration(node: ParameterDeclaration): boolean {
         return hasModifier(node, ModifierFlags.ParameterPropertyModifier) && node.parent.kind === SyntaxKind.Constructor && isClassLike(node.parent.parent);
-    }
-
-    export function startsWith(str: string, prefix: string): boolean {
-        return str.lastIndexOf(prefix, 0) === 0;
-    }
-
-    export function endsWith(str: string, suffix: string): boolean {
-        const expectedPos = str.length - suffix.length;
-        return str.indexOf(suffix, expectedPos) === expectedPos;
     }
 }
