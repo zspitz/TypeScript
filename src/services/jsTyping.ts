@@ -43,7 +43,7 @@ namespace ts.JsTyping {
         safeListPath: Path,
         packageNameToTypingLocation: Map<string>,
         typingOptions: TypingOptions,
-        compilerOptions: CompilerOptions):
+        _compilerOptions: CompilerOptions):
         { cachedTypingPaths: string[], newTypingNames: string[], filesToWatch: string[] } {
 
         // A typing name to typing file path mapping

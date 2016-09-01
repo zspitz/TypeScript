@@ -557,7 +557,7 @@ namespace ts {
         constructor(private factory: ShimFactory) {
             factory.registerShim(this);
         }
-        public dispose(dummy: any): void {
+        dispose(_dummy: any): void {
             this.factory.unregisterShim(this);
         }
     }

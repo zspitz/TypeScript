@@ -770,7 +770,7 @@ namespace ts {
     }
 
     export function symbolPart(text: string, symbol: Symbol) {
-        return displayPart(text, displayPartKind(symbol), symbol);
+        return displayPart(text, displayPartKind(symbol));
 
         function displayPartKind(symbol: Symbol): SymbolDisplayPartKind {
             const flags = symbol.flags;
@@ -796,7 +796,7 @@ namespace ts {
         }
     }
 
-    export function displayPart(text: string, kind: SymbolDisplayPartKind, symbol?: Symbol): SymbolDisplayPart {
+    export function displayPart(text: string, kind: SymbolDisplayPartKind): SymbolDisplayPart {
         return <SymbolDisplayPart>{
             text: text,
             kind: SymbolDisplayPartKind[kind]

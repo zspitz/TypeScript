@@ -28,16 +28,16 @@ namespace ts {
     export function getNullSourceMapWriter(): SourceMapWriter {
         if (nullSourceMapWriter === undefined) {
             nullSourceMapWriter = {
-                getSourceMapData(): SourceMapData { return undefined; },
-                setSourceFile(sourceFile: SourceFile): void { },
-                emitStart(range: TextRange): void { },
-                emitEnd(range: TextRange, stopOverridingSpan?: boolean): void { },
-                emitPos(pos: number): void { },
-                changeEmitSourcePos(): void { },
-                getText(): string { return undefined; },
-                getSourceMappingURL(): string { return undefined; },
-                initialize(filePath: string, sourceMapFilePath: string, sourceFiles: SourceFile[], isBundledEmit: boolean): void { },
-                reset(): void { },
+                getSourceMapData() { return undefined; },
+                setSourceFile() { },
+                emitStart() { },
+                emitEnd() { },
+                emitPos() { },
+                changeEmitSourcePos() { },
+                getText() { return undefined; },
+                getSourceMappingURL() { return undefined; },
+                initialize() { },
+                reset() { },
             };
         }
 

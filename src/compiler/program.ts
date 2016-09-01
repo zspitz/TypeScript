@@ -78,7 +78,7 @@ namespace ts {
 
     function trace(host: ModuleResolutionHost, message: DiagnosticMessage, ...args: any[]): void;
     function trace(host: ModuleResolutionHost, message: DiagnosticMessage): void {
-        host.trace(formatMessage.apply(undefined, arguments));
+        host.trace(formatMessage(message));
     }
 
     function isTraceEnabled(compilerOptions: CompilerOptions, host: ModuleResolutionHost): boolean {

@@ -10,7 +10,9 @@
         "stripInternal": true,
         "types": [
             "node", "mocha", "chai"
-        ]
+        ],
+        "noUnusedLocals": true,
+        "noUnusedParameters": true
     },
     "files": [
         "../compiler/core.ts",

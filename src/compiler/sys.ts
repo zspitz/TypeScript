@@ -44,13 +44,9 @@ namespace ts {
     }
 
     declare var require: any;
-    declare var module: any;
     declare var process: any;
     declare var global: any;
     declare var __filename: string;
-    declare var Buffer: {
-        new (str: string, encoding?: string): any;
-    };
 
     declare class Enumerator {
         public atEnd(): boolean;
