@@ -157,6 +157,8 @@ namespace ts {
         }
 
         /**
+         * 
+         * 
          * JSX trims whitespace at the end and beginning of lines, except that the
          * start/end of a tag is considered a start/end of a line only if that line is
          * on the same line as the closing tag. See examples in
