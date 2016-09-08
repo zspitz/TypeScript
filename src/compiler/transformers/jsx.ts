@@ -151,28 +151,28 @@ namespace ts {
             }
         }
 
-        function visitJsxText(node: JsxText) {
-            const text = getTextOfNode(node, /*includeTrivia*/ true);
-            let parts: Expression[];
+        function visitJsxText(node: JsxText): StringLiteral | undefined {
+            const decoded = fixupWhitespaceAndDecodeEntities(getTextOfNode(node, /*includeTrivia*/ true));
+            return decoded && createLiteral(decoded);
+        }
+
+        /**
+         * JSX trims whitespace at the end and beginning of lines, except that the
+         * start/end of a tag is considered a start/end of a line only if that line is
+         * on the same line as the closing tag. See examples in
+         * tests/cases/conformance/jsx/tsxReactEmitWhitespace.tsx
+         */
+        function fixupWhitespaceAndDecodeEntities(text: string): string | undefined {
+            let acc: string | undefined;
             let firstNonWhitespace = 0;
             let lastNonWhitespace = -1;
 
-            // JSX trims whitespace at the end and beginning of lines, except that the
-            // start/end of a tag is considered a start/end of a line only if that line is
-            // on the same line as the closing tag. See examples in
-            // tests/cases/conformance/jsx/tsxReactEmitWhitespace.tsx
             for (let i = 0; i < text.length; i++) {
                 const c = text.charCodeAt(i);
                 if (isLineBreak(c)) {
                     if (firstNonWhitespace !== -1 && (lastNonWhitespace - firstNonWhitespace + 1 > 0)) {
-                        const part = text.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1);
-                        if (!parts) {
-                            parts = [];
-                        }
-
-                        // We do not escape the string here as that is handled by the printer
-                        // when it emits the literal. We do, however, need to decode JSX entities.
-                        parts.push(createLiteral(decodeEntities(part)));
+                        const part = decodeEntities(text.substr(firstNonWhitespace, lastNonWhitespace - firstNonWhitespace + 1));
+                        acc = acc === undefined ? part : acc + " " + part;
                     }
 
                     firstNonWhitespace = -1;
@@ -186,28 +186,12 @@ namespace ts {
             }
 
             if (firstNonWhitespace !== -1) {
-                const part = text.substr(firstNonWhitespace);
-                if (!parts) {
-                    parts = [];
-                }
-
-                // We do not escape the string here as that is handled by the printer
-                // when it emits the literal. We do, however, need to decode JSX entities.
-                parts.push(createLiteral(decodeEntities(part)));
+                const lastPart = decodeEntities(text.substr(firstNonWhitespace));
+                return acc ? acc + lastPart : lastPart;
             }
-
-            if (parts) {
-                return reduceLeft(parts, aggregateJsxTextParts);
+            else {
+                return acc;
             }
-
-            return undefined;
-        }
-
-        /**
-         * Aggregates two expressions by interpolating them with a whitespace literal.
-         */
-        function aggregateJsxTextParts(left: Expression, right: Expression) {
-            return createAdd(createAdd(left, createLiteral(" ")), right);
         }
 
         /**
