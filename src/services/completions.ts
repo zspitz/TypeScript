@@ -113,7 +113,7 @@ namespace ts.Completions {
 
         function getCompletionEntriesFromSymbols(symbols: Symbol[], entries: CompletionEntry[], location: Node, performCharacterChecks: boolean): Set<string> {
             const start = timestamp();
-            const uniqueNames = new StringSet();
+            const uniqueNames = createStringSet();
             if (symbols) {
                 for (const symbol of symbols) {
                     const entry = createCompletionEntry(symbol, location, performCharacterChecks);
@@ -361,7 +361,7 @@ namespace ts.Completions {
                      *
                      * both foo.ts and foo.tsx become foo
                      */
-                    const foundFiles = new StringSet();
+                    const foundFiles = createStringSet();
                     for (let filePath of files) {
                         filePath = normalizePath(filePath);
                         if (exclude && comparePaths(filePath, exclude, scriptPath, ignoreCase) === Comparison.EqualTo) {
@@ -1547,7 +1547,7 @@ namespace ts.Completions {
          *          do not occur at the current position and have not otherwise been typed.
          */
         function filterNamedImportOrExportCompletionItems(exportsOfModule: Symbol[], namedImportsOrExports: ImportOrExportSpecifier[]): Symbol[] {
-            const existingImportsOrExports = new StringSet();
+            const existingImportsOrExports = createStringSet();
 
             for (const element of namedImportsOrExports) {
                 // If this is the current item we are editing right now, do not filter it out
@@ -1577,7 +1577,7 @@ namespace ts.Completions {
                 return contextualMemberSymbols;
             }
 
-            const existingMemberNames = new StringSet();
+            const existingMemberNames = createStringSet();
             for (const m of existingMembers) {
                 // Ignore omitted expressions for missing members
                 if (m.kind !== SyntaxKind.PropertyAssignment &&
@@ -1620,7 +1620,7 @@ namespace ts.Completions {
          *          do not occur at the current position and have not otherwise been typed.
          */
         function filterJsxAttributes(symbols: Symbol[], attributes: NodeArray<JsxAttribute | JsxSpreadAttribute>): Symbol[] {
-            const seenNames = new StringSet();
+            const seenNames = createStringSet();
             for (const attr of attributes) {
                 // If this is the current item we are editing right now, do not filter it out
                 if (attr.getStart() <= position && position <= attr.getEnd()) {

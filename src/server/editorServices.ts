@@ -98,12 +98,12 @@ namespace ts.server {
         /**
          * a path to directory watcher map that detects added tsconfig files
          **/
-        private readonly directoryWatchersForTsconfig = new StringMap<FileWatcher>();
+        private readonly directoryWatchersForTsconfig = createStringMap<FileWatcher>();
         /**
          * count of how many projects are using the directory watcher.
          * If the number becomes 0 for a watcher, then we should close it.
          **/
-        private readonly directoryWatchersRefCount = new StringMap<number>();
+        private readonly directoryWatchersRefCount = createStringMap<number>();
 
         constructor(private readonly projectService: ProjectService) {
         }
@@ -151,7 +151,7 @@ namespace ts.server {
         /**
          * maps external project file name to list of config files that were the part of this project
          */
-        private readonly externalProjectToConfiguredProjectMap = new StringMap<NormalizedPath[]>();
+        private readonly externalProjectToConfiguredProjectMap = createStringMap<NormalizedPath[]>();
 
         /**
          * external projects (configuration and list of root files is not controlled by tsserver)
@@ -830,7 +830,7 @@ namespace ts.server {
         private updateNonInferredProject<T>(project: ExternalProject | ConfiguredProject, newUncheckedFiles: T[], propertyReader: FilePropertyReader<T>, newOptions: CompilerOptions, newTypingOptions: TypingOptions, compileOnSave: boolean, configFileErrors: Diagnostic[]) {
             const oldRootScriptInfos = project.getRootScriptInfos();
             const newRootScriptInfos: ScriptInfo[] = [];
-            const newRootScriptInfoMap: Map<NormalizedPath, ScriptInfo> = new StringMap<ScriptInfo>();
+            const newRootScriptInfoMap: Map<NormalizedPath, ScriptInfo> = createStringMap<ScriptInfo>();
 
             let projectErrors: Diagnostic[];
             let rootFilesChanged = false;

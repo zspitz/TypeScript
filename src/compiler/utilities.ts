@@ -112,7 +112,7 @@ namespace ts {
 
     export function setResolvedModule(sourceFile: SourceFile, moduleNameText: string, resolvedModule: ResolvedModule): void {
         if (!sourceFile.resolvedModules) {
-            sourceFile.resolvedModules = new StringMap<ResolvedModule>();
+            sourceFile.resolvedModules = createStringMap<ResolvedModule>();
         }
 
         sourceFile.resolvedModules.set(moduleNameText, resolvedModule);
@@ -120,7 +120,7 @@ namespace ts {
 
     export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective): void {
         if (!sourceFile.resolvedTypeReferenceDirectiveNames) {
-            sourceFile.resolvedTypeReferenceDirectiveNames = new StringMap<ResolvedTypeReferenceDirective>();
+            sourceFile.resolvedTypeReferenceDirectiveNames = createStringMap<ResolvedTypeReferenceDirective>();
         }
 
         sourceFile.resolvedTypeReferenceDirectiveNames.set(typeReferenceDirectiveName, resolvedTypeReferenceDirective);
@@ -2207,7 +2207,7 @@ namespace ts {
 
     export function createDiagnosticCollection(): DiagnosticCollection {
         let nonFileDiagnostics: Diagnostic[] = [];
-        const fileDiagnostics = new StringMap<Diagnostic[]>();
+        const fileDiagnostics = createStringMap<Diagnostic[]>();
 
         let diagnosticsModified = false;
         let modificationCount = 0;
@@ -3349,7 +3349,7 @@ namespace ts {
         return false;
     }
 
-    const syntaxKindCache = new NumberMap<SyntaxKind, string>();
+    const syntaxKindCache = createNumberMap<SyntaxKind, string>();
 
     export function formatSyntaxKind(kind: SyntaxKind): string {
         const syntaxKindEnum = (<any>ts).SyntaxKind;
@@ -3498,7 +3498,7 @@ namespace ts {
 
     export function collectExternalModuleInfo(sourceFile: SourceFile, resolver: EmitResolver) {
         const externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[] = [];
-        const exportSpecifiers = new StringMap<ExportSpecifier[]>();
+        const exportSpecifiers = createStringMap<ExportSpecifier[]>();
         let exportEquals: ExportAssignment = undefined;
         let hasExportStarsToExportValues = false;
         for (const node of sourceFile.statements) {

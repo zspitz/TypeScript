@@ -267,7 +267,7 @@ namespace ts {
             }
 
             if (!usedTypeDirectiveReferences) {
-                usedTypeDirectiveReferences = new StringSet();
+                usedTypeDirectiveReferences = createStringSet();
             }
             for (const directive of typeReferenceDirectives) {
                 if (!usedTypeDirectiveReferences.has(directive)) {

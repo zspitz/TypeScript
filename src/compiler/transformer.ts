@@ -10,7 +10,7 @@
 
 /* @internal */
 namespace ts {
-    const moduleTransformerMap = new NumberMap<ModuleKind, Transformer>([
+    const moduleTransformerMap = createNumberMap<ModuleKind, Transformer>([
         [ModuleKind.ES6, transformES6Module],
         [ModuleKind.System, transformSystemModule],
         [ModuleKind.AMD, transformModule],

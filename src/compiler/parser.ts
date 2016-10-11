@@ -600,7 +600,7 @@ namespace ts {
 
             parseDiagnostics = [];
             parsingContext = 0;
-            identifiers = new StringMap<string>();
+            identifiers = createStringMap<string>();
             identifierCount = 0;
             nodeCount = 0;
 

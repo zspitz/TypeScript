@@ -1849,7 +1849,7 @@ namespace ts {
         function visitLabeledStatement(node: LabeledStatement): VisitResult<Statement> {
             if (convertedLoopState) {
                 if (!convertedLoopState.labels) {
-                    convertedLoopState.labels = new StringMap<string>();
+                    convertedLoopState.labels = createStringMap<string>();
                 }
                 convertedLoopState.labels.set(node.label.text, node.label.text);
             }
@@ -2457,13 +2457,13 @@ namespace ts {
         function setLabeledJump(state: ConvertedLoopState, isBreak: boolean, labelText: string, labelMarker: string): void {
             if (isBreak) {
                 if (!state.labeledNonLocalBreaks) {
-                    state.labeledNonLocalBreaks = new StringMap<string>();
+                    state.labeledNonLocalBreaks = createStringMap<string>();
                 }
                 state.labeledNonLocalBreaks.set(labelText, labelMarker);
             }
             else {
                 if (!state.labeledNonLocalContinues) {
-                    state.labeledNonLocalContinues = new StringMap<string>();
+                    state.labeledNonLocalContinues = createStringMap<string>();
                 }
                 state.labeledNonLocalContinues.set(labelText, labelMarker);
             }

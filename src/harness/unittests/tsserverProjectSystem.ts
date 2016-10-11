@@ -287,7 +287,7 @@ namespace ts.projectSystem {
     }
 
     export class Callbacks {
-        private map = new NumberMap<number, TimeOutCallback>();
+        private map = createNumberMap<number, TimeOutCallback>();
         private nextId = 1;
 
         register(cb: (...args: any[]) => void, args: any[]) {
@@ -324,8 +324,8 @@ namespace ts.projectSystem {
         private timeoutCallbacks = new Callbacks();
         private immediateCallbacks = new Callbacks();
 
-        readonly watchedDirectories = new StringMap<{ cb: DirectoryWatcherCallback, recursive: boolean }[]>();
-        readonly watchedFiles = new StringMap<FileWatcherCallback[]>();
+        readonly watchedDirectories = createStringMap<{ cb: DirectoryWatcherCallback, recursive: boolean }[]>();
+        readonly watchedFiles = createStringMap<FileWatcherCallback[]>();
 
 
         private filesOrFolders: FileOrFolder[];

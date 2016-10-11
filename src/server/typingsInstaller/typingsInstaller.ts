@@ -75,10 +75,10 @@ namespace ts.server.typingsInstaller {
     };
 
     export abstract class TypingsInstaller {
-        private readonly packageNameToTypingLocation = new StringMap<string>();
-        private readonly missingTypingsSet = new StringSet();
-        private readonly knownCachesSet = new StringSet();
-        private readonly projectWatchers = new StringMap<FileWatcher[]>();
+        private readonly packageNameToTypingLocation = createStringMap<string>();
+        private readonly missingTypingsSet = createStringSet();
+        private readonly knownCachesSet = createStringSet();
+        private readonly projectWatchers = createStringMap<FileWatcher[]>();
         readonly pendingRunRequests: PendingRequest[] = [];
 
         private installRunCount = 1;
@@ -291,7 +291,7 @@ namespace ts.server.typingsInstaller {
                 if (this.log.isEnabled()) {
                     this.log.writeLine(`Requested to install typings ${JSON.stringify(typingsToInstall)}, installed typings ${JSON.stringify(installedTypings)}`);
                 }
-                const installedPackages = new StringSet();
+                const installedPackages = createStringSet();
                 const installedTypingFiles: string[] = [];
                 for (const t of installedTypings) {
                     const packageName = getBaseFileName(t);

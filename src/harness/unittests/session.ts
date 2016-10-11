@@ -364,8 +364,8 @@ namespace ts.server {
         class InProcClient {
             private server: InProcSession;
             private seq = 0;
-            private callbacks = new NumberMap<number, (resp: protocol.Response) => void>();
-            private eventHandlers = new StringMap<(args: any) => void>();
+            private callbacks = createNumberMap<number, (resp: protocol.Response) => void>();
+            private eventHandlers = createStringMap<(args: any) => void>();
 
             handle(msg: protocol.Message): void {
                 if (msg.type === "response") {

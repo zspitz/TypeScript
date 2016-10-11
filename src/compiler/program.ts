@@ -82,7 +82,7 @@ namespace ts {
     }
 
     export function createCompilerHost(options: CompilerOptions, setParentNodes?: boolean): CompilerHost {
-        const existingDirectories = new StringSet();
+        const existingDirectories = createStringSet();
 
         function getCanonicalFileName(fileName: string): string {
             // if underlying system can distinguish between two files whose names differs only in cases then file name already in canonical form.
@@ -136,7 +136,7 @@ namespace ts {
 
         function writeFileIfUpdated(fileName: string, data: string, writeByteOrderMark: boolean): void {
             if (!outputFingerprints) {
-                outputFingerprints = new StringMap<OutputFingerprint>();
+                outputFingerprints = createStringMap<OutputFingerprint>();
             }
 
             const hash = sys.createHash(data);
@@ -279,7 +279,7 @@ namespace ts {
             return [];
         }
         const resolutions: T[] = [];
-        const cache = new StringMap<T>();
+        const cache = createStringMap<T>();
         for (const name of names) {
             const result = cache.has(name)
                 ? cache.get(name)
@@ -297,7 +297,7 @@ namespace ts {
         let noDiagnosticsTypeChecker: TypeChecker;
         let classifiableNames: Set<string>;
 
-        let resolvedTypeReferenceDirectives = new StringMap<ResolvedTypeReferenceDirective>();
+        let resolvedTypeReferenceDirectives = createStringMap<ResolvedTypeReferenceDirective>();
         let fileProcessingDiagnostics = createDiagnosticCollection();
 
         // The below settings are to track if a .js file should be add to the program if loaded via searching under node_modules.
@@ -312,10 +312,10 @@ namespace ts {
 
         // If a module has some of its imports skipped due to being at the depth limit under node_modules, then track
         // this, as it may be imported at a shallower depth later, and then it will need its skipped imports processed.
-        const modulesWithElidedImports = new StringMap<boolean>();
+        const modulesWithElidedImports = createStringMap<boolean>();
 
         // Track source files that are source files found by searching under node_modules, as these shouldn't be compiled.
-        const sourceFilesFoundSearchingNodeModules = new StringMap<boolean>();
+        const sourceFilesFoundSearchingNodeModules = createStringMap<boolean>();
 
         performance.mark("beforeProgram");
 
@@ -1301,7 +1301,7 @@ namespace ts {
         function processImportedModules(file: SourceFile, basePath: string) {
             collectExternalModuleReferences(file);
             if (file.imports.length || file.moduleAugmentations.length) {
-                file.resolvedModules = new StringMap<ResolvedModule>();
+                file.resolvedModules = createStringMap<ResolvedModule>();
                 const moduleNames = map(concatenate(file.imports, file.moduleAugmentations), getTextOfLiteral);
                 const resolutions = resolveModuleNamesWorker(moduleNames, getNormalizedAbsolutePath(file.fileName, currentDirectory));
                 for (let i = 0; i < moduleNames.length; i++) {

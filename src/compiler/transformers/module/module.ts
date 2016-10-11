@@ -4,7 +4,7 @@
 /*@internal*/
 namespace ts {
     export function transformModule(context: TransformationContext) {
-        const transformModuleDelegates = new NumberMap<ModuleKind, (node: SourceFile) => SourceFile>([
+        const transformModuleDelegates = createNumberMap<ModuleKind, (node: SourceFile) => SourceFile>([
             [ModuleKind.None, transformCommonJSModule],
             [ModuleKind.CommonJS, transformCommonJSModule],
             [ModuleKind.AMD, transformAMDModule],
@@ -40,7 +40,7 @@ namespace ts {
         let bindingNameExportSpecifiersMap: Map<string, ExportSpecifier[]>;
         // Subset of exportSpecifiers that is a binding-name.
         // This is to reduce amount of memory we have to keep around even after we done with module-transformer
-        const bindingNameExportSpecifiersForFileMap = new NumberMap<number, Map<string, ExportSpecifier[]>>();
+        const bindingNameExportSpecifiersForFileMap = createNumberMap<number, Map<string, ExportSpecifier[]>>();
         let hasExportStarsToExportValues: boolean;
 
         return transformSourceFile;
@@ -671,7 +671,7 @@ namespace ts {
                 const specifiers = !exportEquals && exportSpecifiers && exportSpecifiers.get(name.text);
                 if (specifiers) {
                     const sourceFileId = getOriginalNodeId(currentSourceFile);
-                    const bindingNameExportSpecifiers = getOrUpdate(bindingNameExportSpecifiersForFileMap, sourceFileId, () => new StringMap());
+                    const bindingNameExportSpecifiers = getOrUpdate(bindingNameExportSpecifiersForFileMap, sourceFileId, () => createStringMap());
                     bindingNameExportSpecifiers.set(name.text, specifiers);
                     addExportMemberAssignments(resultStatements, name);
                 }

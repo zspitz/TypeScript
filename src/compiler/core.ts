@@ -20,7 +20,7 @@ namespace ts {
     }
 
     export function createFileMap<T>(keyMapper?: (key: string) => string): FileMap<T> {
-        const files = new StringMap<T>();
+        const files = createStringMap<T>();
         return {
             get,
             set,

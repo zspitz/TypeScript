@@ -2661,7 +2661,7 @@ namespace ts {
     }
 
     function mergeTokenSourceMapRanges(sourceRanges: Map<SyntaxKind, TextRange>, destRanges: Map<SyntaxKind, TextRange>): Map<SyntaxKind, TextRange> {
-        if (!destRanges) destRanges = new NumberMap<SyntaxKind, TextRange>();
+        if (!destRanges) destRanges = createNumberMap<SyntaxKind, TextRange>();
         copyMapEntriesFromTo(sourceRanges, destRanges);
         return destRanges;
     }
@@ -2754,7 +2754,7 @@ namespace ts {
      */
     export function setTokenSourceMapRange<T extends Node>(node: T, token: SyntaxKind, range: TextRange) {
         const emitNode = getOrCreateEmitNode(node);
-        const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = new NumberMap<SyntaxKind, TextRange>());
+        const tokenSourceMapRanges = emitNode.tokenSourceMapRanges || (emitNode.tokenSourceMapRanges = createNumberMap<SyntaxKind, TextRange>());
         tokenSourceMapRanges.set(token, range);
         return node;
     }

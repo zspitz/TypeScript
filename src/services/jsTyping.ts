@@ -29,7 +29,7 @@ namespace ts.JsTyping {
     // that we are confident require typings
     let safeList: Map<string, string>;
 
-    const EmptySafeList = new StringMap<string>();
+    const EmptySafeList = createStringMap<string>();
 
     /**
      * @param host is the object providing I/O related operations.
@@ -51,7 +51,7 @@ namespace ts.JsTyping {
         { cachedTypingPaths: string[], newTypingNames: string[], filesToWatch: string[] } {
 
         // A typing name to typing file path mapping
-        const inferredTypings = new StringMap<string | undefined>();
+        const inferredTypings = createStringMap<string | undefined>();
 
         if (!typingOptions || !typingOptions.enableAutoDiscovery) {
             return { cachedTypingPaths: [], newTypingNames: [], filesToWatch: [] };

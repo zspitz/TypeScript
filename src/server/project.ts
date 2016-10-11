@@ -472,7 +472,7 @@ namespace ts.server {
             // We need to use a set here since the code can contain the same import twice,
             // but that will only be one dependency.
             // To avoid invernal conversion, the key of the referencedFiles map must be of type Path
-            const referencedFiles = new StringSet();
+            const referencedFiles = createStringSet();
             if (sourceFile.imports && sourceFile.imports.length > 0) {
                 const checker: TypeChecker = this.program.getTypeChecker();
                 for (const importName of sourceFile.imports) {
@@ -647,7 +647,7 @@ namespace ts.server {
             }
             const configDirectoryPath = getDirectoryPath(this.configFileName);
 
-            this.directoriesWatchedForWildcards = new StringMap<FileWatcher>();
+            this.directoriesWatchedForWildcards = createStringMap<FileWatcher>();
             this.wildcardDirectories.forEach((flag, directory) => {
                 if (comparePaths(configDirectoryPath, directory, ".", !this.projectService.host.useCaseSensitiveFileNames) !== Comparison.EqualTo) {
                     const recursive = (flag & WatchDirectoryFlags.Recursive) !== 0;

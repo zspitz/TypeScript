@@ -2744,7 +2744,7 @@ namespace ts {
             const name = node.symbol && node.symbol.name;
             if (name) {
                 if (!currentScopeFirstDeclarationsOfName) {
-                    currentScopeFirstDeclarationsOfName = new StringMap<Node>();
+                    currentScopeFirstDeclarationsOfName = createStringMap<Node>();
                 }
 
                 setIfNotSet(currentScopeFirstDeclarationsOfName, name, node);
@@ -3274,7 +3274,7 @@ namespace ts {
                 context.enableSubstitution(SyntaxKind.Identifier);
 
                 // Keep track of class aliases.
-                classAliases = new NumberMap<number, Identifier>();
+                classAliases = createNumberMap<number, Identifier>();
             }
         }
 

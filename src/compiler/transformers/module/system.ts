@@ -1326,7 +1326,7 @@ namespace ts {
         }
 
         function collectDependencyGroups(externalImports: (ImportDeclaration | ImportEqualsDeclaration | ExportDeclaration)[]) {
-            const groupIndices = new StringMap<number>();
+            const groupIndices = createStringMap<number>();
             const dependencyGroups: DependencyGroup[] = [];
             for (let i = 0; i < externalImports.length; i++) {
                 const externalImport = externalImports[i];
