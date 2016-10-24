@@ -168,6 +168,7 @@ namespace ts {
         DeclareKeyword,
         GetKeyword,
         IsKeyword,
+        KeyOfKeyword,
         ModuleKeyword,
         NamespaceKeyword,
         NeverKeyword,
@@ -216,6 +217,7 @@ namespace ts {
         IntersectionType,
         ParenthesizedType,
         ThisType,
+        TypeOperator,
         LiteralType,
         // Binding patterns
         ObjectBindingPattern,
@@ -879,6 +881,12 @@ namespace ts {
 
     export interface ParenthesizedTypeNode extends TypeNode {
         kind: SyntaxKind.ParenthesizedType;
+        type: TypeNode;
+    }
+
+    export interface TypeOperatorNode extends TypeNode {
+        kind: SyntaxKind.TypeOperator;
+        operator: SyntaxKind.KeyOfKeyword;
         type: TypeNode;
     }
 
