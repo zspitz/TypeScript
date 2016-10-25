@@ -17,16 +17,16 @@ namespace ts {
      */
     interface Resolved {
         path: string,
-        ext: Ext
+        extension: Extension
     }
 
     //doc
     /**
-     * Given a resolution result which does not have a resolvedTsFileName, combine it with second attempt.
+     * Given a resolution result which is not TypeScript code (.d.ts, .ts, .tsx), combine it with second attempt.
      * This should be used in the following pattern:
      *
      * const attemptA = foo();
-     * return attemptA && attemptA.ts ? attemptA : combineAttempts(attemptA, bar());
+     * return attemptA && extensionIsTypeScript(attemptA.extension) ? attemptA : combineAttempts(attemptA, bar());
      *
      * Meaning, we stop early if we found a typed result.
      */
@@ -36,8 +36,8 @@ namespace ts {
             return firstAttempt || secondAttempt;
         }
 
-        Debug.assert(extIsJs(firstAttempt.ext));
-        return extIsJs(secondAttempt.ext) ? firstAttempt : secondAttempt;
+        Debug.assert(!extensionIsTypeScript(firstAttempt.extension));
+        return !extensionIsTypeScript(secondAttempt.extension) ? firstAttempt : secondAttempt;
     }
 
     /**
@@ -47,15 +47,17 @@ namespace ts {
     enum Extensions { All, DtsOnly }
 
     /** Used with `Extensions.DtsOnly` to use just the `ts` component, since `js` can't possibly be defined. */
-    //review
-    function resolvedTsOnly(resolved: Resolved | undefined): string | undefined {
-        Debug.assert(!(resolved && extIsJs(resolved.ext)));
-        return resolved && resolved.path;
+    function resolvedDtsOnly(resolved: Resolved | undefined): string | undefined {
+        if (!resolved) {
+            return undefined;
+        }
+        Debug.assert(resolved.extension === Extension.Dts);
+        return resolved.path;
     }
 
     /** Create Resolved from a file with unknown extension. */
     function resolvedFromAnyFile(path: string): Resolved | undefined {
-        return { path, ext: extFromPath(path) };
+        return { path, extension: extensionFromPath(path) };
     }
 
     /* @internal */
@@ -64,8 +66,8 @@ namespace ts {
     }
 
     /** Adds `isExernalLibraryImport` to a Resolved to get a ResolvedModule. */
-    function resolvedModuleFromResolved({ path, ext }: Resolved, isExternalLibraryImport: boolean): ResolvedModule {
-        return { resolvedFileName: path, ext, isExternalLibraryImport };
+    function resolvedModuleFromResolved({ path, extension }: Resolved, isExternalLibraryImport: boolean): ResolvedModule {
+        return { resolvedFileName: path, extension, isExternalLibraryImport };
     }
 
     function createResolvedModuleWithFailedLookupLocations(resolved: Resolved | undefined, isExternalLibraryImport: boolean, failedLookupLocations: string[]): ResolvedModuleWithFailedLookupLocations {
@@ -219,7 +221,7 @@ namespace ts {
                 const candidate = combinePaths(typeRoot, typeReferenceDirectiveName);
                 const candidateDirectory = getDirectoryPath(candidate);
 
-                const resolved = resolvedTsOnly(
+                const resolved = resolvedDtsOnly(
                     loadNodeModuleFromDirectory(Extensions.DtsOnly, candidate, failedLookupLocations,
                         !directoryProbablyExists(candidateDirectory, host), moduleResolutionState));
 
@@ -248,7 +250,7 @@ namespace ts {
             if (traceEnabled) {
                 trace(host, Diagnostics.Looking_up_in_node_modules_folder_initial_location_0, initialLocationForSecondaryLookup);
             }
-            resolvedFile = resolvedTsOnly(loadModuleFromNodeModules(Extensions.DtsOnly, typeReferenceDirectiveName, initialLocationForSecondaryLookup, failedLookupLocations, moduleResolutionState, /*checkOneLevel*/ false));
+            resolvedFile = resolvedDtsOnly(loadModuleFromNodeModules(Extensions.DtsOnly, typeReferenceDirectiveName, initialLocationForSecondaryLookup, failedLookupLocations, moduleResolutionState, /*checkOneLevel*/ false));
             if (traceEnabled) {
                 if (resolvedFile) {
                     trace(host, Diagnostics.Type_reference_directive_0_was_successfully_resolved_to_1_primary_Colon_2, typeReferenceDirectiveName, resolvedFile, false);
@@ -581,7 +583,7 @@ namespace ts {
 
     function resolvedWithRealpath(resolved: Resolved, host: ModuleResolutionHost, traceEnabled: boolean): Resolved {
         //this could change the extension...
-        return host.realpath ? { path: realpath(resolved.path), ext: resolved.ext } : resolved
+        return host.realpath ? { path: realpath(resolved.path), extension: resolved.extension } : resolved
 
         function realpath(path: string): string {
             const real = normalizePath(host.realpath(path));
@@ -598,7 +600,7 @@ namespace ts {
         }
 
         const resolvedFromFile = !pathEndsWithDirectorySeparator(candidate) && loadModuleFromFile(Extensions.All, candidate, failedLookupLocations, onlyRecordFailures, state);
-        return resolvedFromFile && extIsTs(resolvedFromFile.ext)
+        return resolvedFromFile && extensionIsTypeScript(resolvedFromFile.extension)
             ? resolvedFromFile
             : combineAttempts(resolvedFromFile,
                 loadNodeModuleFromDirectory(Extensions.All, candidate, failedLookupLocations, onlyRecordFailures, state));
@@ -650,17 +652,17 @@ namespace ts {
         switch (extensions) {
             case Extensions.DtsOnly: {
                 const dts = tryExtension(".d.ts");
-                return dts && { path: dts, ext: Ext.Dts };
+                return dts && { path: dts, extension: Extension.Dts };
             }
             case Extensions.All: {
                 //TODO: depends on whether we're in the ts or js iteration...
                 const ts = forEach(supportedTypeScriptExtensions, tryExtension);
                 if (ts) {
-                    return { path: ts, ext: extFromPath(ts) };
+                    return { path: ts, extension: extensionFromPath(ts) };
                 }
 
                 const js = forEach(supportedJavascriptExtensions, tryExtension);
-                return js && { path: js, ext: extFromPath(js) };
+                return js && { path: js, extension: extensionFromPath(js) };
             }
         }
 
@@ -705,7 +707,7 @@ namespace ts {
                     return resolvedFromAnyFile(fromFile);
                 }
                 fromPackageJson = tryAddingExtensions(typesFile, Extensions.All, failedLookupLocation, onlyRecordFailures, state);
-                if (fromPackageJson && extIsTs(fromPackageJson.ext)) {
+                if (fromPackageJson && extensionIsTypeScript(fromPackageJson.extension)) {
                     return fromPackageJson;
                 }
             }
@@ -761,7 +763,7 @@ namespace ts {
                 if (!typesOnly) {
                     // Try to load source from the package
                     packageResult = loadModuleFromNodeModulesFolder(extensions, moduleName, directory, failedLookupLocations, state);
-                    if (packageResult && extIsTs(packageResult.ext)) {
+                    if (packageResult && extensionIsTypeScript(packageResult.extension)) {
                         // Always prefer a TypeScript (.ts, .tsx, .d.ts) file shipped with the package
                         return packageResult;
                     }

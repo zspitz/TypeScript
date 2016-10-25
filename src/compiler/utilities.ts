@@ -118,40 +118,15 @@ namespace ts {
         sourceFile.resolvedModules[moduleNameText] = resolvedModule;
     }
 
-    //doc
-    /** An older host may have omitted resolvedTsFileName and resolvedJsFileName, in which case we should infer them from the file extension of resolvedFileName. */
+    /** An older host may have omitted extension, in which case we should infer it from the file extension of resolvedFileName. */
     export function convertResolvedModuleFromHost(resolved: ResolvedModule | undefined): ResolvedModule | undefined {
-        if (resolved === undefined || resolved.ext) {
+        if (resolved === undefined || resolved.extension) {
             return resolved;
         }
 
         const o = clone(resolved);
-        o.ext = extFromPath(resolved.resolvedFileName);
+        o.extension = extensionFromPath(resolved.resolvedFileName);
         return o;
-
-        //kill
-        /*
-        if (resolved === undefined) {
-            return undefined;
-        }
-        // At least one of `resolevdTsFileName` or `resolvedJsFileName` should be defined.
-        else if (resolved.resolvedTsFileName || resolved.resolvedJsFileName) {
-            const { resolvedFileName, resolvedTsFileName, resolvedJsFileName } = resolved as ResolvedModule;
-            Debug.assert(resolvedFileName === (resolvedTsFileName || resolvedJsFileName));
-            return resolved;
-        }
-        else {
-            // For backwards compatibility, if both `resolvedTsFileName` and `resolvedJsFileName` are undefined, we infer one of them to define.
-            const { resolvedFileName, isExternalLibraryImport } = resolved;
-            if (fileExtensionIsAny(resolvedFileName, supportedTypeScriptExtensions)) {
-                return { resolvedFileName, resolvedTsFileName: resolvedFileName, resolvedJsFileName: undefined, isExternalLibraryImport };
-            }
-            else {
-                Debug.assert(fileExtensionIsAny(resolvedFileName, supportedJavascriptExtensions));
-                return { resolvedFileName, resolvedTsFileName: undefined, resolvedJsFileName: resolvedFileName, isExternalLibraryImport };
-            }
-        }
-        */
     }
 
     export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective): void {

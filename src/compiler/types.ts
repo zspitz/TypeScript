@@ -3304,7 +3304,7 @@ namespace ts {
         resolvedFileName: string;
         //If not present, this must be inferred.
         //resolvedToTs: boolean;
-        ext: Ext,
+        extension: Extension,
         /**
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be a proper external module:
          * - be a .d.ts file
@@ -3315,7 +3315,7 @@ namespace ts {
     }
 
     //rename to Extension
-    export enum Ext {
+    export enum Extension {
         Ts,
         Tsx,
         Dts,
@@ -3323,40 +3323,34 @@ namespace ts {
         Jsx
     }
     //move
-    //name
-    export function extIsJs(ext: Ext): boolean {
-        return ext === Ext.Js || ext === Ext.Jsx;
+    export function extensionIsTypeScript(ext: Extension): boolean {
+        return ext < Extension.Js;
     }
-    //choose one: this or extIsJs
-    export function extIsTs(ext: Ext): boolean {
-        return ext < Ext.Js;
-    }
-    export function extFromPath(path: string): Ext {
+    export function extensionFromPath(path: string): Extension {
         if (fileExtensionIs(path, ".d.ts"))
-            return Ext.Dts;
+            return Extension.Dts;
         if (fileExtensionIs(path, ".ts"))
-            return Ext.Ts;
+            return Extension.Ts;
         if (fileExtensionIs(path, ".tsx"))
-            return Ext.Tsx;
+            return Extension.Tsx;
         if (fileExtensionIs(path, ".js"))
-            return Ext.Js;
+            return Extension.Js;
         if (fileExtensionIs(path, ".jsx"))
-            return Ext.Jsx;
+            return Extension.Jsx;
         Debug.assert(false); //?
-        return Ext.Jsx;
+        return Extension.Jsx;
     }
-    //review
-    //kill?
-    export function extOfString(ext: string): Ext {
+    //kill!!!
+    export function extOfString(ext: string): Extension {
         switch (ext) {
-            case ".ts": return Ext.Ts;
-            case ".tsx": return Ext.Tsx;
-            case ".d.ts": return Ext.Dts;
-            case ".js": return Ext.Js;
-            case ".jsx": return Ext.Jsx;
+            case ".ts": return Extension.Ts;
+            case ".tsx": return Extension.Tsx;
+            case ".d.ts": return Extension.Dts;
+            case ".js": return Extension.Js;
+            case ".jsx": return Extension.Jsx;
         }
         Debug.assert(false); //?
-        return Ext.Jsx;
+        return Extension.Jsx;
     }
 
 
