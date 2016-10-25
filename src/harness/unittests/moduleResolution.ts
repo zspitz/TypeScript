@@ -4,8 +4,8 @@ namespace ts {
     export function checkResolvedModule(expected: ResolvedModule, actual: ResolvedModule): boolean {
         if (!expected === !actual) {
             if (expected) {
-                assert.isTrue(expected.resolvedTsFileName === actual.resolvedTsFileName, `'resolvedTsFileName': expected '${expected.resolvedTsFileName}' to be equal to '${actual.resolvedTsFileName}'`);
-                assert.isTrue(expected.resolvedJsFileName === actual.resolvedJsFileName, `'resolvedTsFileName': expected '${expected.resolvedJsFileName}' to be equal to '${actual.resolvedJsFileName}'`);
+                assert.isTrue(expected.resolvedFileName === actual.resolvedFileName, `'resolvedFileName': expected '${expected.resolvedFileName}' to be equal to '${actual.resolvedFileName}'`);
+                assert.isTrue(expected.ext === actual.ext, `'ext': expected '${Ext[expected.ext]}' to be equal to '${Ext[actual.ext]}'`);
                 assert.isTrue(expected.isExternalLibraryImport === actual.isExternalLibraryImport, `'isExternalLibraryImport': expected '${expected.isExternalLibraryImport}' to be equal to '${actual.isExternalLibraryImport}'`);
             }
             return true;
@@ -19,8 +19,9 @@ namespace ts {
         assert.deepEqual(actual.failedLookupLocations, expectedFailedLookupLocations);
     }
 
-    export function createTsResolvedModule(resolvedTsFileName: string, isExternalLibraryImport = false): ResolvedModule {
-        return { resolvedFileName: resolvedTsFileName, resolvedTsFileName, resolvedJsFileName: undefined, isExternalLibraryImport };
+    export function createTsResolvedModule(resolvedFileName: string, isExternalLibraryImport = false): ResolvedModule {
+        //todo: may be .d.ts, .tsx
+        return { resolvedFileName, ext: extFromPath(resolvedFileName), isExternalLibraryImport }//{ resolvedFileName: resolvedTsFileName, resolvedTsFileName, resolvedJsFileName: undefined, isExternalLibraryImport };
     }
 
     interface File {

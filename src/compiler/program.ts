@@ -1317,7 +1317,7 @@ namespace ts {
                     }
 
                     const isFromNodeModulesSearch = resolution.isExternalLibraryImport;
-                    const isJsFileFromNodeModules = isFromNodeModulesSearch && !resolution.resolvedTsFileName;
+                    const isJsFileFromNodeModules = isFromNodeModulesSearch && extIsJs(resolution.ext);
                     const resolvedFileName = resolution.resolvedFileName;
 
                     if (isFromNodeModulesSearch) {
@@ -1581,7 +1581,9 @@ namespace ts {
      * Returns a DiagnosticMessage if we can't use a resolved module due to its extension.
      * The DiagnosticMessage's parameters are the imported module name, and the filename it resolved to.
      */
-    export function getResolutionDiagnostic(options: CompilerOptions, { resolvedTsFileName: ts, resolvedJsFileName: js }: ResolvedModule): DiagnosticMessage | undefined {
+    export function getResolutionDiagnostic(options: CompilerOptions, { ext }: ResolvedModule): DiagnosticMessage | undefined {
+        //kill
+        /*
         if (ts) {
             return !options.jsx && fileExtensionIs(ts, ".tsx") ? Diagnostics.Module_0_was_resolved_to_1_but_jsx_is_not_set : undefined;
         }
@@ -1595,6 +1597,20 @@ namespace ts {
             else {
                 return undefined;
             }
+        }
+        */
+        switch (ext) {
+            case Ext.Ts:
+            case Ext.Dts:
+                // These are always allowed.
+                return undefined;
+
+            case Ext.Tsx:
+            case Ext.Jsx:
+                return options.jsx ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_jsx_is_not_set;
+
+            case Ext.Js:
+                return options.allowJs ? undefined : Diagnostics.Module_0_was_resolved_to_1_but_allowJs_is_not_set;
         }
     }
 }

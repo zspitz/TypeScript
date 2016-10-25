@@ -16,10 +16,11 @@ namespace ts {
      * At least one of `ts` and `js` should be defined, or the whole thing should be `undefined`.
      */
     interface Resolved {
-        ts: string | undefined;
-        js: string | undefined;
+        path: string,
+        ext: Ext
     }
 
+    //doc
     /**
      * Given a resolution result which does not have a resolvedTsFileName, combine it with second attempt.
      * This should be used in the following pattern:
@@ -29,11 +30,14 @@ namespace ts {
      *
      * Meaning, we stop early if we found a typed result.
      */
+    //todo: review this fn; we don't "combine", we keep one.
     function combineAttempts(firstAttempt: Resolved | undefined, secondAttempt: Resolved | undefined): Resolved | undefined {
-        Debug.assert(!(firstAttempt && firstAttempt.ts));
-        return firstAttempt && secondAttempt
-            ? { ts: secondAttempt.ts, js: firstAttempt.js }
-            : (firstAttempt || secondAttempt);
+        if (!firstAttempt || !secondAttempt) {
+            return firstAttempt || secondAttempt;
+        }
+
+        Debug.assert(extIsJs(firstAttempt.ext));
+        return extIsJs(secondAttempt.ext) ? firstAttempt : secondAttempt;
     }
 
     /**
@@ -43,14 +47,15 @@ namespace ts {
     enum Extensions { All, DtsOnly }
 
     /** Used with `Extensions.DtsOnly` to use just the `ts` component, since `js` can't possibly be defined. */
+    //review
     function resolvedTsOnly(resolved: Resolved | undefined): string | undefined {
-        Debug.assert(!(resolved && resolved.js));
-        return resolved && resolved.ts;
+        Debug.assert(!(resolved && extIsJs(resolved.ext)));
+        return resolved && resolved.path;
     }
 
     /** Create Resolved from a file with unknown extension. */
     function resolvedFromAnyFile(path: string): Resolved | undefined {
-        return fileExtensionIsAny(path, supportedTypeScriptExtensions) ? { ts: path, js: undefined } : { ts: undefined, js: path };
+        return { path, ext: extFromPath(path) };
     }
 
     /* @internal */
@@ -59,8 +64,8 @@ namespace ts {
     }
 
     /** Adds `isExernalLibraryImport` to a Resolved to get a ResolvedModule. */
-    function resolvedModuleFromResolved({ ts, js }: Resolved, isExternalLibraryImport: boolean): ResolvedModule {
-        return { resolvedFileName: ts || js, resolvedTsFileName: ts, resolvedJsFileName: js, isExternalLibraryImport };
+    function resolvedModuleFromResolved({ path, ext }: Resolved, isExternalLibraryImport: boolean): ResolvedModule {
+        return { resolvedFileName: path, ext, isExternalLibraryImport };
     }
 
     function createResolvedModuleWithFailedLookupLocations(resolved: Resolved | undefined, isExternalLibraryImport: boolean, failedLookupLocations: string[]): ResolvedModuleWithFailedLookupLocations {
@@ -575,7 +580,8 @@ namespace ts {
     }
 
     function resolvedWithRealpath(resolved: Resolved, host: ModuleResolutionHost, traceEnabled: boolean): Resolved {
-        return host.realpath ? { ts: resolved.ts && realpath(resolved.ts), js: resolved.js && realpath(resolved.js) } : resolved;
+        //this could change the extension...
+        return host.realpath ? { path: realpath(resolved.path), ext: resolved.ext } : resolved
 
         function realpath(path: string): string {
             const real = normalizePath(host.realpath(path));
@@ -592,7 +598,7 @@ namespace ts {
         }
 
         const resolvedFromFile = !pathEndsWithDirectorySeparator(candidate) && loadModuleFromFile(Extensions.All, candidate, failedLookupLocations, onlyRecordFailures, state);
-        return resolvedFromFile && resolvedFromFile.ts
+        return resolvedFromFile && extIsTs(resolvedFromFile.ext)
             ? resolvedFromFile
             : combineAttempts(resolvedFromFile,
                 loadNodeModuleFromDirectory(Extensions.All, candidate, failedLookupLocations, onlyRecordFailures, state));
@@ -644,16 +650,17 @@ namespace ts {
         switch (extensions) {
             case Extensions.DtsOnly: {
                 const dts = tryExtension(".d.ts");
-                return dts && { ts: dts, js: undefined };
+                return dts && { path: dts, ext: Ext.Dts };
             }
             case Extensions.All: {
+                //TODO: depends on whether we're in the ts or js iteration...
                 const ts = forEach(supportedTypeScriptExtensions, tryExtension);
                 if (ts) {
-                    return { ts, js: undefined };
+                    return { path: ts, ext: extFromPath(ts) };
                 }
 
                 const js = forEach(supportedJavascriptExtensions, tryExtension);
-                return js && { ts: undefined, js };
+                return js && { path: js, ext: extFromPath(js) };
             }
         }
 
@@ -698,7 +705,7 @@ namespace ts {
                     return resolvedFromAnyFile(fromFile);
                 }
                 fromPackageJson = tryAddingExtensions(typesFile, Extensions.All, failedLookupLocation, onlyRecordFailures, state);
-                if (fromPackageJson && fromPackageJson.ts) {
+                if (fromPackageJson && extIsTs(fromPackageJson.ext)) {
                     return fromPackageJson;
                 }
             }
@@ -754,7 +761,7 @@ namespace ts {
                 if (!typesOnly) {
                     // Try to load source from the package
                     packageResult = loadModuleFromNodeModulesFolder(extensions, moduleName, directory, failedLookupLocations, state);
-                    if (packageResult && packageResult.ts) {
+                    if (packageResult && extIsTs(packageResult.ext)) {
                         // Always prefer a TypeScript (.ts, .tsx, .d.ts) file shipped with the package
                         return packageResult;
                     }

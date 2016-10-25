@@ -3300,11 +3300,11 @@ namespace ts {
          * This should always be set to `resolvedTsFileName || resolvedJsFileName`.
          * Present for backwards compatibility.
          */
+        //doc
         resolvedFileName: string;
-        /** TypeScript (.d.ts, .ts, .tsx) file that the module was resolved to. This will be preferred over a JS file. */
-        resolvedTsFileName?: string;
-        /** JavaScript (or .jsx) file that the module was resolved to. This should be returned even if '--allowJs' (or '--jsx') is disabled. */
-        resolvedJsFileName?: string;
+        //If not present, this must be inferred.
+        //resolvedToTs: boolean;
+        ext: Ext,
         /**
          * Denotes if 'resolvedFileName' is isExternalLibraryImport and thus should be a proper external module:
          * - be a .d.ts file
@@ -3313,6 +3313,52 @@ namespace ts {
          */
         isExternalLibraryImport: boolean;
     }
+
+    //rename to Extension
+    export enum Ext {
+        Ts,
+        Tsx,
+        Dts,
+        Js,
+        Jsx
+    }
+    //move
+    //name
+    export function extIsJs(ext: Ext): boolean {
+        return ext === Ext.Js || ext === Ext.Jsx;
+    }
+    //choose one: this or extIsJs
+    export function extIsTs(ext: Ext): boolean {
+        return ext < Ext.Js;
+    }
+    export function extFromPath(path: string): Ext {
+        if (fileExtensionIs(path, ".d.ts"))
+            return Ext.Dts;
+        if (fileExtensionIs(path, ".ts"))
+            return Ext.Ts;
+        if (fileExtensionIs(path, ".tsx"))
+            return Ext.Tsx;
+        if (fileExtensionIs(path, ".js"))
+            return Ext.Js;
+        if (fileExtensionIs(path, ".jsx"))
+            return Ext.Jsx;
+        Debug.assert(false); //?
+        return Ext.Jsx;
+    }
+    //review
+    //kill?
+    export function extOfString(ext: string): Ext {
+        switch (ext) {
+            case ".ts": return Ext.Ts;
+            case ".tsx": return Ext.Tsx;
+            case ".d.ts": return Ext.Dts;
+            case ".js": return Ext.Js;
+            case ".jsx": return Ext.Jsx;
+        }
+        Debug.assert(false); //?
+        return Ext.Jsx;
+    }
+
 
     export interface ResolvedModuleWithFailedLookupLocations {
         resolvedModule: ResolvedModule | undefined;

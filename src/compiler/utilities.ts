@@ -118,8 +118,19 @@ namespace ts {
         sourceFile.resolvedModules[moduleNameText] = resolvedModule;
     }
 
+    //doc
     /** An older host may have omitted resolvedTsFileName and resolvedJsFileName, in which case we should infer them from the file extension of resolvedFileName. */
     export function convertResolvedModuleFromHost(resolved: ResolvedModule | undefined): ResolvedModule | undefined {
+        if (resolved === undefined || resolved.ext) {
+            return resolved;
+        }
+
+        const o = clone(resolved);
+        o.ext = extFromPath(resolved.resolvedFileName);
+        return o;
+
+        //kill
+        /*
         if (resolved === undefined) {
             return undefined;
         }
@@ -140,6 +151,7 @@ namespace ts {
                 return { resolvedFileName, resolvedTsFileName: undefined, resolvedJsFileName: resolvedFileName, isExternalLibraryImport };
             }
         }
+        */
     }
 
     export function setResolvedTypeReferenceDirective(sourceFile: SourceFile, typeReferenceDirectiveName: string, resolvedTypeReferenceDirective: ResolvedTypeReferenceDirective): void {
