@@ -59,8 +59,7 @@ namespace ts {
 
     interface ModuleResolutionState {
         host: ModuleResolutionHost;
-        // We only use this subset of the compiler options.
-        compilerOptions: { rootDirs?: string[], baseUrl?: string, paths?: MapLike<string[]> };
+        compilerOptions: CompilerOptions;
         traceEnabled: boolean;
     }
 
@@ -112,8 +111,7 @@ namespace ts {
         }
     }
 
-    //neater
-    export function getEffectiveTypeRoots(options: CompilerOptions, host: { directoryExists?: (directoryName: string) => boolean, getCurrentDirectory?: () => string }, notDefault = false): string[] | undefined {
+    export function getEffectiveTypeRoots(options: CompilerOptions, host: { directoryExists?: (directoryName: string) => boolean, getCurrentDirectory?: () => string }): string[] | undefined {
         if (options.typeRoots) {
             return options.typeRoots;
         }
@@ -126,7 +124,7 @@ namespace ts {
             currentDirectory = host.getCurrentDirectory();
         }
 
-        if (currentDirectory !== undefined && !notDefault) {
+        if (currentDirectory !== undefined) {
             return getDefaultTypeRoots(currentDirectory, host);
         }
     }
@@ -248,7 +246,7 @@ namespace ts {
      */
     function loadModuleFromTypeRoots(moduleName: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
         //don't want to include the default node_modules/@types type roots since that's already been looked for in the node_modules/@types search.
-        const roots = getEffectiveTypeRoots(state.compilerOptions, state.host, /*notDefault*/ true);
+        const roots = state.compilerOptions.typeRoots; //getEffectiveTypeRoots(state.compilerOptions, state.host);
         return fooTypeRoots(roots, moduleName, failedLookupLocations, state);
     }
 
@@ -304,7 +302,8 @@ namespace ts {
 
         let moduleResolution = compilerOptions.moduleResolution;
         if (moduleResolution === undefined) {
-            moduleResolution = getEmitModuleKind(compilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
+            //todo: ugly cast, just use CompilerOptions...
+            moduleResolution = getEmitModuleKind(compilerOptions as CompilerOptions) === ModuleKind.CommonJS ? ModuleResolutionKind.NodeJs : ModuleResolutionKind.Classic;
             if (traceEnabled) {
                 trace(host, Diagnostics.Module_resolution_kind_is_not_specified_using_0, ModuleResolutionKind[moduleResolution]);
             }
