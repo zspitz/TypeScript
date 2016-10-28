@@ -112,9 +112,6 @@ namespace ts {
         }
     }
 
-    //TODO L8R: this should be cached.
-    //This may vary based on currentDirectory, so have to recalculate each time...
-    //also, this is a public export!
     export function getEffectiveTypeRoots(options: CompilerOptions, host: { directoryExists?: (directoryName: string) => boolean, getCurrentDirectory?: () => string }): string[] | undefined {
         if (options.typeRoots) {
             return options.typeRoots;
@@ -131,31 +128,16 @@ namespace ts {
         return currentDirectory !== undefined && getDefaultTypeRoots(currentDirectory, host);
     }
 
-    //This should only be done for global imports, and only be done at the last minute.
     //Does this duplicate functionality in resolveTypeReferenceDirective?
-    //move 'state' last!
-    function loadModuleFromTypeRoots(state: ModuleResolutionState, moduleName: string, failedLookupLocations: string[]): Resolved | undefined {
-        const roots = getEffectiveTypeRoots(state.compilerOptions, state.host);
-        if (!roots) {
-            return undefined;
-        }
-
-        //use a forEach loop
-        for (const root of roots) {
-            //const rootExists = directoryProbablyExists(root, state.host); //We should instead calculate this in getEffectiveTypeRoots
-            //loadModuleFromFile(Extensions.DtsOnly, moduleName, failedLookupLocations, !rootExists, state);
-            const result = loadNodeModuleFromDirectoryHelper(Extensions.DtsOnly, combinePaths(root, moduleName), failedLookupLocations, state);
-            if (result) {
-                return result;
-            }
-        }
-    }
-
-    //Unlike loadModuleFromTypeRoots, this considers local node_modules directories
-    //used by classic resolver
-    function loadModuleFromAnyTypeLocation(moduleName: string, containingDirectory: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
-        //Which should have priority? I think type roots should.
-        return loadModuleFromTypeRoots(state, moduleName, failedLookupLocations) || loadModuleFromNodeModulesAtTypes(moduleName, containingDirectory, failedLookupLocations, state);
+    /**
+     * Load a module from typeRoots.
+     * This should be done in *addition* to climbing ancestor directories and looking for node_modules/@types.
+     * It should be done after looking for TypeScript but before JavaScript.
+     * This should only be done for global imports.
+     */
+    function loadModuleFromTypeRoots(moduleName: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
+        return forEach(getEffectiveTypeRoots(state.compilerOptions, state.host), root =>
+            loadNodeModuleFromDirectoryHelper(Extensions.DtsOnly, combinePaths(root, moduleName), failedLookupLocations, state));
     }
 
     /**
@@ -605,7 +587,7 @@ namespace ts {
         //rename
         function tryTypeRoots(): { resolved: Resolved, isExternalLibraryImport: boolean } | undefined {
             if (nonRelative) {
-                const resolved = loadModuleFromTypeRoots(state, moduleName, failedLookupLocations); //loadModuleFromAnyTypeLocation(moduleName, containingDirectory, failedLookupLocations, state);
+                const resolved = loadModuleFromTypeRoots(moduleName, failedLookupLocations, state); //loadModuleFromAnyTypeLocation(moduleName, containingDirectory, failedLookupLocations, state);
                 return resolved && { resolved, isExternalLibraryImport: true }
             }
         }
@@ -765,41 +747,13 @@ namespace ts {
 
     //name
     //doc
-    function fromFileOrDirectory(extensions: Extensions, directory: string, moduleName: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
+    /*function fromFileOrDirectory(extensions: Extensions, directory: string, moduleName: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
         const directoryExists = directoryProbablyExists(directory, state.host);
         const candidate = normalizePath(combinePaths(directory, moduleName));
         return loadModuleFromFile(extensions, candidate, failedLookupLocations, !directoryExists, state) ||
             //This shouldn't be node-specific!
             //... but it is ...
             loadNodeModuleFromDirectory(extensions, candidate, failedLookupLocations, !directoryExists, state);
-    }
-
-    //duplicates code in loadModuleFromNodeModules
-
-    //Type references should *not* do this, they should loadModuleFromNodeModulesOrTypes
-    //KILL! just use loadModuleFromNodeModulesAtTypes like before!!!
-    /*function loadModuleFromNodeModulesTypes(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
-        directory = normalizeSlashes(directory);
-        while (true) {
-            if (getBaseFileName(directory) !== "node_modules") {
-                const resolved = tryInDirectory();
-                if (resolved) {
-                    return resolved;
-                }
-            }
-
-            const parentPath = getDirectoryPath(directory);
-            if (parentPath === directory) {
-                return undefined;
-            }
-
-            directory = parentPath;
-        }
-
-        function tryInDirectory(): Resolved | undefined {
-            const typesDirectory = combinePaths(directory, combinePaths("node_modules", combinePaths("@types", moduleName)));
-            return loadNodeModuleFromDirectoryHelper(Extensions.DtsOnly, typesDirectory, failedLookupLocations, state);
-        }
     }*/
 
     function loadModuleFromNodeModulesAtTypes(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): Resolved | undefined {
@@ -807,13 +761,13 @@ namespace ts {
     }
 
     //Dont' do @types lookup here, use loadModuleFromTypeRoots instead!
-    //review "checkOneLevel" uses
+    //"checkOneLevel" is never used!!!
     function loadModuleFromNodeModules(extensions: Extensions, moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, checkOneLevel = false, typesOnly = false): Resolved | undefined {
         directory = normalizeSlashes(directory);
         //forEachAncestorDirectory helper
         while (true) {
             if (getBaseFileName(directory) !== "node_modules") {
-                const resolved = tryInDirectory();
+                const resolved = tryInDirectory(extensions, moduleName, directory, failedLookupLocations, state, typesOnly);
                 if (resolved) {
                     return resolved;
                 }
@@ -826,27 +780,19 @@ namespace ts {
 
             directory = parentPath;
         }
-
-        //This is probably the wrong place to be calling this...
-        //return loadModuleFromTypeRoots(state, moduleName, failedLookupLocations);
-
-        function tryInDirectory(): Resolved | undefined {
-            //const nodeModulesFolder = combinePaths(directory, "node_modules");
-            //return fromFileOrDirectory(extensions, nodeModulesFolder, moduleName, failedLookupLocations, state);
-            const packageResult = typesOnly ? undefined : loadModuleFromNodeModulesFolder(extensions, moduleName, directory, failedLookupLocations, state);
-            //@types lookup should probably be dts only
-            return packageResult || loadModuleFromNodeModulesFolder(extensions, combinePaths("@types", moduleName), directory, failedLookupLocations, state);
-
-            //TODO: don't do this is we have typeRoots set?
-            //|| loadModuleFromNodeModulesFolder(extensions, combinePaths("@types", moduleName), directory, failedLookupLocations, state);
-        }
     }
 
-    //neater
-    //function loadModuleFromNodeModulesOrTypes(moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState): string | undefined {
-    //    return resolvedTypeScriptOnly(loadModuleFromNodeModules(Extensions.DtsOnly, moduleName, directory, failedLookupLocations, state, /*checkOneLevel*/ false)) || loadModuleFromNodeModulesTypes(...);
-    //}
+    //name
+    function tryInDirectory(extensions: Extensions, moduleName: string, directory: string, failedLookupLocations: string[], state: ModuleResolutionState, typesOnly = false): Resolved | undefined {
+        //const nodeModulesFolder = combinePaths(directory, "node_modules");
+        //return fromFileOrDirectory(extensions, nodeModulesFolder, moduleName, failedLookupLocations, state);
+        const packageResult = typesOnly ? undefined : loadModuleFromNodeModulesFolder(extensions, moduleName, directory, failedLookupLocations, state);
+        //@types lookup should probably be dts only
+        return packageResult || loadModuleFromNodeModulesFolder(extensions, combinePaths("@types", moduleName), directory, failedLookupLocations, state);
 
+        //TODO: don't do this is we have typeRoots set?
+        //|| loadModuleFromNodeModulesFolder(extensions, combinePaths("@types", moduleName), directory, failedLookupLocations, state);
+    }
 
     export function classicNameResolver(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
         const traceEnabled = isTraceEnabled(compilerOptions, host);
@@ -870,10 +816,9 @@ namespace ts {
                     return resolved;
                 }
                 if (extensions === Extensions.TypeScript) {
-                    // If we didn't find the file normally, look it up in @types.
-                    //Actually, look it up in typeRoots instead!
-                    //return loadModuleFromNodeModulesAtTypes(moduleName, containingDirectory, failedLookupLocations, state);
-                    return loadModuleFromAnyTypeLocation(moduleName, containingDirectory, failedLookupLocations, state);
+                    // If we didn't find the file normally, look it up in @types and in type roots.
+                    //Test "prefer typings to js during second resolution pass"
+                    return loadModuleFromNodeModulesAtTypes(moduleName, containingDirectory, failedLookupLocations, state) || loadModuleFromTypeRoots(moduleName, failedLookupLocations, state);
                 }
             }
             else {
@@ -911,8 +856,8 @@ namespace ts {
         }
         const state: ModuleResolutionState = { compilerOptions, host, traceEnabled };
         const failedLookupLocations: string[] = [];
-        const foo = combinePaths(combinePaths(globalCache, "node_modules"), "@types"); //neater
-        const resolved = fromFileOrDirectory(Extensions.DtsOnly, foo, moduleName, failedLookupLocations, state); //could just be from directory...
+        //const foo = combinePaths(combinePaths(globalCache, "node_modules"), "@types"); //neater
+        const resolved = tryInDirectory(Extensions.DtsOnly, globalCache, moduleName, failedLookupLocations, state); //fromFileOrDirectory(Extensions.DtsOnly, foo, moduleName, failedLookupLocations, state); //could just be from directory...
         //loadNodeModuleFromDirectory(Extensions.DtsOnly, candidate, failedLookupLocations, !directoryExists, state);
         //const resolved = loadModuleFromTypeRoots(state, moduleName, failedLookupLocations);
         //const resolved = loadModuleFromNodeModules(Extensions.TypeScript, moduleName, globalCache, failedLookupLocations, state, /*checkOneLevel*/ true) ||
