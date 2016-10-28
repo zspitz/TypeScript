@@ -1,0 +1,22 @@
+[
+    "======== Resolving module 'foo' from '/a.ts'. ========",
+    "Explicitly specified module resolution kind: 'Classic'.",
+    "File '/foo.ts' does not exist.",
+    "File '/foo.tsx' does not exist.",
+    "File '/foo.d.ts' does not exist.",
+    "File '/node_modules/@types/foo.ts' does not exist.",
+    "File '/node_modules/@types/foo.tsx' does not exist.",
+    "File '/node_modules/@types/foo.d.ts' does not exist.",
+    "File '/node_modules/@types/foo/package.json' does not exist.",
+    "File '/node_modules/@types/foo/index.ts' does not exist.",
+    "File '/node_modules/@types/foo/index.tsx' does not exist.",
+    "File '/node_modules/@types/foo/index.d.ts' does not exist.",
+    "File '/types/foo/package.json' does not exist.",
+    "File '/types/foo/index.d.ts' exist - use it as a name resolution result.",
+    "======== Module name 'foo' was successfully resolved to '/types/foo/index.d.ts'. ========",
+    "======== Resolving type reference directive 'foo', containing file '/__inferred type names__.ts', root directory '/types'. ========",
+    "Resolving with primary search path '/types'",
+    "File '/types/foo/package.json' does not exist.",
+    "File '/types/foo/index.d.ts' exist - use it as a name resolution result.",
+    "======== Type reference directive 'foo' was successfully resolved to '/types/foo/index.d.ts', primary: true. ========"
+]

@@ -1,7 +1,6 @@
 // @traceResolution: true
 // @noImplicitReferences: true
 // @currentDirectory: /
-//TODO: also want a test with "module": "node"
 
 // @filename: /tsconfig.json
 {

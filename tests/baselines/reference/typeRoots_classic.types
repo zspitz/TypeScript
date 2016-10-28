@@ -1,0 +1,8 @@
+=== /a.ts ===
+import { foo } from "foo";
+>foo : () => void
+
+=== /types/foo/index.d.ts ===
+export function foo(): void;
+>foo : () => void
+
