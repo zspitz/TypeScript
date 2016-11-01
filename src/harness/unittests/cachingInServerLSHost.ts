@@ -17,6 +17,7 @@ namespace ts {
                 dir = getDirectoryPath(dir);
             } while (dir !== previous);
         }
+
         return {
             args: <string[]>[],
             newLine: "\r\n",
@@ -93,7 +94,7 @@ namespace ts {
             const originalFileExists = serverHost.fileExists;
             {
                 // patch fileExists to make sure that disk is not touched
-                serverHost.fileExists = notImplemented;
+                serverHost.fileExists = () => { throw new Error("Don't you dare!") };//notImplemented;
 
                 const newContent = `import {x} from "f1"
                 var x: string = 1;`;
