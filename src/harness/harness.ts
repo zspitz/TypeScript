@@ -977,9 +977,9 @@ namespace Harness {
 
             function getSourceFile(fileName: string) {
                 fileName = ts.normalizePath(fileName);
-                const path = ts.toPath(fileName, currentDirectory, getCanonicalFileName);
-                if (fileMap.contains(path)) {
-                    return fileMap.get(path)();
+                const fromMap = fileMap.get(realPath(fileName));
+                if (fromMap) {
+                    return fromMap();
                 }
                 else if (fileName === fourslashFileName) {
                     const tsFn = "tests/cases/fourslash/" + fourslashFileName;
@@ -998,6 +998,13 @@ namespace Harness {
                     newLineKind === ts.NewLineKind.LineFeed ? lineFeed :
                         Harness.IO.newLine();
 
+            //move
+            function realPath(fileName: string): ts.Path {
+                const path = ts.toPath(fileName, currentDirectory, getCanonicalFileName);
+                return realPathMap
+                    ? (realPathMap.get(path) as ts.Path) || path
+                    : path;
+            }
 
             return {
                 getCurrentDirectory: () => currentDirectory,
@@ -1012,12 +1019,9 @@ namespace Harness {
                     return fileMap.contains(path) || (realPathMap && realPathMap.contains(path));
                 },
                 readFile: (fileName: string): string => {
-                    return fileMap.get(ts.toPath(fileName, currentDirectory, getCanonicalFileName))().getText();
+                    return fileMap.get(realPath(fileName))().getText();
                 },
-                realpath: realPathMap && ((f: string) => {
-                    const path = ts.toPath(f, currentDirectory, getCanonicalFileName);
-                    return realPathMap.get(path) || path;
-                }),
+                realpath: realPathMap && realPath,
                 directoryExists: dir => {
                     let path = ts.toPath(dir, currentDirectory, getCanonicalFileName);
                     // Strip trailing /, which may exist if the path is a drive root

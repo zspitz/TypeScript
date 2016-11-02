@@ -32,6 +32,7 @@ namespace ts {
         getSourceFiles(): SourceFile[];
 
         /* @internal */
+        //!!!
         isSourceFileFromExternalLibrary(file: SourceFile): boolean;
 
         getCommonSourceDirectory(): string;
@@ -2632,6 +2633,7 @@ namespace ts {
             const sourceFiles = targetSourceFile === undefined ? host.getSourceFiles() : [targetSourceFile];
             for (const sourceFile of sourceFiles) {
                 // Don't emit if source file is a declaration file, or was located under node_modules
+                //!!!!!!!
                 if (!isDeclarationFile(sourceFile) && !host.isSourceFileFromExternalLibrary(sourceFile)) {
                     onSingleFileEmit(host, sourceFile);
                 }
@@ -2684,6 +2686,7 @@ namespace ts {
         }
     }
 
+    //!!!
     export function getSourceFilePathInNewDir(sourceFile: SourceFile, host: EmitHost, newDirPath: string) {
         let sourceFilePath = getNormalizedAbsolutePath(sourceFile.fileName, host.getCurrentDirectory());
         const commonSourceDirectory = host.getCommonSourceDirectory();
