@@ -1,4 +1,3 @@
-// Symlinks for '.ts' files are *not* resolved
 // @module: commonjs
 // @noImplicitReferences: true
 // @traceResolution: true

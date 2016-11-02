@@ -17,6 +17,14 @@ let y: MyClass2;
 x = y;
 y = x;
 
+//// [/src/library-a/index.js]
+"use strict";
+var MyClass = (function () {
+    function MyClass() {
+    }
+    return MyClass;
+}());
+exports.MyClass = MyClass;
 //// [/src/library-b/index.js]
 "use strict";
 var library_a_1 = require("library-a");

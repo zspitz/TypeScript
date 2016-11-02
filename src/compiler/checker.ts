@@ -1430,6 +1430,7 @@ namespace ts {
                         error(errorNode, diag, tsExtension, removeExtension(moduleName, tsExtension));
                     }
                     else {
+                        debugger;
                         error(errorNode, moduleNotFoundError, moduleName);
                     }
                 }

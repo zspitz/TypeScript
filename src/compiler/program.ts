@@ -359,7 +359,10 @@ namespace ts {
         }
 
         //Keys must be real paths!!!
+        //above not quite true any more
         const filesByName = createFileMap<SourceFile>();
+        const symlinkedFiles = createFileMap<SourceFile>();
+
         // stores 'filename -> file association' ignoring case
         // used to track cases when two file names differ only in casing
         const filesByNameIgnoreCase = host.useCaseSensitiveFileNames() ? createFileMap<SourceFile>(fileName => fileName.toLowerCase()) : undefined;
@@ -578,6 +581,7 @@ namespace ts {
             for (let i = 0, len = newSourceFiles.length; i < len; i++) {
                 filesByName.set(filePaths[i], newSourceFiles[i]);
             }
+            //update symlinkedFiles too?
 
             files = newSourceFiles;
             fileProcessingDiagnostics = oldProgram.getFileProcessingDiagnostics();
@@ -686,13 +690,13 @@ namespace ts {
         }
 
         function getSourceFileByPath(path: Path): SourceFile { //path is logical
-            return filesByName.get(path); //realpath(path));
+            return filesByName.get(path) || symlinkedFiles.get(path); //realpath(path));
         }
 
         //neater
-        //function realpath(path: Path): Path {
-        //    return host.realpath ? (host.realpath(path) as Path) : path;
-        //}
+        function realpath(path: Path): Path {
+            return host.realpath ? (host.realpath(path) as Path) : path;
+        }
 
         function getDiagnosticsHelper(
             sourceFile: SourceFile,
@@ -1183,10 +1187,6 @@ namespace ts {
         }
         //name, move below findSourceFile
         function bar(file: SourceFile, fileName: string, path: Path, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number) {
-            sourceFilesFoundSearchingNodeModules[path] = (currentNodeModulesDepth > 0);
-            //This sets file.path to the *realpath*
-            file.path = path;
-
             if (host.useCaseSensitiveFileNames()) {
                 // for case-sensitive file systems check if we've already seen some file with similar filename ignoring case
                 const existingFile = filesByNameIgnoreCase.get(path);
@@ -1220,8 +1220,13 @@ namespace ts {
         //!!!
         //fileName is a relative path, thus not a realpath.
         //does getCanonicalFileName need to be an input?
-        function findSourceFile(fileName: string, currentDirectory: string, getCanonicalFileName: (fileName: string) => string, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): SourceFile {
-            const path = toPath(fileName, currentDirectory, getCanonicalFileName); //realpath(...)
+        //TODO: fix up parameters -- resolution and fileName are redundatn
+        function findSourceFile(fileName: string, currentDirectory: string, getCanonicalFileName: (fileName: string) => string, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number/*, resolution?: ResolvedModuleFull*/): SourceFile {
+            const originalPath = toPath(fileName, currentDirectory, getCanonicalFileName); //realpath(...)
+            //need resolution.isExternalLibraryImport...
+            const foundSearchingNodeModules = currentNodeModulesDepth > 0;
+                //Support `npm link` scenario -- use real path
+            const path = foundSearchingNodeModules ? realpath(originalPath) : originalPath;
             let fileFromFiles = filesByName.get(path);
             //This might be a symlink.
             //if (!fileFromFiles) {
@@ -1234,6 +1239,12 @@ namespace ts {
             //}
 
             if (fileFromFiles) {
+                //still might need to add realpath
+                //duplicate code
+                if (originalPath !== path) {
+                    symlinkedFiles.set(originalPath, fileFromFiles);
+                }
+
                 return foo(fileFromFiles, fileName, isDefaultLib, refFile, refPos, refEnd);
             }
 
@@ -1249,7 +1260,15 @@ namespace ts {
             });
 
             filesByName.set(path, file);
+            if (originalPath !== path) {
+                //this is needed for getSourceFileByPath to work when given relative paths
+                symlinkedFiles.set(originalPath, file); //!!!
+            }
+
             if (file) {
+                //move these back inside `bar`?
+                sourceFilesFoundSearchingNodeModules[path] = foundSearchingNodeModules;
+                file.path = path;
                 bar(file, fileName, path, isDefaultLib, refFile, refPos, refEnd);
             }
 

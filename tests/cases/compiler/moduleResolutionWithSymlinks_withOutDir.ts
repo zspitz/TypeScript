@@ -8,7 +8,7 @@
 export const x = 0;
 
 // @filename: /src/app.ts
-import { x } from './shared/abc';
+import { x } from "./shared/abc";
 x + 1;
 
 // @filename: /src/tsconfig.json

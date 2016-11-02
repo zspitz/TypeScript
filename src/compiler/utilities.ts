@@ -2551,7 +2551,7 @@ namespace ts {
      * Whether a file should be emitted in a non-`--outFile` case.
      * Don't emit if source file is a declaration file, or was located under node_modules
      */
-    function shouldEmitInDirectory(sourceFile: SourceFile, isSourceFileFromExternalLibrary: (file: SourceFile) => boolean): boolean {
+    export function shouldEmitInDirectory(sourceFile: SourceFile, isSourceFileFromExternalLibrary: (file: SourceFile) => boolean): boolean {
         return isNonDeclarationFile(sourceFile) && !isSourceFileFromExternalLibrary(sourceFile);
     }
 

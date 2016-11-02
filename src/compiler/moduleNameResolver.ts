@@ -571,7 +571,7 @@ namespace ts {
     }
 
     function resolvedWithRealpath(resolved: Resolved, host: ModuleResolutionHost, traceEnabled: boolean): Resolved {
-        if (!host.realpath || resolved.extension !== Extension.Dts) {//(!false) {//(!host.realpath) { //TODO: Kill this fn
+        if (!false) {//if (!host.realpath || resolved.extension !== Extension.Dts) {//(!false) {//(!host.realpath) { //TODO: Kill this fn
             return resolved;
         }
 

@@ -6,7 +6,7 @@
 export const x = 0;
 
 //// [app.ts]
-import { x } from './shared/abc';
+import { x } from "./shared/abc";
 x + 1;
 
 
