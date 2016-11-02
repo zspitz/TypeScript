@@ -979,8 +979,9 @@ namespace Harness {
             function getSourceFile(fileName: string) {
                 fileName = ts.normalizePath(fileName);
                 const path = realPath(ts.toPath(fileName, currentDirectory, getCanonicalFileName));
-                if (fileMap.contains(path)) { //Don't lookup twice...
-                    return fileMap.get(path)();
+                const fromMap = fileMap.get(path);
+                if (fromMap) {
+                    return fromMap();
                 }
                 else if (fileName === fourslashFileName) {
                     const tsFn = "tests/cases/fourslash/" + fourslashFileName;
@@ -999,11 +1000,12 @@ namespace Harness {
                     newLineKind === ts.NewLineKind.LineFeed ? lineFeed :
                         Harness.IO.newLine();
 
-
             //move
             function realPath(f: ts.Path): ts.Path {
                 const path = ts.toPath(f, currentDirectory, getCanonicalFileName);
-                return (realPathMap.get(path) as ts.Path) || path;
+                return realPathMap
+                    ? (realPathMap.get(path) as ts.Path) || path
+                    : path;
             }
 
             return {
