@@ -686,13 +686,13 @@ namespace ts {
         }
 
         function getSourceFileByPath(path: Path): SourceFile { //path is logical
-            return filesByName.get(realpath(path));
+            return filesByName.get(path); //realpath(path));
         }
 
         //neater
-        function realpath(path: Path): Path {
-            return host.realpath ? (host.realpath(path) as Path) : path;
-        }
+        //function realpath(path: Path): Path {
+        //    return host.realpath ? (host.realpath(path) as Path) : path;
+        //}
 
         function getDiagnosticsHelper(
             sourceFile: SourceFile,
@@ -1221,7 +1221,7 @@ namespace ts {
         //fileName is a relative path, thus not a realpath.
         //does getCanonicalFileName need to be an input?
         function findSourceFile(fileName: string, currentDirectory: string, getCanonicalFileName: (fileName: string) => string, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): SourceFile {
-            const path = realpath(toPath(fileName, currentDirectory, getCanonicalFileName));
+            const path = toPath(fileName, currentDirectory, getCanonicalFileName); //realpath(...)
             let fileFromFiles = filesByName.get(path);
             //This might be a symlink.
             //if (!fileFromFiles) {

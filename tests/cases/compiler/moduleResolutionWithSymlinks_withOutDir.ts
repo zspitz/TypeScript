@@ -1,7 +1,7 @@
+// Test of GH#10364
 // @noImplicitReferences: true
 // @traceResolution: true
 // @fullEmitPaths: true
-// Test of GH#10364
 
 // @filename: /shared/abc.ts
 // @symlink: /src/shared/abc.ts

@@ -1,0 +1,7 @@
+=== /src/app.ts ===
+import { x } from './shared/abc';
+>x : Symbol(x, Decl(app.ts, 0, 8))
+
+x + 1;
+>x : Symbol(x, Decl(app.ts, 0, 8))
+

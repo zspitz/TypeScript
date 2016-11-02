@@ -1,6 +1,8 @@
+// Symlinks for '.ts' files are *not* resolved
 // @module: commonjs
 // @noImplicitReferences: true
 // @traceResolution: true
+// @fullEmitPaths: true
 
 // @filename: /src/library-a/index.ts
 // @symlink: /src/library-b/node_modules/library-a/index.ts

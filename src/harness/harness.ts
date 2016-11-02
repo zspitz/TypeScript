@@ -976,9 +976,10 @@ namespace Harness {
                 }
             }
 
+            //!!! Problem: this may not represent what the command line compiler actually does!!!
             function getSourceFile(fileName: string) {
                 fileName = ts.normalizePath(fileName);
-                const path = realPath(ts.toPath(fileName, currentDirectory, getCanonicalFileName));
+                const path = ts.toPath(fileName, currentDirectory, getCanonicalFileName); //was realPath(...)
                 const fromMap = fileMap.get(path);
                 if (fromMap) {
                     return fromMap();

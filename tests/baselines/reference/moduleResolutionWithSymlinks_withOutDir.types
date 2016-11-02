@@ -1,0 +1,9 @@
+=== /src/app.ts ===
+import { x } from './shared/abc';
+>x : 0
+
+x + 1;
+>x + 1 : number
+>x : 0
+>1 : 1
+

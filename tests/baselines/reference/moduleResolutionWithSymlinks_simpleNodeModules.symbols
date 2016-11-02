@@ -1,0 +1,7 @@
+=== /app/index.ts ===
+import { x } from "test";
+>x : Symbol(x, Decl(index.ts, 0, 8))
+
+x + 1;
+>x : Symbol(x, Decl(index.ts, 0, 8))
+
