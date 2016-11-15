@@ -772,6 +772,41 @@ namespace ts {
             };
         }
 
+        function cloneFlow(n: FlowNode, target: FlowNode, replaceWith: FlowNode, visited: FlowNode[]): FlowNode {
+            if (n === target) {
+                return replaceWith;
+            }
+            if (!n || contains(visited, n)) {
+                return n;
+            }
+            let copy: FlowNode;
+            visited.push(n);
+            if (n.flags & FlowFlags.Assignment) {
+                copy = createFlowAssignment(cloneFlow((<FlowAssignment>n).antecedent, target, replaceWith, visited), (<FlowAssignment>n).node);
+            }
+            else if (n.flags & FlowFlags.Condition) {
+                copy = createFlowCondition(n.flags, cloneFlow((<FlowCondition>n).antecedent, target, replaceWith, visited), (<FlowCondition>n).expression)
+            }
+            else if (n.flags & FlowFlags.SwitchClause) {
+                copy = createFlowSwitchClause(cloneFlow((<FlowSwitchClause>n).antecedent, target, replaceWith, visited),(<FlowSwitchClause>n).switchStatement, (<FlowSwitchClause>n).clauseStart, (<FlowSwitchClause>n).clauseEnd);
+            }
+            else if (n.flags & FlowFlags.Label) {
+                copy = n.flags & FlowFlags.BranchLabel ? createBranchLabel() : createLoopLabel();
+                if ((<FlowLabel>n).antecedents) {
+                    (<FlowLabel>copy).antecedents = [];
+                    for (const antecedent of (<FlowLabel>n).antecedents) {
+                        (<FlowLabel>copy).antecedents.push(cloneFlow(antecedent, target, replaceWith, visited));
+                    }
+                }
+            }
+            else if (n.flags & FlowFlags.ArrayMutation) {
+                copy = createFlowArrayMutation(cloneFlow((<FlowArrayMutation>n).antecedent, target, replaceWith, visited), (<FlowArrayMutation>n).node);
+            }
+            visited.pop();
+            copy.flags = n.flags;
+            return copy;
+        }
+
         function createFlowSwitchClause(antecedent: FlowNode, switchStatement: SwitchStatement, clauseStart: number, clauseEnd: number): FlowNode {
             if (!isNarrowingExpression(switchStatement.expression)) {
                 return antecedent;
@@ -1000,39 +1035,46 @@ namespace ts {
 
         function bindTryStatement(node: TryStatement): void {
             const preFinallyLabel = createBranchLabel();
-            const preTryFlow = currentFlow;
+            const flowBeforeTry = currentFlow;
             // TODO: Every statement in try block is potentially an exit point!
             bind(node.tryBlock);
-            addAntecedent(preFinallyLabel, currentFlow);
-
             const flowAfterTry = currentFlow;
             let flowAfterCatch = unreachableFlow;
 
             if (node.catchClause) {
-                currentFlow = preTryFlow;
+                currentFlow = flowBeforeTry;
                 bind(node.catchClause);
                 addAntecedent(preFinallyLabel, currentFlow);
 
                 flowAfterCatch = currentFlow;
             }
+            addAntecedent(preFinallyLabel, flowAfterTry);
+            addAntecedent(preFinallyLabel, flowAfterCatch)
             if (node.finallyBlock) {
                 // in finally flow is combined from pre-try/flow from try/flow from catch
                 // pre-flow is necessary to make sure that finally is reachable even if finally flows in both try and finally blocks are unreachable
-                addAntecedent(preFinallyLabel, preTryFlow);
+                addAntecedent(preFinallyLabel, flowBeforeTry);
                 currentFlow = finishFlowLabel(preFinallyLabel);
+                const preFinallyFlow = currentFlow;
                 bind(node.finallyBlock);
-                // if flow after finally is unreachable - keep it
-                // otherwise check if flows after try and after catch are unreachable
-                // if yes - convert current flow to unreachable
-                // i.e.
-                // try { return "1" } finally { console.log(1); }
-                // console.log(2); // this line should be unreachable even if flow falls out of finally block
                 if (!(currentFlow.flags & FlowFlags.Unreachable)) {
+                    // if flow after finally is unreachable - keep it
+                    // otherwise check if flows after try and after catch are unreachable
+                    // if yes - convert current flow to unreachable
+                    // i.e.
+                    // try { return "1" } finally { console.log(1); }
+                    // console.log(2); // this line should be unreachable even if flow falls out of finally block
                     if ((flowAfterTry.flags & FlowFlags.Unreachable) && (flowAfterCatch.flags & FlowFlags.Unreachable)) {
                         currentFlow = flowAfterTry === reportedUnreachableFlow || flowAfterCatch === reportedUnreachableFlow
                             ? reportedUnreachableFlow
                             : unreachableFlow;
                     }
+                    else if (!(preFinallyFlow.flags & FlowFlags.Unreachable)) {
+                        const newPreFinallyLabel = createBranchLabel();
+                        addAntecedent(newPreFinallyLabel, flowAfterTry);
+                        addAntecedent(newPreFinallyLabel, flowAfterCatch);
+                        currentFlow = cloneFlow(currentFlow, preFinallyFlow, finishFlowLabel(newPreFinallyLabel), []);
+                    } 
                 }
             }
             else {
