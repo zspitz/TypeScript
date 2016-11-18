@@ -797,38 +797,45 @@ namespace ts {
             };
         }
 
-        function cloneFlow(n: FlowNode, target: FlowNode, replaceWith: FlowNode, visited: FlowNode[]): FlowNode {
+        function cloneFlow(n: FlowNode, target: FlowNode, replaceWith: FlowNode, visited: FlowNode[], copied: FlowNode[]): FlowNode {
+            if (!n) {
+                return n;
+            }
             if (n === target) {
                 return replaceWith;
             }
-            if (!n || contains(visited, n)) {
-                return n;
+            const index = indexOf(visited, n);
+            if (index >= 0) {
+                return copied[index];
             }
-            let copy: FlowNode;
+            let copy: FlowNode = { flags: n.flags };
+
             visited.push(n);
-            if (n.flags & FlowFlags.Assignment) {
-                copy = createFlowAssignment(cloneFlow((<FlowAssignment>n).antecedent, target, replaceWith, visited), (<FlowAssignment>n).node);
+            copied.push(copy);
+
+            if (n.flags & (FlowFlags.Assignment | FlowFlags.ArrayMutation)) {
+                (<FlowAssignment | FlowArrayMutation>copy).antecedent = cloneFlow((<FlowAssignment | FlowArrayMutation>n).antecedent, target, replaceWith, visited, copied);
+                (<FlowAssignment | FlowArrayMutation>copy).node = (<FlowAssignment | FlowArrayMutation>n).node;
             }
             else if (n.flags & FlowFlags.Condition) {
-                copy = createFlowCondition(n.flags, cloneFlow((<FlowCondition>n).antecedent, target, replaceWith, visited), (<FlowCondition>n).expression)
+                (<FlowCondition>copy).antecedent = cloneFlow((<FlowCondition>n).antecedent, target, replaceWith, visited, copied);
+                (<FlowCondition>copy).expression = (<FlowCondition>n).expression;
             }
             else if (n.flags & FlowFlags.SwitchClause) {
-                copy = createFlowSwitchClause(cloneFlow((<FlowSwitchClause>n).antecedent, target, replaceWith, visited),(<FlowSwitchClause>n).switchStatement, (<FlowSwitchClause>n).clauseStart, (<FlowSwitchClause>n).clauseEnd);
+                (<FlowSwitchClause>copy).antecedent = cloneFlow((<FlowSwitchClause>n).antecedent, target, replaceWith, visited, copied);
+                (<FlowSwitchClause>copy).clauseStart = (<FlowSwitchClause>n).clauseStart;
+                (<FlowSwitchClause>copy).clauseEnd = (<FlowSwitchClause>n).clauseEnd;
+                (<FlowSwitchClause>copy).switchStatement = (<FlowSwitchClause>n).switchStatement;
             }
             else if (n.flags & FlowFlags.Label) {
-                copy = n.flags & FlowFlags.BranchLabel ? createBranchLabel() : createLoopLabel();
                 if ((<FlowLabel>n).antecedents) {
                     (<FlowLabel>copy).antecedents = [];
                     for (const antecedent of (<FlowLabel>n).antecedents) {
-                        (<FlowLabel>copy).antecedents.push(cloneFlow(antecedent, target, replaceWith, visited));
+                        (<FlowLabel>copy).antecedents.push(cloneFlow(antecedent, target, replaceWith, visited, copied));
                     }
                 }
             }
-            else if (n.flags & FlowFlags.ArrayMutation) {
-                copy = createFlowArrayMutation(cloneFlow((<FlowArrayMutation>n).antecedent, target, replaceWith, visited), (<FlowArrayMutation>n).node);
-            }
-            visited.pop();
-            copy.flags = n.flags;
+
             return copy;
         }
 
@@ -1098,7 +1105,7 @@ namespace ts {
                         const newPreFinallyLabel = createBranchLabel();
                         addAntecedent(newPreFinallyLabel, flowAfterTry);
                         addAntecedent(newPreFinallyLabel, flowAfterCatch);
-                        currentFlow = cloneFlow(currentFlow, preFinallyFlow, finishFlowLabel(newPreFinallyLabel), []);
+                        currentFlow = cloneFlow(currentFlow, preFinallyFlow, finishFlowLabel(newPreFinallyLabel), [], []);
                     } 
                 }
             }
