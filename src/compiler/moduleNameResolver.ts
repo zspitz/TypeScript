@@ -318,7 +318,7 @@ namespace ts {
                 result = nodeModuleNameResolver(moduleName, containingFile, compilerOptions, host);
                 break;
             case ModuleResolutionKind.Classic:
-                result = classicNameResolver(moduleName, containingFile, compilerOptions, host);
+                result = classicModuleNameResolver(moduleName, containingFile, compilerOptions, host);
                 break;
         }
 
@@ -749,7 +749,7 @@ namespace ts {
         }
     }
 
-    export function classicNameResolver(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
+    export function classicModuleNameResolver(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost): ResolvedModuleWithFailedLookupLocations {
         const traceEnabled = isTraceEnabled(compilerOptions, host);
         const state: ModuleResolutionState = { compilerOptions, host, traceEnabled };
         const failedLookupLocations: string[] = [];
