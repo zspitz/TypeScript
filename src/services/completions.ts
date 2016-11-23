@@ -400,49 +400,64 @@ namespace ts.Completions {
 
         /**
          * Check all of the declared modules and those in node modules. Possible sources of modules:
-         *      Modules that are found by the type checker
-         *      Modules found relative to "baseUrl" compliler options (including patterns from "paths" compiler option)
-         *      Modules from node_modules (i.e. those listed in package.json)
-         *          This includes all files that are found in node_modules/moduleName/ with acceptable file extensions
+         * * Modules that are found by the type checker
+         * * Modules found relative to "baseUrl" compliler options (including patterns from "paths" compiler option)
+         * * Modules from node_modules (i.e. those listed in package.json)
+         *
+         * We include all files that are found in node_modules/moduleName/ with acceptable file extensions.
+         * Note that we do not traverse the path through all of its ancestors and node_modules subdirectories as that is too
+         * slow and the above should include all intended packages.
          */
         function getCompletionEntriesForNonRelativeModules(fragment: string, scriptPath: string, span: TextSpan): CompletionEntry[] {
             const { baseUrl, paths } = compilerOptions;
 
             let result: CompletionEntry[];
+            // TODO: (arozga) do completions by path fragment
+
+            const dirPathFragment = getDirectoryPath(normalizeSlashes(fragment));
 
             if (baseUrl) {
                 const fileExtensions = getSupportedExtensions(compilerOptions);
                 const projectDir = compilerOptions.project || host.getCurrentDirectory();
                 const absolute = isRootedDiskPath(baseUrl) ? baseUrl : combinePaths(projectDir, baseUrl);
-                result = getCompletionEntriesForDirectoryFragment(fragment, normalizePath(absolute), fileExtensions, /*includeExtensions*/false, span);
-
-                if (paths) {
+                if (!paths) {
+                    result = getCompletionEntriesForDirectoryFragment(dirPathFragment, normalizePath(absolute), fileExtensions, /*includeExtensions*/false, span);
+                }
+                else {
+                    result = [];
                     for (const path in paths) {
-                        if (paths.hasOwnProperty(path)) {
-                            if (path === "*") {
-                                if (paths[path]) {
-                                    for (const pattern of paths[path]) {
-                                        for (const match of getModulesForPathsPattern(fragment, baseUrl, pattern, fileExtensions)) {
-                                            result.push(createCompletionEntryForModule(match, ScriptElementKind.externalModuleName, span));
-                                        }
+                        if (!paths.hasOwnProperty(path)) {
+                            continue;
+                        }
+                        const patterns = paths[path];
+                        if (!patterns) {
+                            continue;
+                        }
+                        
+                        const pathPattern = hasZeroOrOneAsteriskCharacter(path) ? tryParsePattern(path) : undefined;
+
+                        if (pathPattern) {
+                            for (const pattern of patterns) {
+                                // TODO: (arozga) Need to match fragment against path-pattern to see if we have already partially-completed the path.
+                                const matches = getModulesForPathsPattern(fragment, baseUrl, pattern, fileExtensions);
+                                // TODO: (arozga)
+                                if (matches) {
+                                    for (const match of matches) {
+                                        // TODO: (arozga) need to figure out which fragment to add based on 
+                                        result.push(createCompletionEntryForModule(pathPattern.prefix + match + pathPattern.suffix, ScriptElementKind.externalModuleName, span));
                                     }
                                 }
                             }
-                            else if (startsWith(path, fragment)) {
-                                const entry = paths[path] && paths[path].length === 1 && paths[path][0];
-                                if (entry) {
-                                    result.push(createCompletionEntryForModule(path, ScriptElementKind.externalModuleName, span));
-                                }
-                            }
+                        }
+                        else {
+                            // TODO: (arozga) Check if target of pattern exists.
+                            result.push(createCompletionEntryForModule(path, ScriptElementKind.externalModuleName, span));
                         }
                     }
                 }
             }
-            else {
-                result = [];
-            }
 
-            getCompletionEntriesFromTypings(host, compilerOptions, scriptPath, span, result);
+            result = getCompletionEntriesFromTypings(host, compilerOptions, scriptPath, span, result);
 
             for (const moduleName of enumeratePotentialNonRelativeModules(fragment, scriptPath, compilerOptions)) {
                 result.push(createCompletionEntryForModule(moduleName, ScriptElementKind.externalModuleName, span));
@@ -451,7 +466,14 @@ namespace ts.Completions {
             return result;
         }
 
-        function getModulesForPathsPattern(fragment: string, baseUrl: string, pattern: string, fileExtensions: string[]): string[] {
+        /**
+         * ???
+         * 
+         * TODO: (arozga) Make the fragment a path (as an argument)
+         * TODO: (arozga) Make the result returned be the only the last bit of the path (like in getDirFragment).
+         * TODO: (arozga) Draw pictures of what we think the various components look like.
+         */
+        function getModulesForPathsPattern(fragment: string, baseUrl: string, pattern: string, fileExtensions: string[]): string[] | undefined {
             if (host.readDirectory) {
                 const parsed = hasZeroOrOneAsteriskCharacter(pattern) ? tryParsePattern(pattern) : undefined;
                 if (parsed) {
@@ -486,6 +508,7 @@ namespace ts.Completions {
                                 continue;
                             }
 
+                            // TODO: (arozga) simplify.
                             const start = completePrefix.length;
                             const length = normalizedMatch.length - start - normalizedSuffix.length;
 
