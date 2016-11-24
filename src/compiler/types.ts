@@ -2055,7 +2055,9 @@ namespace ts {
         Referenced     = 1 << 9,  // Referenced as antecedent once
         Shared         = 1 << 10, // Referenced as antecedent more than once
         Label = BranchLabel | LoopLabel,
-        Condition = TrueCondition | FalseCondition
+        Condition = TrueCondition | FalseCondition,
+
+        // range from 22-29 bits is reserved for marking flow nodes that should be cloned during binding
     }
 
     export interface FlowNode {

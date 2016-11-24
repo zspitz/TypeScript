@@ -125,6 +125,8 @@ namespace ts {
         // state used for emit helpers
         let emitFlags: NodeFlags;
 
+        let clonedNodeMarker = 0;
+
         // If this file is an external module, then it is automatically in strict-mode according to
         // ES6.  If it is not an external module, then we'll determine if it is in strict mode or
         // not depending on if we see "use strict" in certain places or if we hit a class/namespace
@@ -150,6 +152,7 @@ namespace ts {
             classifiableNames = createMap<string>();
             symbolCount = 0;
             skipTransformFlagAggregation = isDeclarationFile(file);
+            clonedNodeMarker = 0;
 
             Symbol = objectAllocator.getSymbolConstructor();
 
@@ -773,6 +776,21 @@ namespace ts {
                 (label.antecedents || (label.antecedents = [])).push(antecedent);
                 setFlowNodeReferenced(antecedent);
             }
+        }
+
+        function markClonableFlowNodes<T extends FlowNode>(flowNode: T): T {
+            if (clonedNodeMarker !== 0) {
+                flowNode.flags |= clonedNodeMarker << 22;
+            }
+            return flowNode;
+        }
+
+        function getFlowNodeMarker(flowNode: FlowNode): number {
+            return flowNode.flags >> 22;
+        }
+
+        function resetFlowNodeMarker(flowNode: FlowNode): void {
+            flowNode.flags &= 
         }
 
         function createFlowCondition(flags: FlowFlags, antecedent: FlowNode, expression: Expression): FlowNode {
