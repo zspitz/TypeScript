@@ -1078,6 +1078,7 @@ namespace Harness {
             includeBuiltFile?: string;
             baselineFile?: string;
             libFiles?: string;
+            flowGraph?: boolean;
         }
 
         // Additional options not already in ts.optionDeclarations
@@ -1094,7 +1095,8 @@ namespace Harness {
             { name: "currentDirectory", type: "string" },
             { name: "symlink", type: "string" },
             // Emitted js baseline will print full paths for every output file
-            { name: "fullEmitPaths", type: "boolean" }
+            { name: "fullEmitPaths", type: "boolean" },
+            { name: "flowGraph", type: "boolean" }
         ];
 
         let optionsIndex: ts.Map<ts.CommandLineOption>;
@@ -1161,6 +1163,143 @@ namespace Harness {
         export interface CompilationOutput {
             result: CompilerResult;
             options: ts.CompilerOptions & HarnessOptions;
+        }
+
+        export function flowGraphToDot(files: ts.SourceFile[]): string {
+            return files.map(fileFlowGraphToDot).join("\n===\n")
+        }
+
+        type FlowNodeWithId = ts.FlowNode & { __id?: number };
+        type TextPart = { text: string, indent: string };
+
+        function fileFlowGraphToDot(file: ts.SourceFile): string {
+            let nextFlowNodeId = 0;
+            let visited = ts.createMap<ts.Node>();
+            let nodes = { text: "", indent: "        " };
+            let edges = { text: "", indent: "    " };
+
+            // collect all flow nodes
+            recordFlowNodesFromFlowGraph(file);
+
+            return (
+`digraph "${file.fileName}" {
+    rankdir = BT;
+    {
+${nodes.text}
+    }
+${edges.text}
+}`);
+
+            function recordFlowNodesFromFlowGraph(n: ts.Node): void {
+                if (n.flowNode) {
+                    recordFlowNode(n.flowNode);
+                    recordFlowNodeForNode(n, n.flowNode);
+                }
+                ts.forEachChild(n, recordFlowNodesFromFlowGraph);
+            }
+
+            function recordFlowNodeForNode(node: ts.Node, flowNode?: ts.FlowNode, edgeLabel?: string) {
+                if (!node) {
+                    return;
+                }
+                flowNode = flowNode || node.flowNode;
+                if (!flowNode) {
+                    return;
+                }
+                const nodeId = ts.getNodeId(node);
+                if (nodeId in visited) {
+                    //return;
+                }
+
+                visited[nodeId] = node;
+                writeLine(nodes, `N_${nodeId} [label=${getFirstLineOfNode(node)}, shape=box]`);
+
+                const flowNodeId = getFlowNodeId(flowNode);
+                writeLine(edges, `N_${nodeId} -> F_${flowNodeId} [color=blue, dir=none, label="${edgeLabel || ""}"]`);
+            }
+
+            function getFirstLineOfNode(n: ts.Node): string {
+                const pos = ts.skipTrivia(file.text, n.pos);
+                for (let i = pos; i <= n.end; i++) {
+                    if (i == n.end || ts.isLineBreak(file.text.charCodeAt(i))) {
+                        return file.text.substring(pos, i);
+                    }
+                }
+            }
+
+            function recordFlowNode(flowNode: FlowNodeWithId) {
+                if (flowNode.__id !== undefined) {
+                    // already saw this flow node
+                    return getFlowNodeId(flowNode);
+                }
+
+                // create a node for flow node
+                const flowNodeId = getFlowNodeId(flowNode);
+                let label: string;
+                if (flowNode.flags & ts.FlowFlags.ArrayMutation) {
+                    label = "array mutation"
+                }
+                else if (flowNode.flags & ts.FlowFlags.Assignment) {
+                    label = "assignment";
+                }
+                else if (flowNode.flags & ts.FlowFlags.Condition) {
+                    label = "condition";
+                }
+                else if (flowNode.flags & ts.FlowFlags.SwitchClause) {
+                    label = `switch clause [${(<ts.FlowSwitchClause>flowNode).clauseStart} - ${(<ts.FlowSwitchClause>flowNode).clauseEnd}]`;
+                }
+                else if (flowNode.flags & ts.FlowFlags.Label) {
+                    label = "label";
+                }
+                else if (flowNode.flags & ts.FlowFlags.Start) {
+                    label = "start";
+                }
+                writeLine(nodes, `F_${flowNodeId} [label=${label}]`);
+
+                // link flow node with its antecedents
+                if (flowNode.flags & (ts.FlowFlags.ArrayMutation | ts.FlowFlags.Assignment | ts.FlowFlags.Condition | ts.FlowFlags.SwitchClause)) {
+                    // record edge from flow node it its antecedent
+                    const antecedentFlowNodeId = recordFlowNode((<ts.FlowArrayMutation | ts.FlowAssignment | ts.FlowCondition | ts.FlowSwitchClause>flowNode).antecedent);
+                    writeLine(edges, `F_${getFlowNodeId(flowNode)} -> F_${antecedentFlowNodeId}`);
+                }
+                else if (flowNode.flags & ts.FlowFlags.Label) {
+                    for (const antecedent of (<ts.FlowLabel>flowNode).antecedents) {
+                        // record edge
+                        const antecedentFlowNodeId = recordFlowNode(antecedent);
+                        writeLine(edges, `F_${flowNodeId} -> F_${antecedentFlowNodeId}`);
+                    }
+                }
+
+                // link flow node with tree node
+                if (flowNode.flags & (ts.FlowFlags.ArrayMutation | ts.FlowFlags.Assignment)) {
+                    recordFlowNodeForNode((<ts.FlowArrayMutation | ts.FlowAssignment>flowNode).node, flowNode, label);
+                }
+                else if (flowNode.flags & ts.FlowFlags.Condition) {
+                    recordFlowNodeForNode((<ts.FlowCondition>flowNode).expression, flowNode, "condition");
+                }
+                else if (flowNode.flags & ts.FlowFlags.SwitchClause) {
+                    const switchStatement = (<ts.FlowSwitchClause>flowNode).switchStatement;
+                    for (let i = (<ts.FlowSwitchClause>flowNode).clauseStart; i < (<ts.FlowSwitchClause>flowNode).clauseEnd; i++) {
+                        recordFlowNodeForNode(switchStatement.caseBlock.clauses[i], flowNode, "case");
+                    }
+                }
+                else if (flowNode.flags & ts.FlowFlags.Start) {
+                    recordFlowNodeForNode((<ts.FlowStart>flowNode).container, flowNode);
+                }
+                return flowNodeId;
+            }
+
+            function getFlowNodeId(node: FlowNodeWithId): number {
+                if (node.__id === undefined) {
+                    node.__id = nextFlowNodeId;
+                    nextFlowNodeId++;
+                }
+                return node.__id;
+            }
+
+            function writeLine(text: TextPart, s: string) {
+                text.text += text.indent + s + "\n"
+            }
         }
 
         export function compileFiles(

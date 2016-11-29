@@ -147,6 +147,18 @@ class CompilerBaselineRunner extends RunnerBase {
                 }
             });
 
+            it(`Flow graph for ${fileName}`, function (this: any) {
+                if (harnessSettings["flowGraph"]) {
+                    Harness.Baseline.runBaseline(justName.replace(/\.tsx?$/, ".flowgraph.txt"), () => {
+                        return Harness.Compiler.flowGraphToDot(result.program.getSourceFiles().filter(f => !Harness.isDefaultLibraryFile(f.fileName)));
+                    });
+                }
+                else {
+                    // skip the test
+                    this.skip();
+                }
+            })
+
             // Source maps?
             it("Correct sourcemap content for " + fileName, () => {
                 if (options.sourceMap || options.inlineSourceMap) {
