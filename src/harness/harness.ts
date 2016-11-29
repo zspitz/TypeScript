@@ -1176,10 +1176,17 @@ namespace Harness {
             let nextFlowNodeId = 0;
             let nodes = { text: "", indent: "        " };
             let edges = { text: "", indent: "    " };
-            const seenFlowNodes: ts.Map<true> = ts.createMap<true>();
+            const renderedFlowNodes: ts.Map<true> = ts.createMap<true>();
+            const flowNodes: { flowNode: FlowNodeWithId, node: ts.Node }[] = [];
 
-            // collect all flow nodes
-            recordFlowNodesFromFlowGraph(file);
+            // first - create graph for tree nodes
+            renderNode(file);
+
+            // second - walk collected flow nodes and add vertices for flow nodes 
+            for (const pair of flowNodes) {
+                renderFlowNode(pair.flowNode);
+                linkFlowNodeToTreeNode(pair.flowNode, pair.node);
+            }
 
             return (
 `digraph "${file.fileName}" {
@@ -1190,32 +1197,51 @@ ${nodes.text}
 ${edges.text}
 }`);
 
-            function recordFlowNodesFromFlowGraph(n: ts.Node): void {
+            function getTreeNodeGraphId(n: ts.Node): string {
+                return `N_${ts.getNodeId(n)}`;
+            }
+
+            function getFlowNodeGraphId(n: ts.FlowNode): string {
+                return `F_${getFlowNodeId(n)}`;
+            }
+
+            function linkTreeNodeToParent(node: ts.Node) {
+                if (!node.parent){
+                    return;
+                }
+                writeLine(edges, `${getTreeNodeGraphId(node)} -> ${getTreeNodeGraphId(node.parent)} [color=gray, style=dashed]`);
+            }
+
+            function linkFlowNodes(flowNode: ts.FlowNode, antecedent: ts.FlowNode): void {
+                writeLine(edges, `${getFlowNodeGraphId(flowNode)} -> ${getFlowNodeGraphId(antecedent)} [penwidth=4, color=red]`);
+            }
+
+            function linkFlowNodeToTreeNode(flowNode: ts.FlowNode, node: ts.Node, label?: string) {
+                label = label || "";
+                writeLine(edges, `${getTreeNodeGraphId(node)} -> ${getFlowNodeGraphId(flowNode)} [color=blue, dir=none, label="${label}"]`);
+            }
+
+            function renderNode(n: ts.Node): void {
+                let label = (<any>ts).SyntaxKind[n.kind];
                 if (n.flowNode) {
-                    // add a flow node to a graph
-                    recordFlowNode(n.flowNode);
-                    // add associated tree node to flow node
-                    recordFlowNodeForNode(n, n.flowNode);
+                    label += `'${ts.getTextOfNode(n)}'`;
+                    flowNodes.push({ flowNode: n.flowNode, node: n });
                 }
-                ts.forEachChild(n, recordFlowNodesFromFlowGraph);
+
+                writeLine(nodes, `${getTreeNodeGraphId(n)} [label="${label}", shape=box]`);
+                linkTreeNodeToParent(n);
+
+                ts.forEachChild(n, renderNode);
             }
 
-            function recordFlowNodeForNode(node: ts.Node, flowNode: ts.FlowNode, edgeLabel?: string) {
-                const nodeId = ts.getNodeId(node);
-                writeLine(nodes, `N_${nodeId} [label="${ts.getTextOfNode(node)}", shape=box]`);
-
+            function renderFlowNode(flowNode: FlowNodeWithId): void {
                 const flowNodeId = getFlowNodeId(flowNode);
-                writeLine(edges, `N_${nodeId} -> F_${flowNodeId} [color=blue, dir=none, label="${edgeLabel || ""}"]`);
-            }
-
-            function recordFlowNode(flowNode: FlowNodeWithId) {
-                const flowNodeId = getFlowNodeId(flowNode);
-                if (flowNodeId in seenFlowNodes) {
+                if (flowNodeId in renderedFlowNodes) {
                     // already saw this flow node
-                    return flowNodeId;
+                    return;
                 }
 
-                seenFlowNodes[flowNodeId] = true;
+                renderedFlowNodes[flowNodeId] = true;
                 // create a node for flow node
                 let label: string;
                 if (flowNode.flags & ts.FlowFlags.ArrayMutation) {
@@ -1236,39 +1262,39 @@ ${edges.text}
                 else if (flowNode.flags & ts.FlowFlags.Start) {
                     label = "start";
                 }
-                writeLine(nodes, `F_${flowNodeId} [label="${label}"]`);
+                writeLine(nodes, `${getFlowNodeGraphId(flowNode)} [label="${label}", penwidth=3, color=red]`);
 
                 // link flow node with its antecedents
                 if (flowNode.flags & (ts.FlowFlags.ArrayMutation | ts.FlowFlags.Assignment | ts.FlowFlags.Condition | ts.FlowFlags.SwitchClause)) {
                     // record edge from flow node it its antecedent
-                    const antecedentFlowNodeId = recordFlowNode((<ts.FlowArrayMutation | ts.FlowAssignment | ts.FlowCondition | ts.FlowSwitchClause>flowNode).antecedent);
-                    writeLine(edges, `F_${getFlowNodeId(flowNode)} -> F_${antecedentFlowNodeId}`);
+                    const antecedent = (<ts.FlowArrayMutation | ts.FlowAssignment | ts.FlowCondition | ts.FlowSwitchClause>flowNode).antecedent;
+                    renderFlowNode(antecedent);
+                    linkFlowNodes(flowNode, antecedent);
                 }
                 else if (flowNode.flags & ts.FlowFlags.Label) {
                     for (const antecedent of (<ts.FlowLabel>flowNode).antecedents) {
                         // record edge from flow node to all antecedents
-                        const antecedentFlowNodeId = recordFlowNode(antecedent);
-                        writeLine(edges, `F_${flowNodeId} -> F_${antecedentFlowNodeId}`);
+                        renderFlowNode(antecedent);
+                        linkFlowNodes(flowNode, antecedent);
                     }
                 }
 
                 // link flow node with associated tree node
                 if (flowNode.flags & (ts.FlowFlags.ArrayMutation | ts.FlowFlags.Assignment)) {
-                    recordFlowNodeForNode((<ts.FlowArrayMutation | ts.FlowAssignment>flowNode).node, flowNode, label);
+                    linkFlowNodeToTreeNode(flowNode, (<ts.FlowArrayMutation | ts.FlowAssignment>flowNode).node, label);
                 }
                 else if (flowNode.flags & ts.FlowFlags.Condition) {
-                    recordFlowNodeForNode((<ts.FlowCondition>flowNode).expression, flowNode, label);
+                    linkFlowNodeToTreeNode(flowNode, (<ts.FlowCondition>flowNode).expression, label);
                 }
                 else if (flowNode.flags & ts.FlowFlags.SwitchClause) {
                     const switchStatement = (<ts.FlowSwitchClause>flowNode).switchStatement;
                     for (let i = (<ts.FlowSwitchClause>flowNode).clauseStart; i < (<ts.FlowSwitchClause>flowNode).clauseEnd; i++) {
-                        recordFlowNodeForNode(switchStatement.caseBlock.clauses[i], flowNode, "case");
+                        linkFlowNodeToTreeNode(flowNode, switchStatement.caseBlock.clauses[i], "case");
                     }
                 }
                 else if (flowNode.flags & ts.FlowFlags.Start && (<ts.FlowStart>flowNode).container) {
-                    recordFlowNodeForNode((<ts.FlowStart>flowNode).container, flowNode);
+                    linkFlowNodeToTreeNode(flowNode, (<ts.FlowStart>flowNode).container, "start");
                 }
-                return flowNodeId;
             }
 
             function getFlowNodeId(node: FlowNodeWithId): number {
