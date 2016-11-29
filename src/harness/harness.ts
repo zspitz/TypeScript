@@ -1172,24 +1172,24 @@ namespace Harness {
         type FlowNodeWithId = ts.FlowNode & { __id?: number };
         type TextPart = { text: string, indent: string };
 
+        function getNodeTooltip(n: ts.Node): string {
+            const text = ts.getTextOfNode(n);
+            return text
+                .replace(/\r?\n/g, "&#10;")
+                .replace(/"/g, "\\\"");
+        }
+        
         function fileFlowGraphToDot(file: ts.SourceFile): string {
             let nextFlowNodeId = 0;
             let nodes = { text: "", indent: "        " };
             let edges = { text: "", indent: "    " };
             const renderedFlowNodes: ts.Map<true> = ts.createMap<true>();
-            const flowNodes: { flowNode: FlowNodeWithId, node: ts.Node }[] = [];
 
-            // first - create graph for tree nodes
             renderNode(file);
 
-            // second - walk collected flow nodes and add vertices for flow nodes 
-            for (const pair of flowNodes) {
-                renderFlowNode(pair.flowNode);
-                linkFlowNodeToTreeNode(pair.flowNode, pair.node);
-            }
-
             return (
-`digraph "${file.fileName}" {
+                `/// to render the graph use http://www.webgraphviz.com/
+digraph "${file.fileName}" {
     rankdir = BT;
     {
 ${nodes.text}
@@ -1206,7 +1206,7 @@ ${edges.text}
             }
 
             function linkTreeNodeToParent(node: ts.Node) {
-                if (!node.parent){
+                if (!node.parent) {
                     return;
                 }
                 writeLine(edges, `${getTreeNodeGraphId(node)} -> ${getTreeNodeGraphId(node.parent)} [color=gray, style=dashed]`);
@@ -1225,10 +1225,12 @@ ${edges.text}
                 let label = (<any>ts).SyntaxKind[n.kind];
                 if (n.flowNode) {
                     label += `'${ts.getTextOfNode(n)}'`;
-                    flowNodes.push({ flowNode: n.flowNode, node: n });
+
+                    renderFlowNode(n.flowNode);
+                    linkFlowNodeToTreeNode(n.flowNode, n)
                 }
 
-                writeLine(nodes, `${getTreeNodeGraphId(n)} [label="${label}", shape=box]`);
+                writeLine(nodes, `${getTreeNodeGraphId(n)} [label="${label}", shape=box, tooltip="${getNodeTooltip(n)}"]`);
                 linkTreeNodeToParent(n);
 
                 ts.forEachChild(n, renderNode);
