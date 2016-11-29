@@ -15,5 +15,5 @@ finally {
   }
   closeFile();
 }
-
+let a = 1;
 result.x
