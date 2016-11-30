@@ -121,6 +121,7 @@ namespace ts {
         let preSwitchCaseFlow: FlowNode;
         let activeLabels: ActiveLabel[];
         let hasExplicitReturn: boolean;
+        let currentFlowCloneLevel = 0
 
         // state used for emit helpers
         let emitFlags: NodeFlags;
@@ -149,6 +150,7 @@ namespace ts {
             inStrictMode = bindInStrictMode(file, opts);
             classifiableNames = createMap<string>();
             symbolCount = 0;
+            currentFlowCloneLevel = 0;
             skipTransformFlagAggregation = isDeclarationFile(file);
 
             Symbol = objectAllocator.getSymbolConstructor();
@@ -506,7 +508,7 @@ namespace ts {
                     currentReturnTarget = createBranchLabel();
                 }
                 else {
-                    currentFlow = { flags: FlowFlags.Start };
+                    currentFlow = createFlowStart();
                     if (containerFlags & (ContainerFlags.IsFunctionExpression | ContainerFlags.IsObjectLiteralOrClassExpressionMethod)) {
                         (<FlowStart>currentFlow).container = <FunctionExpression | ArrowFunction | MethodDeclaration>node;
                     }
@@ -749,18 +751,29 @@ namespace ts {
             return isNarrowableReference(expr);
         }
 
+        function setCloneDepthIfNecessary<T extends FlowNode>(n: T): T {
+            if (currentFlowCloneLevel !== 0) {
+                n.flags |= currentFlowCloneLevel << FlowCloneLevelStartBit;
+            }
+            return n;
+        }
+
+        function createFlowStart(): FlowStart {
+            return setCloneDepthIfNecessary({ flags: FlowFlags.Start });
+        }
+
         function createBranchLabel(): FlowLabel {
-            return {
+            return setCloneDepthIfNecessary({
                 flags: FlowFlags.BranchLabel,
                 antecedents: undefined
-            };
+            });
         }
 
         function createLoopLabel(): FlowLabel {
-            return {
+            return setCloneDepthIfNecessary({
                 flags: FlowFlags.LoopLabel,
                 antecedents: undefined
-            };
+            });
         }
 
         function setFlowNodeReferenced(flow: FlowNode) {
@@ -790,11 +803,11 @@ namespace ts {
                 return antecedent;
             }
             setFlowNodeReferenced(antecedent);
-            return <FlowCondition>{
+            return setCloneDepthIfNecessary(<FlowCondition>{
                 flags,
                 expression,
                 antecedent
-            };
+            });
         }
 
         function createFlowSwitchClause(antecedent: FlowNode, switchStatement: SwitchStatement, clauseStart: number, clauseEnd: number): FlowNode {
@@ -802,31 +815,31 @@ namespace ts {
                 return antecedent;
             }
             setFlowNodeReferenced(antecedent);
-            return <FlowSwitchClause>{
+            return setCloneDepthIfNecessary(<FlowSwitchClause>{
                 flags: FlowFlags.SwitchClause,
                 switchStatement,
                 clauseStart,
                 clauseEnd,
                 antecedent
-            };
+            });
         }
 
         function createFlowAssignment(antecedent: FlowNode, node: Expression | VariableDeclaration | BindingElement): FlowNode {
             setFlowNodeReferenced(antecedent);
-            return <FlowAssignment>{
+            return setCloneDepthIfNecessary(<FlowAssignment>{
                 flags: FlowFlags.Assignment,
                 antecedent,
                 node
-            };
+            });
         }
 
         function createFlowArrayMutation(antecedent: FlowNode, node: CallExpression | BinaryExpression): FlowNode {
             setFlowNodeReferenced(antecedent);
-            return <FlowArrayMutation>{
+            return setCloneDepthIfNecessary(<FlowArrayMutation>{
                 flags: FlowFlags.ArrayMutation,
                 antecedent,
                 node
-            };
+            });
         }
 
         function finishFlowLabel(flow: FlowLabel): FlowNode {

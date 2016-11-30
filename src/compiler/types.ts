@@ -2058,6 +2058,8 @@ namespace ts {
         Condition = TrueCondition | FalseCondition
     }
 
+    export const FlowCloneLevelStartBit = 25;
+
     export interface FlowNode {
         flags: FlowFlags;
         id?: number;     // Node id used by flow type cache in checker
