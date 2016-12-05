@@ -751,26 +751,81 @@ namespace ts {
             return isNarrowableReference(expr);
         }
 
-        function setCloneDepthIfNecessary<T extends FlowNode>(n: T): T {
+        function setCloneLevelIfNecessary<T extends FlowNode>(n: T): T {
             if (currentFlowCloneLevel !== 0) {
                 n.flags |= currentFlowCloneLevel << FlowCloneLevelStartBit;
             }
             return n;
         }
 
+        function getCloneLevel(n: FlowNode): number {
+            return n.flags >> FlowCloneLevelStartBit;
+        }
+
+        function clearCloneLevel(n: FlowNode) {
+            n.flags &= FlowOnlyFlagsMask;
+        }
+
+        function cloneFlow(flowNode: FlowNode, level: number, start: FlowNode, newStart: FlowNode, visitedList: FlowNode[], copyList: FlowNode[]): FlowNode {
+            if (flowNode === start) {
+                return newStart;
+            }
+            const i = visitedList.indexOf(flowNode);
+            if (i >= 0) {
+                return copyList[i];
+            }
+            if (getCloneLevel(flowNode) !== level) {
+                return flowNode;
+            }
+            clearCloneLevel(flowNode);
+            const copy = { flags: flowNode.flags };
+            visitedList.push(flowNode);
+            copyList.push(copy);
+            if (flowNode.flags & (FlowFlags.Assignment | FlowFlags.ArrayMutation)) {
+                (<FlowAssignment | FlowArrayMutation>copy).node = (<FlowAssignment | FlowArrayMutation>flowNode).node;
+                const antecedentCopy = cloneFlow((<FlowAssignment | FlowArrayMutation>flowNode).antecedent, level, start, newStart, visitedList, copyList);
+                (<FlowAssignment | FlowArrayMutation>copy).antecedent = antecedentCopy;;
+            }
+            else if (flowNode.flags & FlowFlags.Condition) {
+                (<FlowCondition>copy).expression = (<FlowCondition>flowNode).expression;
+                const antecedentCopy = cloneFlow((<FlowCondition>flowNode).antecedent, level, start, newStart, visitedList, copyList);
+                (<FlowCondition>copy).antecedent = antecedentCopy;
+            }
+            else if (flowNode.flags & FlowFlags.Label) {
+                if ((<FlowLabel>flowNode).antecedents) {
+                    (<FlowLabel>copy).antecedents = [];
+                    for (const antecedent of (<FlowLabel>flowNode).antecedents) {
+                        const antecedentCopy = cloneFlow(antecedent, level, start, newStart, visitedList, copyList);
+                        (<FlowLabel>copy).antecedents.push(antecedentCopy);
+                    }
+                }
+            }
+            else if (flowNode.flags & FlowFlags.SwitchClause) {
+                (<FlowSwitchClause>copy).switchStatement = (<FlowSwitchClause>flowNode).switchStatement;
+                (<FlowSwitchClause>copy).clauseStart = (<FlowSwitchClause>flowNode).clauseStart;
+                (<FlowSwitchClause>copy).clauseEnd = (<FlowSwitchClause>flowNode).clauseEnd;
+                const antecedentCopy = cloneFlow((<FlowSwitchClause>flowNode).antecedent, level, start, newStart, visitedList, copyList);
+                (<FlowSwitchClause>copy).antecedent = antecedentCopy;
+            }
+            else if (flowNode.flags & FlowFlags.Start) {
+                (<FlowStart>copy).container = (<FlowStart>flowNode).container;
+            }
+            return copy;
+        }
+
         function createFlowStart(): FlowStart {
-            return setCloneDepthIfNecessary({ flags: FlowFlags.Start });
+            return setCloneLevelIfNecessary({ flags: FlowFlags.Start });
         }
 
         function createBranchLabel(): FlowLabel {
-            return setCloneDepthIfNecessary({
+            return setCloneLevelIfNecessary({
                 flags: FlowFlags.BranchLabel,
                 antecedents: undefined
             });
         }
 
         function createLoopLabel(): FlowLabel {
-            return setCloneDepthIfNecessary({
+            return setCloneLevelIfNecessary({
                 flags: FlowFlags.LoopLabel,
                 antecedents: undefined
             });
@@ -803,7 +858,7 @@ namespace ts {
                 return antecedent;
             }
             setFlowNodeReferenced(antecedent);
-            return setCloneDepthIfNecessary(<FlowCondition>{
+            return setCloneLevelIfNecessary(<FlowCondition>{
                 flags,
                 expression,
                 antecedent
@@ -815,7 +870,7 @@ namespace ts {
                 return antecedent;
             }
             setFlowNodeReferenced(antecedent);
-            return setCloneDepthIfNecessary(<FlowSwitchClause>{
+            return setCloneLevelIfNecessary(<FlowSwitchClause>{
                 flags: FlowFlags.SwitchClause,
                 switchStatement,
                 clauseStart,
@@ -826,7 +881,7 @@ namespace ts {
 
         function createFlowAssignment(antecedent: FlowNode, node: Expression | VariableDeclaration | BindingElement): FlowNode {
             setFlowNodeReferenced(antecedent);
-            return setCloneDepthIfNecessary(<FlowAssignment>{
+            return setCloneLevelIfNecessary(<FlowAssignment>{
                 flags: FlowFlags.Assignment,
                 antecedent,
                 node
@@ -835,7 +890,7 @@ namespace ts {
 
         function createFlowArrayMutation(antecedent: FlowNode, node: CallExpression | BinaryExpression): FlowNode {
             setFlowNodeReferenced(antecedent);
-            return setCloneDepthIfNecessary(<FlowArrayMutation>{
+            return setCloneLevelIfNecessary(<FlowArrayMutation>{
                 flags: FlowFlags.ArrayMutation,
                 antecedent,
                 node
@@ -1054,11 +1109,19 @@ namespace ts {
                 flowAfterCatch = currentFlow;
             }
             if (node.finallyBlock) {
+                const savedFlowCloneLevel = currentFlowCloneLevel;
+                currentFlowCloneLevel++;
+
+                const currentLevel = currentFlowCloneLevel;
                 // in finally flow is combined from pre-try/flow from try/flow from catch
                 // pre-flow is necessary to make sure that finally is reachable even if finally flows in both try and finally blocks are unreachable
                 addAntecedent(preFinallyLabel, preTryFlow);
                 currentFlow = finishFlowLabel(preFinallyLabel);
+                const preFinallyFlow = currentFlow;
+
                 bind(node.finallyBlock);
+
+                currentFlowCloneLevel = savedFlowCloneLevel;
                 // if flow after finally is unreachable - keep it
                 // otherwise check if flows after try and after catch are unreachable
                 // if yes - convert current flow to unreachable
@@ -1070,6 +1133,12 @@ namespace ts {
                         currentFlow = flowAfterTry === reportedUnreachableFlow || flowAfterCatch === reportedUnreachableFlow
                             ? reportedUnreachableFlow
                             : unreachableFlow;
+                    }
+                    else if (!(preFinallyFlow.flags & FlowFlags.Unreachable)) {
+                        const newPreFinallyLabel = createBranchLabel();
+                        addAntecedent(newPreFinallyLabel, flowAfterTry);
+                        addAntecedent(newPreFinallyLabel, flowAfterCatch);
+                        currentFlow = cloneFlow(currentFlow, currentLevel, preFinallyLabel, newPreFinallyLabel, [], []);
                     }
                 }
             }

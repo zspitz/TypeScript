@@ -2059,6 +2059,7 @@ namespace ts {
     }
 
     export const FlowCloneLevelStartBit = 25;
+    export const FlowOnlyFlagsMask = (1 << FlowCloneLevelStartBit) - 1
 
     export interface FlowNode {
         flags: FlowFlags;

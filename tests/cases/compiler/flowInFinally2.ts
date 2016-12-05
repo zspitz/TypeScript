@@ -15,7 +15,9 @@ while ("".length === 1) {
         while (x < 100) {
         }
         closeFile();
-        break;
+        if (x > 5) {
+            break;
+        }
     }
 }
 let a = 1;
