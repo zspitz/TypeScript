@@ -1209,7 +1209,9 @@ ${edges.text}
                 if (!node.parent) {
                     return;
                 }
-                writeLine(edges, `${getTreeNodeGraphId(node)} -> ${getTreeNodeGraphId(node.parent)} [color=gray, style=dashed]`);
+                const treeNodeId = getTreeNodeGraphId(node);
+                const parentTreeNodeId = getTreeNodeGraphId(node.parent);
+                writeLine(edges, `${treeNodeId} -> ${parentTreeNodeId} [color=gray, style=dashed, id="tree_edge_${treeNodeId}_${parentTreeNodeId}"]`);
             }
 
             function linkFlowNodes(flowNode: ts.FlowNode, antecedent: ts.FlowNode): void {
@@ -1218,7 +1220,9 @@ ${edges.text}
 
             function linkFlowNodeToTreeNode(flowNode: ts.FlowNode, node: ts.Node, label?: string) {
                 label = label || "";
-                writeLine(edges, `${getTreeNodeGraphId(node)} -> ${getFlowNodeGraphId(flowNode)} [color=blue, dir=none, label="${label}"]`);
+                const treeNodeId = getTreeNodeGraphId(node);
+                const flowNodeId = getFlowNodeGraphId(flowNode);
+                writeLine(edges, `${treeNodeId} -> ${flowNodeId} [color=blue, dir=none, label="${label}", id="tree_edge_${treeNodeId}_${flowNodeId}}"]`);
             }
 
             function renderNode(n: ts.Node): void {
@@ -1229,8 +1233,8 @@ ${edges.text}
                     renderFlowNode(n.flowNode);
                     linkFlowNodeToTreeNode(n.flowNode, n)
                 }
-
-                writeLine(nodes, `${getTreeNodeGraphId(n)} [label="${label}", shape=box, tooltip="${getNodeTooltip(n)}"]`);
+                const treeNodeId = getTreeNodeGraphId(n);
+                writeLine(nodes, `${treeNodeId} [label="${label}", shape=box, tooltip="${getNodeTooltip(n)}", id="tree_node_${treeNodeId}"]`);
                 linkTreeNodeToParent(n);
 
                 ts.forEachChild(n, renderNode);
