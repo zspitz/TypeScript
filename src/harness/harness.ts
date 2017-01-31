@@ -1197,7 +1197,7 @@ namespace Harness {
             let nextFlowNodeId = 0;
             let nodes = { text: "", indent: "        " };
             let edges = { text: "", indent: "    " };
-            const renderedFlowNodes: ts.Map<true> = ts.createMap<true>();
+            const renderedFlowNodes = ts.createMap<true>();
 
             renderNode(file);
 
@@ -1261,7 +1261,8 @@ ${edges.text}
                     return;
                 }
 
-                renderedFlowNodes[flowNodeId] = true;
+                renderedFlowNodes.set(flowNodeId.toString(), true);
+
                 // create a node for flow node
                 let label: string;
                 if (flowNode.flags & ts.FlowFlags.ArrayMutation) {
