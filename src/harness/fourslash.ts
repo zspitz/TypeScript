@@ -860,6 +860,36 @@ namespace FourSlash {
             }
         }
 
+        public verifySymbolAtLocation(markerName: string, ranges: Range[]): void {
+            if (markerName !== undefined) {
+                this.goToMarker(markerName);
+            }
+
+            const program = this.languageService.getProgram();
+            const checker = program.getTypeChecker();
+            const file = program.getSourceFile(this.activeFile.fileName);
+            const node = ts.getTouchingPropertyName(file, this.currentCaretPosition);
+            const symbol = checker.getSymbolAtLocation(node);
+            console.log(symbol);
+            if (!symbol) {
+                this.raiseError("Could not get symbol at location");
+            }
+
+            const { declarations } = symbol;
+            if (declarations.length !== ranges.length) {
+                this.raiseError(`Expected to get ${ranges.length} declarations, got ${declarations.length}`);
+            }
+
+            ts.zipWith(declarations, ranges, (decl, range) => {
+                if (decl.getStart() !== range.start || decl.getEnd() !== range.end) {
+                    this.raiseError(`Expected to get range ${range.start}-${range.end}, got ${decl.getStart()}-${decl.getEnd()}`);
+                }
+            });
+
+            //symbol.declarations.map(d => d.start, d.end);
+        }
+
+
         public verifyReferencesAre(expectedReferences: Range[]) {
             const actualReferences = this.getReferencesAtCaret() || [];
 
@@ -3336,6 +3366,10 @@ namespace FourSlashInterface {
 
         public verifyGetEmitOutputContentsForCurrentFile(expected: ts.OutputFile[]): void {
             this.state.verifyGetEmitOutputContentsForCurrentFile(expected);
+        }
+
+        public symbolAtLocation(markerName: string, ...ranges: FourSlash.Range[]) {
+            this.state.verifySymbolAtLocation(markerName, ranges);
         }
 
         public referencesAre(ranges: FourSlash.Range[]) {
