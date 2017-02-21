@@ -642,6 +642,7 @@ namespace ts {
             parseErrorBeforeNextFinishedNode = false;
 
             // Initialize and prime the scanner before parsing the source elements.
+            // TODO: Make the scanner do crazy things here for vue files
             scanner.setText(sourceText);
             scanner.setOnError(scanError);
             scanner.setScriptTarget(languageVersion);

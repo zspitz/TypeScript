@@ -2017,7 +2017,7 @@ namespace ts {
     export const supportedTypeScriptExtensions = [".ts", ".tsx", ".d.ts"];
     /** Must have ".d.ts" first because if ".ts" goes first, that will be detected as the extension instead of ".d.ts". */
     export const supportedTypescriptExtensionsForExtractExtension = [".d.ts", ".ts", ".tsx"];
-    export const supportedJavascriptExtensions = [".js", ".jsx"];
+    export const supportedJavascriptExtensions = [".js", ".jsx", ".vue"];
     const allSupportedExtensions = supportedTypeScriptExtensions.concat(supportedJavascriptExtensions);
 
     export function getSupportedExtensions(options?: CompilerOptions, extraFileExtensions?: JsFileExtensionInfo[]): string[] {
