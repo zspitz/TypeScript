@@ -1033,12 +1033,12 @@ namespace ts.server.protocol {
         fileContent?: string;
         /**
          * Used to specify the script kind of the file explicitly. It could be one of the following:
-         *      "TS", "JS", "TSX", "JSX"
+         *      "TS", "JS", "TSX", "JSX", "VUE"
          */
         scriptKindName?: ScriptKindName;
     }
 
-    export type ScriptKindName = "TS" | "JS" | "TSX" | "JSX";
+    export type ScriptKindName = "TS" | "JS" | "TSX" | "JSX" | "VUE";
 
     /**
       * Open request; value of command field is "open". Notify the

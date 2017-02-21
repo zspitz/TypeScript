@@ -130,7 +130,7 @@ namespace ts.server {
             return response;
         }
 
-        openFile(fileName: string, content?: string, scriptKindName?: "TS" | "JS" | "TSX" | "JSX"): void {
+        openFile(fileName: string, content?: string, scriptKindName?: "TS" | "JS" | "TSX" | "JSX" | "VUE"): void {
             const args: protocol.OpenRequestArgs = { file: fileName, fileContent: content, scriptKindName };
             this.processRequest(CommandNames.Open, args);
         }
