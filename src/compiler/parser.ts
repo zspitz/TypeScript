@@ -689,7 +689,16 @@ namespace ts {
             sourceFile.parseDiagnostics = parseDiagnostics;
 
             if (scriptKind === ScriptKind.VUE) {
-                // find the export default and monkey with it!
+                // 1. add `import Vue from './vue'
+                // 2. find the export default and wrap it in `new Vue(...)` if it exists and is an object literal
+                const exportDefaultObject = find(sourceFile.statements, st => st.kind === SyntaxKind.ExportAssignment &&
+                                                                              (st as ExportAssignment).expression.kind === SyntaxKind.ObjectLiteralExpression);
+                if (exportDefaultObject) {
+                    const obj = (exportDefaultObject as ExportAssignment).expression as ObjectLiteralExpression;
+                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier('Vue'), obj), undefined, [obj]), obj);
+                    setTextRange(((exportDefaultObject as ExportAssignment).expression as NewExpression).arguments, obj);
+                }
+                //
                 // also it would be nice to report errors in vue files actually
             }
 
@@ -1160,7 +1169,7 @@ namespace ts {
         // An identifier that starts with two underscores has an extra underscore character prepended to it to avoid issues
         // with magic property names like '__proto__'. The 'identifiers' object is used to share a single string instance for
         // each identifier in order to reduce memory consumption.
-        function createIdentifier(isIdentifier: boolean, diagnosticMessage?: DiagnosticMessage): Identifier {
+        function createInternedIdentifier(isIdentifier: boolean, diagnosticMessage?: DiagnosticMessage): Identifier {
             identifierCount++;
             if (isIdentifier) {
                 const node = <Identifier>createNode(SyntaxKind.Identifier);
@@ -1178,11 +1187,11 @@ namespace ts {
         }
 
         function parseIdentifier(diagnosticMessage?: DiagnosticMessage): Identifier {
-            return createIdentifier(isIdentifier(), diagnosticMessage);
+            return createInternedIdentifier(isIdentifier(), diagnosticMessage);
         }
 
         function parseIdentifierName(): Identifier {
-            return createIdentifier(tokenIsIdentifierOrKeyword(token()));
+            return createInternedIdentifier(tokenIsIdentifierOrKeyword(token()));
         }
 
         function isLiteralPropertyName(): boolean {
@@ -2146,7 +2155,7 @@ namespace ts {
         function parseParameter(): ParameterDeclaration {
             const node = <ParameterDeclaration>createNode(SyntaxKind.Parameter);
             if (token() === SyntaxKind.ThisKeyword) {
-                node.name = createIdentifier(/*isIdentifier*/true, undefined);
+                node.name = createInternedIdentifier(/*isIdentifier*/true, undefined);
                 node.type = parseParameterType();
                 return finishNode(node);
             }
