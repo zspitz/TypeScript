@@ -28,5 +28,13 @@
 ////  text-align: center;
 ////}
 ////</style>
-verify.getSyntacticDiagnostics("");
-verify.getSemanticDiagnostics("");
+verify.getSyntacticDiagnostics("[]");
+verify.getSemanticDiagnostics(`[
+  {
+    "message": "Cannot find name 'console'.",
+    "start": 154,
+    "length": 7,
+    "category": "error",
+    "code": 2304
+  }
+]`);
