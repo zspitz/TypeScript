@@ -642,8 +642,15 @@ namespace ts {
             parseErrorBeforeNextFinishedNode = false;
 
             // Initialize and prime the scanner before parsing the source elements.
-            // TODO: Make the scanner do crazy things here for vue files
-            scanner.setText(sourceText);
+            if (scriptKind === ScriptKind.VUE) {
+                // create a scanner with different start and stop values
+                const start = sourceText.indexOf('<script>');
+                const end = sourceText.indexOf('</script>');
+                scanner.setText(sourceText, start + "<script>".length, end - (start + "<script>".length));
+            }
+            else {
+                scanner.setText(sourceText);
+            }
             scanner.setOnError(scanError);
             scanner.setScriptTarget(languageVersion);
             scanner.setLanguageVariant(getLanguageVariant(scriptKind));
@@ -680,6 +687,11 @@ namespace ts {
             sourceFile.identifierCount = identifierCount;
             sourceFile.identifiers = identifiers;
             sourceFile.parseDiagnostics = parseDiagnostics;
+
+            if (scriptKind === ScriptKind.VUE) {
+                // find the export default and monkey with it!
+                // also it would be nice to report errors in vue files actually
+            }
 
             if (setParentNodes) {
                 fixupParentReferences(sourceFile);
