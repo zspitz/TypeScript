@@ -2,17 +2,45 @@
 
 // @allowJs: true
 // @allowNonTsExtensions: true
+// @Filename: vue.d.ts
+////export declare type VueInstance<D,M,P> = D & M & P & {
+////    $options: { data: D, methods: M, properties: P },
+////    $data: D,
+////    $parent: VueInstance<{ [s: string]: any }, { [s: string]: any }, { [s: string]: any }>
+////}
+////export declare var Vue: {
+////    new<D,M,P>(options: { data?: D, methods?: M, properties?: P }): VueInstance<D, M, P>;
+////};
+/*var vexample = new Vue({
+    data: {
+        greeting: "Hello"
+    },
+    methods: {
+        m1() {
+            return this.greeting
+        },
+        a1() {
+            return "thousand miles an hour"
+        }
+    }
+});
+vexample.$parent.$parent.$parent
+vexample.$data.greeting
+vexample.$options.properties
+vexample.$options.methods
+vexample.$options.data*/
 // @Filename: whatever.vue
 ////<template>
 ////  <p>{{ greeting }} World!</p>
 ////</template>
 ////
 ////<script>
-////export default {
+////import { Vue, VueInstance } from './vue'
+////export default { /*1*/
 ////  data: {
 ////    greeting: "Hello"
 ////  },
-////  methods: {
+////  meth/*3*/ods: {
 ////      m1() {
 ////          console.log('hi')
 ////          return this.greeting
@@ -29,12 +57,6 @@
 ////}
 ////</style>
 verify.getSyntacticDiagnostics("[]");
-verify.getSemanticDiagnostics(`[
-  {
-    "message": "Cannot find name 'console'.",
-    "start": 154,
-    "length": 7,
-    "category": "error",
-    "code": 2304
-  }
-]`);
+verify.getSemanticDiagnostics("[]");
+verify.completionsAt('1', ['properties']);
+verify.completionsAt('3', ['methods', 'properties']);
