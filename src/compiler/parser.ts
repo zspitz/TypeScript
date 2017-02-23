@@ -697,8 +697,8 @@ namespace ts {
                     return setTextRange(n, { pos: 0, end: 0 });
                 }
                 if (exportDefaultObject) {
-                    const vueImport = b(createImportDeclaration([],
-                                                                [],
+                    const vueImport = b(createImportDeclaration(undefined,
+                                                                undefined,
                                                                 b(createImportClause(undefined,
                                                                                      b(createNamedImports([
                                                                                          b(createImportSpecifier(

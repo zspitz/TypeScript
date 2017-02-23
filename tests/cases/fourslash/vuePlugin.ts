@@ -45,13 +45,13 @@ vexample.$options.data
 ////</template>
 ////
 ////<script>
-////export default { /*1*/
+////export /*0*/default { /*1*/
 ////  data: {
 ////    greeting: "Hello"
 ////  },
 ////  meth/*3*/ods: {
 ////      m1() {
-////          console.log('hi')
+////          console.lozenge('hi')
 ////          return th/*2*/is.gr/*4*/eeting
 ////      },
 ////    a1() { return this.m1() }
@@ -65,8 +65,24 @@ vexample.$options.data
 ////  text-align: center;
 ////}
 ////</style>
+goTo.marker('0');
 verify.getSyntacticDiagnostics("[]");
-verify.getSemanticDiagnostics("[]");
+verify.getSemanticDiagnostics(`[
+  {
+    "message": "Cannot find name 'console'.",
+    "start": 155,
+    "length": 7,
+    "category": "error",
+    "code": 2304
+  },
+  {
+    "message": "Property 'm1' does not exist on type '{ greeting: string; }'.",
+    "start": 240,
+    "length": 2,
+    "category": "error",
+    "code": 2339
+  }
+]`);
 verify.completionsAt('1', ['properties']);
 verify.completionsAt('3', ['methods', 'properties']);
 verify.quickInfoAt('2', `this: {
