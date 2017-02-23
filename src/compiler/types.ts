@@ -3372,7 +3372,7 @@
         JSX = 2,
         TS = 3,
         TSX = 4,
-        External = 5,
+        External = 5
     }
 
     export const enum ScriptTarget {
