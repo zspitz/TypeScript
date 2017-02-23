@@ -644,8 +644,8 @@ namespace ts {
             // Initialize and prime the scanner before parsing the source elements.
             if (scriptKind === ScriptKind.VUE) {
                 // create a scanner with different start and stop values
-                const start = sourceText.indexOf('<script>');
-                const end = sourceText.indexOf('</script>');
+                const start = sourceText.indexOf("<script>");
+                const end = sourceText.indexOf("</script>");
                 scanner.setText(sourceText, start + "<script>".length, end - (start + "<script>".length));
             }
             else {
@@ -693,9 +693,21 @@ namespace ts {
                 // 2. find the export default and wrap it in `new Vue(...)` if it exists and is an object literal
                 const exportDefaultObject = find(sourceFile.statements, st => st.kind === SyntaxKind.ExportAssignment &&
                                                                               (st as ExportAssignment).expression.kind === SyntaxKind.ObjectLiteralExpression);
+                function b<T extends Node>(n: T) {
+                    return setTextRange(n, { pos: 0, end: 0 });
+                }
                 if (exportDefaultObject) {
+                    const vueImport = b(createImportDeclaration([],
+                                                                [],
+                                                                b(createImportClause(undefined,
+                                                                                     b(createNamedImports([
+                                                                                         b(createImportSpecifier(
+                                                                                             b(createIdentifier("Vue")),
+                                                                                             b(createIdentifier("Vue"))))])))),
+                                                                b(createLiteral("./vue"))));
+                    sourceFile.statements.unshift(vueImport);
                     const obj = (exportDefaultObject as ExportAssignment).expression as ObjectLiteralExpression;
-                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier('Vue'), { pos: obj.pos, end: obj.pos + 1 }),
+                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier("Vue"), { pos: obj.pos, end: obj.pos + 1 }),
                                                                                                   undefined,
                                                                                                   [obj]),
                                                                                         obj);
