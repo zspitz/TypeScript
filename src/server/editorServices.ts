@@ -92,7 +92,7 @@ namespace ts.server {
             case "TSX":
                 return ScriptKind.TSX;
             case "VUE":
-                return ScriptKind.VUE;
+                return ScriptKind.External;
             default:
                 return ScriptKind.Unknown;
         }

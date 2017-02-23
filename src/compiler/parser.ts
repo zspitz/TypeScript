@@ -642,7 +642,7 @@ namespace ts {
             parseErrorBeforeNextFinishedNode = false;
 
             // Initialize and prime the scanner before parsing the source elements.
-            if (scriptKind === ScriptKind.VUE) {
+            if (scriptKind === ScriptKind.External) {
                 // create a scanner with different start and stop values
                 const start = sourceText.indexOf("<script>");
                 const end = sourceText.indexOf("</script>");
@@ -688,7 +688,7 @@ namespace ts {
             sourceFile.identifiers = identifiers;
             sourceFile.parseDiagnostics = parseDiagnostics;
 
-            if (scriptKind === ScriptKind.VUE) {
+            if (scriptKind === ScriptKind.External) {
                 // 1. add `import Vue from './vue'
                 // 2. find the export default and wrap it in `new Vue(...)` if it exists and is an object literal
                 const exportDefaultObject = find(sourceFile.statements, st => st.kind === SyntaxKind.ExportAssignment &&

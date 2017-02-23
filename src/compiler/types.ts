@@ -3373,7 +3373,6 @@
         TS = 3,
         TSX = 4,
         External = 5,
-        VUE = 6 // TODO: Probably should just be external
     }
 
     export const enum ScriptTarget {

@@ -51,10 +51,10 @@ vexample.$options.data
 ////  },
 ////  meth/*3*/ods: {
 ////      m1() {
-////          console.lozenge('hi')
+////          //console.lozenge('hi')
 ////          return th/*2*/is.gr/*4*/eeting
 ////      },
-////    a1() { return this.m1() }
+////    a1() { return this.greeting /* .m1() */ }
 ////  }
 ////}
 ////</script>
@@ -67,22 +67,7 @@ vexample.$options.data
 ////</style>
 goTo.marker('0');
 verify.getSyntacticDiagnostics("[]");
-verify.getSemanticDiagnostics(`[
-  {
-    "message": "Cannot find name 'console'.",
-    "start": 155,
-    "length": 7,
-    "category": "error",
-    "code": 2304
-  },
-  {
-    "message": "Property 'm1' does not exist on type '{ greeting: string; }'.",
-    "start": 240,
-    "length": 2,
-    "category": "error",
-    "code": 2339
-  }
-]`);
+verify.getSemanticDiagnostics(`[]`);
 verify.completionsAt('1', ['properties']);
 verify.completionsAt('3', ['methods', 'properties']);
 verify.quickInfoAt('2', `this: {

@@ -2007,7 +2007,7 @@ namespace ts {
             case ".tsx":
                 return ScriptKind.TSX;
             case ".vue":
-                return ScriptKind.VUE;
+                return ScriptKind.External;
             default:
                 return ScriptKind.Unknown;
         }
