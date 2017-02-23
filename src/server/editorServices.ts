@@ -91,8 +91,6 @@ namespace ts.server {
                 return ScriptKind.TS;
             case "TSX":
                 return ScriptKind.TSX;
-            case "VUE":
-                return ScriptKind.External;
             default:
                 return ScriptKind.Unknown;
         }

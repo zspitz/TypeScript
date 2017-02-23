@@ -1038,7 +1038,7 @@ namespace ts.server.protocol {
         scriptKindName?: ScriptKindName;
     }
 
-    export type ScriptKindName = "TS" | "JS" | "TSX" | "JSX" | "VUE";
+    export type ScriptKindName = "TS" | "JS" | "TSX" | "JSX";
 
     /**
       * Open request; value of command field is "open". Notify the
