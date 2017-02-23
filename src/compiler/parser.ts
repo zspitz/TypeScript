@@ -695,7 +695,10 @@ namespace ts {
                                                                               (st as ExportAssignment).expression.kind === SyntaxKind.ObjectLiteralExpression);
                 if (exportDefaultObject) {
                     const obj = (exportDefaultObject as ExportAssignment).expression as ObjectLiteralExpression;
-                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier('Vue'), obj), undefined, [obj]), obj);
+                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier('Vue'), { pos: obj.pos, end: obj.pos + 1 }),
+                                                                                                  undefined,
+                                                                                                  [obj]),
+                                                                                        obj);
                     setTextRange(((exportDefaultObject as ExportAssignment).expression as NewExpression).arguments, obj);
                 }
                 //
@@ -708,7 +711,6 @@ namespace ts {
 
             return sourceFile;
         }
-
 
         function addJSDocComment<T extends Node>(node: T): T {
             const comments = getJSDocCommentRanges(node, sourceFile.text);
@@ -764,7 +766,7 @@ namespace ts {
         function createSourceFile(fileName: string, languageVersion: ScriptTarget, scriptKind: ScriptKind): SourceFile {
             // code from createNode is inlined here so createNode won't have to deal with special case of creating source files
             // this is quite rare comparing to other nodes and createNode should be as fast as possible
-            const sourceFile = <SourceFile>new SourceFileConstructor(SyntaxKind.SourceFile, /*pos*/ 0, /* end */ sourceText.length);
+            const sourceFile = <SourceFile>new SourceFileConstructor(SyntaxKind.SourceFile, /*pos*/ 0, /*end*/ sourceText.length);
             nodeCount++;
 
             sourceFile.text = sourceText;
