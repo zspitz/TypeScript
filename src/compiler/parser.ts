@@ -445,9 +445,9 @@ namespace ts {
         }
     }
 
-    export function createSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind): SourceFile {
+    export function createSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, setParentNodes = false, scriptKind?: ScriptKind, range?: TextRange): SourceFile {
         performance.mark("beforeParse");
-        const result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, scriptKind);
+        const result = Parser.parseSourceFile(fileName, sourceText, languageVersion, /*syntaxCursor*/ undefined, setParentNodes, scriptKind, range);
         performance.mark("afterParse");
         performance.measure("Parse", "beforeParse", "afterParse");
         return result;
@@ -596,10 +596,10 @@ namespace ts {
         // attached to the EOF token.
         let parseErrorBeforeNextFinishedNode = false;
 
-        export function parseSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, syntaxCursor: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind): SourceFile {
+        export function parseSourceFile(fileName: string, sourceText: string, languageVersion: ScriptTarget, syntaxCursor: IncrementalParser.SyntaxCursor, setParentNodes?: boolean, scriptKind?: ScriptKind, range?: TextRange): SourceFile {
             scriptKind = ensureScriptKind(fileName, scriptKind);
 
-            initializeState(sourceText, languageVersion, syntaxCursor, scriptKind);
+            initializeState(sourceText, languageVersion, syntaxCursor, scriptKind, range);
 
             const result = parseSourceFileWorker(fileName, languageVersion, setParentNodes, scriptKind);
 
@@ -623,7 +623,7 @@ namespace ts {
             return scriptKind === ScriptKind.TSX || scriptKind === ScriptKind.JSX || scriptKind === ScriptKind.JS ? LanguageVariant.JSX : LanguageVariant.Standard;
         }
 
-        function initializeState(_sourceText: string, languageVersion: ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor, scriptKind: ScriptKind) {
+        function initializeState(_sourceText: string, languageVersion: ScriptTarget, _syntaxCursor: IncrementalParser.SyntaxCursor, scriptKind: ScriptKind, range?: TextRange) {
             NodeConstructor = objectAllocator.getNodeConstructor();
             TokenConstructor = objectAllocator.getTokenConstructor();
             IdentifierConstructor = objectAllocator.getIdentifierConstructor();
@@ -642,11 +642,9 @@ namespace ts {
             parseErrorBeforeNextFinishedNode = false;
 
             // Initialize and prime the scanner before parsing the source elements.
-            if (scriptKind === ScriptKind.External) {
+            if (range) {
                 // create a scanner with different start and stop values
-                const start = sourceText.indexOf("<script>");
-                const end = sourceText.indexOf("</script>");
-                scanner.setText(sourceText, start + "<script>".length, end - (start + "<script>".length));
+                scanner.setText(sourceText, range.pos, range.end - range.pos);
             }
             else {
                 scanner.setText(sourceText);
@@ -687,35 +685,6 @@ namespace ts {
             sourceFile.identifierCount = identifierCount;
             sourceFile.identifiers = identifiers;
             sourceFile.parseDiagnostics = parseDiagnostics;
-
-            if (scriptKind === ScriptKind.External) {
-                // 1. add `import Vue from './vue'
-                // 2. find the export default and wrap it in `new Vue(...)` if it exists and is an object literal
-                const exportDefaultObject = find(sourceFile.statements, st => st.kind === SyntaxKind.ExportAssignment &&
-                                                                              (st as ExportAssignment).expression.kind === SyntaxKind.ObjectLiteralExpression);
-                function b<T extends Node>(n: T) {
-                    return setTextRange(n, { pos: 0, end: 0 });
-                }
-                if (exportDefaultObject) {
-                    const vueImport = b(createImportDeclaration(undefined,
-                                                                undefined,
-                                                                b(createImportClause(undefined,
-                                                                                     b(createNamedImports([
-                                                                                         b(createImportSpecifier(
-                                                                                             b(createIdentifier("Vue")),
-                                                                                             b(createIdentifier("Vue"))))])))),
-                                                                b(createLiteral("./vue"))));
-                    sourceFile.statements.unshift(vueImport);
-                    const obj = (exportDefaultObject as ExportAssignment).expression as ObjectLiteralExpression;
-                    (exportDefaultObject as ExportAssignment).expression = setTextRange(createNew(setTextRange(createIdentifier("Vue"), { pos: obj.pos, end: obj.pos + 1 }),
-                                                                                                  undefined,
-                                                                                                  [obj]),
-                                                                                        obj);
-                    setTextRange(((exportDefaultObject as ExportAssignment).expression as NewExpression).arguments, obj);
-                }
-                //
-                // also it would be nice to report errors in vue files actually
-            }
 
             if (setParentNodes) {
                 fixupParentReferences(sourceFile);
@@ -1183,7 +1152,7 @@ namespace ts {
         // An identifier that starts with two underscores has an extra underscore character prepended to it to avoid issues
         // with magic property names like '__proto__'. The 'identifiers' object is used to share a single string instance for
         // each identifier in order to reduce memory consumption.
-        function createInternedIdentifier(isIdentifier: boolean, diagnosticMessage?: DiagnosticMessage): Identifier {
+        function createIdentifier(isIdentifier: boolean, diagnosticMessage?: DiagnosticMessage): Identifier {
             identifierCount++;
             if (isIdentifier) {
                 const node = <Identifier>createNode(SyntaxKind.Identifier);
@@ -1201,11 +1170,11 @@ namespace ts {
         }
 
         function parseIdentifier(diagnosticMessage?: DiagnosticMessage): Identifier {
-            return createInternedIdentifier(isIdentifier(), diagnosticMessage);
+            return createIdentifier(isIdentifier(), diagnosticMessage);
         }
 
         function parseIdentifierName(): Identifier {
-            return createInternedIdentifier(tokenIsIdentifierOrKeyword(token()));
+            return createIdentifier(tokenIsIdentifierOrKeyword(token()));
         }
 
         function isLiteralPropertyName(): boolean {
@@ -2169,7 +2138,7 @@ namespace ts {
         function parseParameter(): ParameterDeclaration {
             const node = <ParameterDeclaration>createNode(SyntaxKind.Parameter);
             if (token() === SyntaxKind.ThisKeyword) {
-                node.name = createInternedIdentifier(/*isIdentifier*/true, undefined);
+                node.name = createIdentifier(/*isIdentifier*/true, undefined);
                 node.type = parseParameterType();
                 return finishNode(node);
             }
