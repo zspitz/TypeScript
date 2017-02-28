@@ -102,7 +102,13 @@ namespace ts.server {
     export interface PluginModule {
         create(createInfo: PluginCreateInfo): LanguageService;
         getExternalFiles?(proj: Project): string[];
+        changeSourceFiles?(createInfo: PluginCreateInfo): PluginSourceFileChange;
     }
+
+    export type PluginSourceFileChange = {
+        createLanguageServiceSourceFile(fileName: string, scriptSnapshot: IScriptSnapshot, scriptTarget: ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ScriptKind, range?: TextRange): SourceFile,
+        updateLanguageServiceSourceFile(sourceFile: SourceFile, scriptSnapshot: IScriptSnapshot, version: string, textChangeRange: TextChangeRange, aggressiveChecks?: boolean, range?: TextRange): SourceFile,
+    };
 
     export interface PluginModuleFactory {
         (mod: { typescript: typeof ts }): PluginModule;
@@ -904,6 +910,11 @@ namespace ts.server {
 
                 const pluginModule = pluginModuleFactory({ typescript: ts });
                 this.languageService = pluginModule.create(info);
+                if (pluginModule.changeSourceFiles) {
+                    const chg = pluginModule.changeSourceFiles(info);
+                    ts.createLanguageServiceSourceFile = chg.createLanguageServiceSourceFile;
+                    ts.updateLanguageServiceSourceFile = chg.updateLanguageServiceSourceFile;
+                }
                 this.plugins.push(pluginModule);
             }
             catch (e) {
