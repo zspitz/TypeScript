@@ -2006,8 +2006,6 @@ namespace ts {
                 return ScriptKind.TS;
             case ".tsx":
                 return ScriptKind.TSX;
-            case ".vue":
-                return ScriptKind.External;
             default:
                 return ScriptKind.Unknown;
         }
