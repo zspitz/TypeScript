@@ -933,8 +933,6 @@ namespace ts {
                                 : (changedText + suffix);
                     }
 
-                    // TODO: Previously I passed the cheat parameter to updateSourceFile even though this code path never happened (afaict)
-                    // now I am no longer passing it and hoping for the best
                     const newSourceFile = updateSourceFile(sourceFile, newText, textChangeRange, aggressiveChecks);
                     setSourceFileFields(newSourceFile, scriptSnapshot, version);
                     // after incremental parsing nameTable might not be up-to-date
