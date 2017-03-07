@@ -250,6 +250,101 @@ namespace ts {
             : node;
     }
 
+    // Types
+    export function createKeywordTypeNode(kind: SyntaxKind): KeywordTypeNode {
+        return <KeywordTypeNode>createSynthesizedNode(kind);
+    }
+
+    export function createThisTypeNode(): ThisTypeNode {
+        return <ThisTypeNode>createSynthesizedNode(SyntaxKind.ThisType);
+    }
+
+    export function createArrayTypeNode(elementType: TypeNode): ArrayTypeNode {
+        const type = <ArrayTypeNode>createSynthesizedNode(SyntaxKind.ArrayType);
+        type.elementType = elementType;
+        return type;
+    }
+
+    export function createTupleTypeNode(elementTypes: TypeNode[]): TupleTypeNode {
+        const type = <TupleTypeNode>createSynthesizedNode(SyntaxKind.TupleType);
+        type.elementTypes = asNodeArray(elementTypes);
+        return type;
+    }
+
+    export function createStringLiteralTypeNode(literal: string): LiteralTypeNode {
+        const type = <LiteralTypeNode>createSynthesizedNode(SyntaxKind.LiteralType);
+        type.literal = createStringLiteral(literal);
+        return type;
+    }
+
+    export function createMappedTypeNode(typeParameter: TypeParameterDeclaration, readonlyToken?: Token<SyntaxKind.ReadonlyKeyword>, questionToken?: QuestionToken, type?: TypeNode): MappedTypeNode {
+        const mappedType = <MappedTypeNode>createSynthesizedNode(SyntaxKind.MappedType);
+        mappedType.typeParameter = typeParameter;
+        mappedType.readonlyToken = readonlyToken;
+        mappedType.questionToken = questionToken;
+        mappedType.type = type;
+        return mappedType;
+    }
+
+    export function createIndexedAccessTypeNode(objectType: TypeNode,indexType: TypeNode): IndexedAccessTypeNode {
+        const type = <IndexedAccessTypeNode>createSynthesizedNode(SyntaxKind.IndexedAccessType);
+        type.objectType = objectType;
+        type.indexType = indexType;
+        return type;
+    }
+
+    export function createTypeOperatorNode(type: TypeNode): TypeOperatorNode {
+        const typeOperator = <TypeOperatorNode>createSynthesizedNode(SyntaxKind.TypeOperator);
+        typeOperator.operator = SyntaxKind.KeyOfKeyword;
+        typeOperator.type = type;
+        return typeOperator;
+    }
+
+    export function createTypeLiteralNode(members?: NodeArray<TypeElement>): TypeLiteralNode {
+        const type = <TypeLiteralNode>createSynthesizedNode(SyntaxKind.TypeLiteral);
+        type.members = members;
+        return type;
+    }
+
+    export function createEnumLiteralNode(enumRef: Expression, name: string | Identifier): LiteralTypeNode {
+        const type = <LiteralTypeNode>createSynthesizedNode(SyntaxKind.LiteralType);
+        type.literal = createPropertyAccess(enumRef, name);
+        return type;
+    }
+
+    export function createTypeReferenceNode(typeName: EntityName, typeArguments?: NodeArray<TypeNode>): TypeReferenceNode {
+        const type = <TypeReferenceNode>createSynthesizedNode(SyntaxKind.TypeReference);
+        type.typeName = typeName;
+        type.typeArguments = typeArguments;
+        return type;
+    }
+
+    export function createTypeQueryNode(exprName: EntityName): TypeQueryNode {
+        const type = <TypeQueryNode>createSynthesizedNode(SyntaxKind.TypeQuery);
+        type.exprName = exprName;
+        return type;
+    }
+
+    export function createUnionTypeNode(types: TypeNode[]): UnionTypeNode {
+        const type = <UnionTypeNode>createSynthesizedNode(SyntaxKind.UnionType);
+        type.types = asNodeArray(types);
+        return type;
+    }
+
+    export function createIntersectionTypeNode(types: TypeNode[]): IntersectionTypeNode {
+        const type = <IntersectionTypeNode>createSynthesizedNode(SyntaxKind.IntersectionType);
+        type.types = asNodeArray(types);
+        return type;
+    }
+
+    export function createTypePredicateNode(parameterName: Identifier | ThisTypeNode, type: TypeNode): TypePredicateNode {
+        const typePredicate = <TypePredicateNode>createSynthesizedNode(SyntaxKind.TypePredicate);
+        typePredicate.parameterName = parameterName;
+        typePredicate.type = type;
+        return typePredicate;
+    }
+
+
     // Type members
 
     export function createProperty(decorators: Decorator[] | undefined, modifiers: Modifier[] | undefined, name: string | PropertyName, questionToken: QuestionToken | undefined, type: TypeNode | undefined, initializer: Expression) {
@@ -273,6 +368,22 @@ namespace ts {
             : node;
     }
 
+    export function createIndexSignature(modifiers: Modifier[] | undefined, parameter: ParameterDeclaration, type?: TypeNode): IndexSignatureDeclaration {
+        const node = <IndexSignatureDeclaration>createSynthesizedNode(SyntaxKind.IndexSignature);
+        node.modifiers = asNodeArray(modifiers);
+        node.parameters = createNodeArray([parameter]);
+        node.type = type;
+        return node;
+    }
+
+    export function createConstructSignature(modifiers: Modifier[] | undefined, typeParameters: TypeParameterDeclaration[] | undefined, parameters: ParameterDeclaration[], type: TypeNode | undefined): ConstructSignatureDeclaration {
+        const node = <ConstructSignatureDeclaration>createSynthesizedNode(SyntaxKind.ConstructSignature);
+        node.modifiers = asNodeArray(modifiers);
+        node.typeParameters = asNodeArray(typeParameters);
+        node.parameters = asNodeArray(parameters);
+        node.type = type;
+        return node;
+    }
     export function createMethod(decorators: Decorator[] | undefined, modifiers: Modifier[] | undefined, asteriskToken: AsteriskToken | undefined, name: string | PropertyName, typeParameters: TypeParameterDeclaration[] | undefined, parameters: ParameterDeclaration[], type: TypeNode | undefined, body: Block | undefined) {
         const node = <MethodDeclaration>createSynthesizedNode(SyntaxKind.MethodDeclaration);
         node.decorators = asNodeArray(decorators);

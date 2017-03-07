@@ -2137,6 +2137,11 @@ namespace ts {
         getSignatureConstructor(): new (checker: TypeChecker) => Signature;
     }
 
+    export interface NodePrinter {
+        print(node: Node, writer: SymbolWriter): void;
+        printNodes(node: NodeArray<Node>, writer: SymbolWriter): void;
+    }
+
     function Symbol(this: Symbol, flags: SymbolFlags, name: string) {
         this.flags = flags;
         this.name = name;
@@ -2172,6 +2177,11 @@ namespace ts {
         getSignatureConstructor: () => <any>Signature
     };
 
+    /**
+     * Hook for checker to pull in printer
+     */
+    export let symbolPrinter: NodePrinter;
+
     export const enum AssertionLevel {
         None = 0,
         Normal = 1,
@@ -2197,8 +2207,8 @@ namespace ts {
             }
         }
 
-        export function fail(message?: string): void {
-            Debug.assert(/*expression*/ false, message);
+        export function fail(message?: string): never {
+            throw Debug.assert(/*expression*/ false, message);
         }
     }
 

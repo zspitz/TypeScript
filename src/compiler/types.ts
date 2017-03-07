@@ -2518,7 +2518,31 @@
         buildReturnTypeDisplay(signature: Signature, writer: SymbolWriter, enclosingDeclaration?: Node, flags?: TypeFormatFlags): void;
     }
 
-    export interface SymbolWriter {
+    export interface SymbolToNodeConverter {
+        typeToNode(type: Type, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): TypeNode;
+        symbolToNode(symbol: Symbol, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, meaning?: SymbolFlags, flags?: SymbolFormatFlags): Expression;
+        signatureToNode(signatures: Signature, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags, kind?: SignatureKind): SignatureDeclaration;
+        indexSignatureToNode(info: IndexInfo, symbolTracker: SymbolTracker, kind: IndexKind, enclosingDeclaration?: Node, globalFlags?: TypeFormatFlags, symbolStack?: Symbol[]): IndexSignatureDeclaration;
+        parameterToNode(parameter: Symbol, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): ParameterDeclaration;
+        typeParameterToNode(tp: TypeParameter, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): TypeParameterDeclaration;
+        typePredicateToNode(predicate: TypePredicate, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): TypePredicateNode;
+        typeParameterFromSymbolToNode(symbol: Symbol, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): TypeParameterDeclaration;
+        parametersToNodeArray(thisParameter: Symbol, parameters: Symbol[], symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): NodeArray<ParameterDeclaration>;
+        typeParametersToNodeArray(typeParameters: TypeParameter[], symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): NodeArray<TypeParameterDeclaration>;
+        returnTypeToNode(signature: Signature, symbolTracker: SymbolTracker, enclosingDeclaration?: Node, flags?: TypeFormatFlags): TypeNode;
+    }
+
+
+    export interface SymbolTracker {
+        // Called when the symbol writer encounters a symbol to write.  Currently only used by the
+        // declaration emitter to help determine if it should patch up the final declaration file
+        // with import statements it previously saw (but chose not to emit).
+        trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
+        reportInaccessibleThisError(): void;
+        reportIllegalExtends(): void;
+    }
+
+    export interface SymbolWriter extends SymbolTracker {
         writeKeyword(text: string): void;
         writeOperator(text: string): void;
         writePunctuation(text: string): void;
@@ -2531,13 +2555,6 @@
         increaseIndent(): void;
         decreaseIndent(): void;
         clear(): void;
-
-        // Called when the symbol writer encounters a symbol to write.  Currently only used by the
-        // declaration emitter to help determine if it should patch up the final declaration file
-        // with import statements it previously saw (but chose not to emit).
-        trackSymbol(symbol: Symbol, enclosingDeclaration?: Node, meaning?: SymbolFlags): void;
-        reportInaccessibleThisError(): void;
-        reportIllegalExtends(): void;
     }
 
     export const enum TypeFormatFlags {
