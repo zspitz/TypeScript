@@ -412,7 +412,7 @@ namespace ts {
         getDeclaration(): SignatureDeclaration {
             return this.declaration;
         }
-        getTypeParameters(): Type[] {
+        getTypeParameters(): TypeParameter[] {
             return this.typeParameters;
         }
         getParameters(): Symbol[] {
@@ -1447,7 +1447,8 @@ namespace ts {
                 });
             }
 
-            const emitOutput = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles);
+            const customTransformers = host.getCustomTransformers && host.getCustomTransformers();
+            const emitOutput = program.emit(sourceFile, writeFile, cancellationToken, emitOnlyDtsFiles, customTransformers);
 
             return {
                 outputFiles,
