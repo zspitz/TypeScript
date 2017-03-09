@@ -314,7 +314,7 @@ namespace ts.textChanges {
 
                     this.changes.push({
                         sourceFile,
-                        range: { pos: startPos, end: getAdjustedStartPosition(sourceFile, containingList[index + 1], {}, Position.Start) },
+                        range: { pos: startPos, end: containingList[index + 1].getStart(sourceFile) },
                         node: newNode,
                         useIndentationFromFile: true,
                         prefix,
