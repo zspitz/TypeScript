@@ -141,6 +141,13 @@ namespace ts.textChanges {
         return node.parent && (separator.kind === SyntaxKind.CommaToken || (separator.kind === SyntaxKind.SemicolonToken && node.parent.kind === SyntaxKind.ObjectLiteralExpression));
     }
 
+    function getSeparator(sourceFile: SourceFile, element: Node) {
+        const previousToken = getTokenAtPosition(sourceFile, element.end);
+        return previousToken && isSeparator(element, previousToken) 
+            ? previousToken
+            : createToken(SyntaxKind.CommaToken);
+    }
+
     function spaces(count: number) {
         let s = "";
         for (let i = 0; i < count; i++) {
@@ -309,7 +316,6 @@ namespace ts.textChanges {
                     else {
                         // different lines
                         startPos = getStartPositionOfLine(lineAndCharOfNextElement.line, sourceFile);
-                        //prefix = formatting.getIndentationString(lineAndCharOfNextElement.character, this.rulesProvider.getFormatOptions());
                     }
 
                     this.changes.push({
@@ -326,22 +332,39 @@ namespace ts.textChanges {
             }
             else {
                 // insert element after the last element in the list that has more than one item
-                // use previos sibling
-                const prevPreviousElement = containingList[index - 1];
-                let separator = getTokenAtPosition(sourceFile, prevPreviousElement.end);
-                separator = createToken(separator && isSeparator(prevPreviousElement, separator) ? separator.kind : SyntaxKind.CommaToken);
+                // pick the element preceding the after element to:
+                // - pick the separator
+                // - determine if list is a multiline
+                const afterMinusOne = containingList[index - 1];
+                const separatorBefore = <Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>>getSeparator(sourceFile, afterMinusOne);
                 const endPosition = getAdjustedEndPosition(sourceFile, after, options);
-                const multilineList = 
-                    getLineOfLocalPosition(sourceFile, prevPreviousElement.getStart(sourceFile)) !== getLineOfLocalPosition(sourceFile, after.getStart(sourceFile));
-                this.changes.push({
-                    sourceFile,
-                    range: { pos: endPosition, end: endPosition },
-                    node: newNode,
-                    useIndentationFromFile: true,
-                    options: multilineList ? { insertLeadingNewLine: true } : {},
-                    prefix: multilineList ? undefined : " ",
-                    separatorBefore: <Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>>separator
-                })
+                const range = { pos: endPosition, end: endPosition };
+                const afterMinusOneStartLinePosition = getLineStartPositionForPosition(afterMinusOne.getStart(sourceFile), sourceFile);
+                const afterStart = after.getStart(sourceFile);
+                const afterStartLinePosition = getLineStartPositionForPosition(afterStart, sourceFile);
+                if (afterMinusOneStartLinePosition !== afterStartLinePosition) {
+                    // multiline list
+                    // use the same indentation as 'after' item
+                    const indentation = formatting.SmartIndenter.findFirstNonWhitespaceColumn(afterStartLinePosition, afterStart, sourceFile, this.rulesProvider.getFormatOptions());
+                    this.changes.push({
+                        sourceFile,
+                        range,
+                        node: newNode,
+                        options: { insertLeadingNewLine: true, indentation },
+                        separatorBefore
+                    });
+                }
+                else {
+                    // single line list
+                    this.changes.push({
+                        sourceFile,
+                        range,
+                        node: newNode,
+                        options: {},
+                        prefix: " ", // ensure that new item is separate from previous item by one whitespace
+                        separatorBefore
+                    })
+                }
             }
         }
 
@@ -409,7 +432,8 @@ namespace ts.textChanges {
 
             let text = applyFormatting(nonFormattedText, sourceFile, initialIndentation, delta, this.rulesProvider);
             // strip initial indentation (spaces or tabs) if text will be inserted in the middle of the line
-            text = posStartsLine ? text : text.replace(/^\s+/, "");
+            // however keep indentation if it is was forced
+            text = posStartsLine || change.options.indentation !== undefined ? text : text.replace(/^\s+/, "");
 
             if (options.insertLeadingNewLine) {
                 text = this.newLineCharacter + text;
