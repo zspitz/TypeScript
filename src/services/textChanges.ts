@@ -28,6 +28,27 @@ namespace ts.textChanges {
         useNonAdjustedEndPosition?: boolean;
     }
 
+    export enum Position {
+        FullStart,
+        FirstNonWhitespace,
+        Start
+    }
+
+    function skipWhitespacesAndLineBreaks(text: string, start: number) {
+        return skipTrivia(text, start, /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
+    }
+
+    function getPosition(node: Node, sourceFile: SourceFile, position: Position) {
+        switch (position) {
+            case Position.FullStart:
+                return node.getFullStart();
+            case Position.Start:
+                return node.getStart(sourceFile);
+            case Position.FirstNonWhitespace:
+                return skipWhitespacesAndLineBreaks(sourceFile.text, node.getFullStart());
+        }
+    }
+
     /**
      * Usually node.pos points to a position immediately after the previous token.
      * If this position is used as a beginning of the span to remove - it might lead to removing the trailing trivia of the previous node, i.e:
@@ -66,12 +87,16 @@ namespace ts.textChanges {
     interface Change {
         readonly sourceFile: SourceFile;
         readonly range: TextRange;
-        readonly oldNode?: Node;
+        readonly useIndentationFromFile?: boolean;
         readonly node?: Node;
+        readonly separatorBefore?: Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>;
+        readonly separatorAfter?: Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>,
+        readonly prefix?: string;
+        readonly suffix?: string;
         readonly options?: ChangeNodeOptions;
     }
 
-    export function getAdjustedStartPosition(sourceFile: SourceFile, node: Node, options: ConfigurableStart, forDeleteOperation: boolean) {
+    export function getAdjustedStartPosition(sourceFile: SourceFile, node: Node, options: ConfigurableStart, position: Position) {
         if (options.useNonAdjustedStartPosition) {
             return node.getFullStart();
         }
@@ -90,12 +115,12 @@ namespace ts.textChanges {
             // fullstart
             // when b is replaced - we usually want to keep the leading trvia
             // when b is deleted - we delete it
-            return forDeleteOperation ? fullStart : start;
+            return getPosition(node, sourceFile, position);
         }
         // get start position of the line following the line that contains fullstart position
         let adjustedStartPosition = getStartPositionOfLine(getLineOfLocalPosition(sourceFile, fullStartLine) + 1, sourceFile);
         // skip whitespaces/newlines
-        adjustedStartPosition = skipTrivia(sourceFile.text, adjustedStartPosition, /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
+        adjustedStartPosition = skipWhitespacesAndLineBreaks(sourceFile.text, adjustedStartPosition);
         return getStartPositionOfLine(getLineOfLocalPosition(sourceFile, adjustedStartPosition), sourceFile);
     }
 
@@ -116,6 +141,14 @@ namespace ts.textChanges {
         return node.parent && (separator.kind === SyntaxKind.CommaToken || (separator.kind === SyntaxKind.SemicolonToken && node.parent.kind === SyntaxKind.ObjectLiteralExpression));
     }
 
+    function spaces(count: number) {
+        let s = "";
+        for (let i = 0; i < count; i++) {
+            s += " ";
+        }
+        return s;
+    }
+
     export class ChangeTracker {
         private changes: Change[] = [];
         private readonly newLineCharacter: string;
@@ -132,7 +165,7 @@ namespace ts.textChanges {
         }
 
         public deleteNode(sourceFile: SourceFile, node: Node, options: ConfigurableStartEnd = {}) {
-            const startPosition = getAdjustedStartPosition(sourceFile, node, options, /*forDeleteOperation*/ true);
+            const startPosition = getAdjustedStartPosition(sourceFile, node, options, Position.FullStart);
             const endPosition = getAdjustedEndPosition(sourceFile, node, options);
             this.changes.push({ sourceFile, options, range: { pos: startPosition, end: endPosition } });
             return this;
@@ -144,7 +177,7 @@ namespace ts.textChanges {
         }
 
         public deleteNodeRange(sourceFile: SourceFile, startNode: Node, endNode: Node, options: ConfigurableStartEnd = {}) {
-            const startPosition = getAdjustedStartPosition(sourceFile, startNode, options, /*forDeleteOperation*/ true);
+            const startPosition = getAdjustedStartPosition(sourceFile, startNode, options, Position.FullStart);
             const endPosition = getAdjustedEndPosition(sourceFile, endNode, options);
             this.changes.push({ sourceFile, options, range: { pos: startPosition, end: endPosition } });
             return this;
@@ -153,7 +186,7 @@ namespace ts.textChanges {
         public deleteNodeInList(sourceFile: SourceFile, node: Node) {
             const containingList = formatting.SmartIndenter.getContainingList(node, sourceFile);
             if (!containingList) {
-                return;
+                return this;
             }
             const index = containingList.indexOf(node);
             if (index < 0) {
@@ -167,10 +200,10 @@ namespace ts.textChanges {
                 const nextToken = getTokenAtPosition(sourceFile, node.end);
                 if (nextToken && isSeparator(node, nextToken)) {
                     // find first non-whitespace position in the leading trivia of the node
-                    const startPosition = skipTrivia(sourceFile.text, getAdjustedStartPosition(sourceFile, node, {}, /*forDeleteOperation*/ true), /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
+                    const startPosition = skipTrivia(sourceFile.text, getAdjustedStartPosition(sourceFile, node, {}, Position.FullStart), /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
                     const nextElement = containingList[index + 1];
                     /// find first non-whitespace position in the leading trivia of the next node
-                    const endPosition = skipTrivia(sourceFile.text, getAdjustedStartPosition(sourceFile, nextElement, {}, /*forDeleteOperation*/ true), /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
+                    const endPosition = skipTrivia(sourceFile.text, getAdjustedStartPosition(sourceFile, nextElement, {}, Position.FullStart), /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
                     // shift next node so its first non-whitespace position will be moved to the first non-whitespace position of the deleted node
                     this.deleteRange(sourceFile, { pos: startPosition, end: endPosition });
                 }
@@ -190,16 +223,16 @@ namespace ts.textChanges {
         }
 
         public replaceNode(sourceFile: SourceFile, oldNode: Node, newNode: Node, options: ChangeNodeOptions = {}) {
-            const startPosition = getAdjustedStartPosition(sourceFile, oldNode, options, /*forDeleteOperation*/ false);
+            const startPosition = getAdjustedStartPosition(sourceFile, oldNode, options, Position.Start);
             const endPosition = getAdjustedEndPosition(sourceFile, oldNode, options);
-            this.changes.push({ sourceFile, options, oldNode, node: newNode, range: { pos: startPosition, end: endPosition } });
+            this.changes.push({ sourceFile, options, useIndentationFromFile: true, node: newNode, range: { pos: startPosition, end: endPosition } });
             return this;
         }
 
         public replaceNodeRange(sourceFile: SourceFile, startNode: Node, endNode: Node, newNode: Node, options: ChangeNodeOptions = {}) {
-            const startPosition = getAdjustedStartPosition(sourceFile, startNode, options, /*forDeleteOperation*/ false);
+            const startPosition = getAdjustedStartPosition(sourceFile, startNode, options, Position.Start);
             const endPosition = getAdjustedEndPosition(sourceFile, endNode, options);
-            this.changes.push({ sourceFile, options, oldNode: startNode, node: newNode, range: { pos: startPosition, end: endPosition } });
+            this.changes.push({ sourceFile, options, useIndentationFromFile: true, node: newNode, range: { pos: startPosition, end: endPosition } });
             return this;
         }
 
@@ -209,15 +242,107 @@ namespace ts.textChanges {
         }
 
         public insertNodeBefore(sourceFile: SourceFile, before: Node, newNode: Node, options: InsertNodeOptions & ConfigurableStart = {}) {
-            const startPosition = getAdjustedStartPosition(sourceFile, before, options, /*forDeleteOperation*/ false);
-            this.changes.push({ sourceFile, options, oldNode: before, node: newNode, range: { pos: startPosition, end: startPosition } });
+            const startPosition = getAdjustedStartPosition(sourceFile, before, options, Position.Start);
+            this.changes.push({ sourceFile, options, useIndentationFromFile: true, node: newNode, range: { pos: startPosition, end: startPosition } });
             return this;
         }
 
         public insertNodeAfter(sourceFile: SourceFile, after: Node, newNode: Node, options: InsertNodeOptions & ConfigurableEnd = {}) {
             const endPosition = getAdjustedEndPosition(sourceFile, after, options);
-            this.changes.push({ sourceFile, options, oldNode: after, node: newNode, range: { pos: endPosition, end: endPosition } });
+            this.changes.push({ sourceFile, options, useIndentationFromFile: true, node: newNode, range: { pos: endPosition, end: endPosition } });
             return this;
+        }
+
+        public insertNodeInListAfter(sourceFile: SourceFile, after: Node, newNode: Node, options: InsertNodeOptions & ConfigurableEnd = {}) {
+            const containingList = formatting.SmartIndenter.getContainingList(after, sourceFile);
+            if (!containingList) {
+                return this;
+            }
+            const index = containingList.indexOf(after);
+            if (index < 0) {
+                return this;
+            }
+            if (containingList.length === 1) {
+                // list with one element - format as single line
+                const endPosition = getAdjustedEndPosition(sourceFile, after, options);
+                this.changes.push({
+                    sourceFile,
+                    range: { pos: endPosition, end: endPosition },
+                    node: newNode,
+                    useIndentationFromFile: true,
+                    separatorBefore: createToken(SyntaxKind.CommaToken),
+                    prefix: " ",
+                    options: {}
+                });
+            }
+            else if (index !== containingList.length - 1) {
+                // any element except the last one
+                // use next sibling as an anchor
+                const nextToken = getTokenAtPosition(sourceFile, after.end);
+                if (nextToken && isSeparator(after, nextToken)) {
+                    // for list
+                    // a, b, c
+                    // create change for adding 'e' after 'a' as
+                    // - find start of next element after a (it is b)
+                    // - use this start as start and end position in final change
+                    // - build text of change by formatting the text of node + separator + leading trivia of b
+
+                    // in multiline case it will work as
+                    //   a,
+                    //   b,
+                    //   c,
+                    // result - '*' denotes leading trivia that will be inserted after new text (displayed as '#')
+                    //   a,*
+                    //***insertedtext<separator>#
+                    //###b,
+                    //   c,
+                    const lineAndCharOfNextElement = getLineAndCharacterOfPosition(sourceFile, skipWhitespacesAndLineBreaks(sourceFile.text, containingList[index + 1].getFullStart()));
+                    const lineAndCharOfNextToken = getLineAndCharacterOfPosition(sourceFile, nextToken.end);
+                    let prefix: string;
+                    let startPos: number;
+                    if (lineAndCharOfNextToken.line === lineAndCharOfNextElement.line) {
+                        // same line
+                        // replace all text
+                        startPos = nextToken.end; 
+                        prefix = spaces(lineAndCharOfNextElement.character - lineAndCharOfNextToken.character);
+                    }
+                    else {
+                        // different lines
+                        startPos = getStartPositionOfLine(lineAndCharOfNextElement.line, sourceFile);
+                        //prefix = formatting.getIndentationString(lineAndCharOfNextElement.character, this.rulesProvider.getFormatOptions());
+                    }
+
+                    this.changes.push({
+                        sourceFile,
+                        range: { pos: startPos, end: getAdjustedStartPosition(sourceFile, containingList[index + 1], {}, Position.Start) },
+                        node: newNode,
+                        useIndentationFromFile: true,
+                        prefix,
+                        separatorAfter: createToken(<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>nextToken.kind),
+                        suffix: sourceFile.text.substring(nextToken.end, containingList[index + 1].getStart(sourceFile)),
+                        options: {}
+                    });
+                }
+            }
+            else {
+                // insert element after the last element in the list that has more than one item
+                // use previos sibling
+                const prevPreviousElement = containingList[index - 1];
+                let separator = getTokenAtPosition(sourceFile, prevPreviousElement.end);
+                separator = createToken(separator && isSeparator(prevPreviousElement, separator) ? separator.kind : SyntaxKind.CommaToken);
+                const endPosition = getAdjustedEndPosition(sourceFile, after, options);
+                const multilineList = 
+                    getLineOfLocalPosition(sourceFile, prevPreviousElement.getStart(sourceFile)) !== getLineOfLocalPosition(sourceFile, after.getStart(sourceFile));
+                this.changes.push({
+                    sourceFile,
+                    range: { pos: endPosition, end: endPosition },
+                    node: newNode,
+                    useIndentationFromFile: true,
+                    options: multilineList ? { insertLeadingNewLine: true } : {},
+                    prefix: multilineList ? undefined : " ",
+                    separatorBefore: <Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>>separator
+                })
+            }
         }
 
         public getChanges(): FileTextChanges[] {
@@ -272,7 +397,7 @@ namespace ts.textChanges {
             const initialIndentation =
                 change.options.indentation !== undefined
                     ? change.options.indentation
-                    : change.oldNode
+                    : change.useIndentationFromFile
                         ? formatting.SmartIndenter.getIndentation(change.range.pos, sourceFile, formatOptions, posStartsLine || change.options.insertLeadingNewLine)
                         : 0;
             const delta =
@@ -288,6 +413,18 @@ namespace ts.textChanges {
 
             if (options.insertLeadingNewLine) {
                 text = this.newLineCharacter + text;
+            }
+            if (change.prefix) {
+                text = change.prefix + text;
+            }
+            if (change.separatorBefore) {
+                text = tokenToString(change.separatorBefore.kind) + text;
+            }
+            if (change.separatorAfter) {
+                text = text + tokenToString(change.separatorAfter.kind);
+            }
+            if (change.suffix) {
+                text = text + change.suffix;
             }
             if (options.insertTrailingNewLine) {
                 text = text + this.newLineCharacter;

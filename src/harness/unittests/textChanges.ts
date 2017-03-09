@@ -498,7 +498,7 @@ function foo(a: number,b: string,c = true) {
                 changeTracker.deleteNodeInList(sourceFile, findChild("c", sourceFile));
             });
         }
-{
+        {
             const text = `
 function foo(
     a: number,
@@ -514,6 +514,55 @@ function foo(
             });
             runSingleFileTest("deleteNodeInList15", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
                 changeTracker.deleteNodeInList(sourceFile, findChild("c", sourceFile));
+            });
+        }
+        {
+            const text = `
+const x = 1, y = 2;`;
+            runSingleFileTest("insertNodeInListAfter1", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+            runSingleFileTest("insertNodeInListAfter2", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("y", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+        }
+        {
+            const text = `
+const /*x*/ x = 1, /*y*/ y = 2;`;
+            runSingleFileTest("insertNodeInListAfter3", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+            runSingleFileTest("insertNodeInListAfter4", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("y", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+        }
+        {
+            const text = `
+const x = 1;`;
+            runSingleFileTest("insertNodeInListAfter5", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+        }
+        {
+            const text = `
+const x = 1, 
+    y = 2;`;
+            runSingleFileTest("insertNodeInListAfter6", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+            runSingleFileTest("insertNodeInListAfter7", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("y", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+        }
+        {
+            const text = `
+const /*x*/ x = 1, 
+    /*y*/ y = 2;`;
+            runSingleFileTest("insertNodeInListAfter8", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
+            });
+            runSingleFileTest("insertNodeInListAfter9", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("y", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
             });
         }
     });
