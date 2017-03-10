@@ -366,6 +366,7 @@ namespace ts.textChanges {
                     })
                 }
             }
+            return this;
         }
 
         public getChanges(): FileTextChanges[] {
@@ -435,23 +436,35 @@ namespace ts.textChanges {
             // however keep indentation if it is was forced
             text = posStartsLine || change.options.indentation !== undefined ? text : text.replace(/^\s+/, "");
 
-            if (options.insertLeadingNewLine) {
-                text = this.newLineCharacter + text;
-            }
+            let prefix = "";
             if (change.prefix) {
-                text = change.prefix + text;
+                prefix = change.prefix;
             }
-            if (change.separatorBefore) {
-                text = tokenToString(change.separatorBefore.kind) + text;
+            else {
+                if (change.separatorBefore) {
+                    prefix += tokenToString(change.separatorBefore.kind);
+                }
+                if (options.insertLeadingNewLine) {
+                    prefix  += this.newLineCharacter;
+                }
             }
-            if (change.separatorAfter) {
-                text = text + tokenToString(change.separatorAfter.kind);
+            if (prefix) {
+                text = prefix + text;
             }
+            let suffix = "";
             if (change.suffix) {
-                text = text + change.suffix;
+                suffix = change.suffix;
             }
-            if (options.insertTrailingNewLine) {
-                text = text + this.newLineCharacter;
+            else {
+                if (change.separatorAfter) {
+                    suffix += tokenToString(change.separatorAfter.kind);
+                }
+                if (options.insertTrailingNewLine) {
+                    suffix = suffix + this.newLineCharacter;
+                }
+            }
+            if (suffix) {
+                text += suffix;
             }
             return text;
         }
@@ -558,9 +571,13 @@ namespace ts.textChanges {
         constructor(newLine: string) {
             this.writer = createTextWriter(newLine);
             this.onEmitNode = (hint, node, printCallback) => {
-                setPos(node, this.lastNonTriviaPosition);
+                if (node) {
+                    setPos(node, this.lastNonTriviaPosition);
+                }
                 printCallback(hint, node);
-                setEnd(node, this.lastNonTriviaPosition);
+                if (node) {
+                    setEnd(node, this.lastNonTriviaPosition);
+                }
             };
             this.onBeforeEmitNodeArray = nodes => {
                 if (nodes) {

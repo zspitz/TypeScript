@@ -345,7 +345,7 @@ namespace ts.codefix {
                         return createChangeTracker().insertNodeInListAfter(
                             sourceFile,
                             importList.elements[importList.elements.length - 1],
-                            newImportSpecifier).getChanges()
+                            newImportSpecifier).getChanges();
                         // return {
                         //     newText: `,${oneImportPerLine ? context.newLineCharacter : " "}${newImportText}`,
                         //     span: { start: insertPoint, length: 0 }
