@@ -403,10 +403,10 @@ namespace ts.codefix {
                             : createImportClause(/*name*/ undefined, createNamedImports([createImportSpecifier(/*propertyName*/ undefined, createIdentifier(name))]));
                     const importDecl = createImportDeclaration(/*decorators*/ undefined, /*modifiers*/ undefined, importClause, createLiteral(moduleSpecifierWithoutQuotes));
                     if (!lastImportDeclaration) {
-                        changeTracker.insertNodeAt(sourceFile, 0, importDecl, { insertTrailingNewLine: true });
+                        changeTracker.insertNodeAt(sourceFile, 0, importDecl, { suffix: `${context.newLineCharacter}${context.newLineCharacter}` });
                     }
                     else {
-                        changeTracker.insertNodeAfter(sourceFile, lastImportDeclaration, importDecl, { insertTrailingNewLine: true });
+                        changeTracker.insertNodeAfter(sourceFile, lastImportDeclaration, importDecl, { suffix: context.newLineCharacter });
                     }
                     // const importStatementText = isDefault
                     //     ? `import ${name} from "${moduleSpecifierWithoutQuotes}"`

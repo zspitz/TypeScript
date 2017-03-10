@@ -65,13 +65,13 @@ namespace ts.textChanges {
 
     export interface InsertNodeOptions {
         /**
-         * Set this value to true to make sure that node text of newly inserted node ends with new line
+         * Text to be inserted before the new node
          */
-        insertTrailingNewLine?: boolean;
+        prefix?: string;
         /**
-         * Set this value to true to make sure that node text of newly inserted node starts with new line
+         * Text to be inserted after the new node
          */
-        insertLeadingNewLine?: boolean;
+        suffix?: string;
         /**
          * Text of inserted node will be formatted with this indentation, otherwise indentation will be inferred from the old node
          */
@@ -89,11 +89,11 @@ namespace ts.textChanges {
         readonly range: TextRange;
         readonly useIndentationFromFile?: boolean;
         readonly node?: Node;
-        readonly separatorBefore?: Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>;
-        readonly separatorAfter?: Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>,
-        readonly prefix?: string;
-        readonly suffix?: string;
         readonly options?: ChangeNodeOptions;
+    }
+
+    export function getSeparatorCharacter(separator: Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>) {
+        return tokenToString(separator.kind);
     }
 
     export function getAdjustedStartPosition(sourceFile: SourceFile, node: Node, options: ConfigurableStart, position: Position) {
@@ -277,9 +277,7 @@ namespace ts.textChanges {
                     range: { pos: endPosition, end: endPosition },
                     node: newNode,
                     useIndentationFromFile: true,
-                    separatorBefore: createToken(SyntaxKind.CommaToken),
-                    prefix: " ",
-                    options: {}
+                    options: { prefix: ", " }
                 });
             }
             else if (index !== containingList.length - 1) {
@@ -323,10 +321,10 @@ namespace ts.textChanges {
                         range: { pos: startPos, end: containingList[index + 1].getStart(sourceFile) },
                         node: newNode,
                         useIndentationFromFile: true,
-                        prefix,
-                        separatorAfter: createToken(<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>nextToken.kind),
-                        suffix: sourceFile.text.substring(nextToken.end, containingList[index + 1].getStart(sourceFile)),
-                        options: {}
+                        options: {
+                            prefix,
+                            suffix: `${tokenToString(nextToken.kind)}${sourceFile.text.substring(nextToken.end, containingList[index + 1].getStart(sourceFile))}`
+                        }
                     });
                 }
             }
@@ -350,8 +348,7 @@ namespace ts.textChanges {
                         sourceFile,
                         range,
                         node: newNode,
-                        options: { insertLeadingNewLine: true, indentation },
-                        separatorBefore
+                        options: { prefix: `${getSeparatorCharacter(separatorBefore)}${this.newLineCharacter}`, indentation },
                     });
                 }
                 else {
@@ -360,9 +357,7 @@ namespace ts.textChanges {
                         sourceFile,
                         range,
                         node: newNode,
-                        options: {},
-                        prefix: " ", // ensure that new item is separate from previous item by one whitespace
-                        separatorBefore
+                        options: { prefix: `${getSeparatorCharacter(separatorBefore)} ` }, // ensure that new item is separate from previous item by one whitespace
                     })
                 }
             }
@@ -422,7 +417,7 @@ namespace ts.textChanges {
                 change.options.indentation !== undefined
                     ? change.options.indentation
                     : change.useIndentationFromFile
-                        ? formatting.SmartIndenter.getIndentation(change.range.pos, sourceFile, formatOptions, posStartsLine || change.options.insertLeadingNewLine)
+                        ? formatting.SmartIndenter.getIndentation(change.range.pos, sourceFile, formatOptions, posStartsLine || (change.options.prefix == this.newLineCharacter))
                         : 0;
             const delta =
                 change.options.delta !== undefined
@@ -435,38 +430,7 @@ namespace ts.textChanges {
             // strip initial indentation (spaces or tabs) if text will be inserted in the middle of the line
             // however keep indentation if it is was forced
             text = posStartsLine || change.options.indentation !== undefined ? text : text.replace(/^\s+/, "");
-
-            let prefix = "";
-            if (change.prefix) {
-                prefix = change.prefix;
-            }
-            else {
-                if (change.separatorBefore) {
-                    prefix += tokenToString(change.separatorBefore.kind);
-                }
-                if (options.insertLeadingNewLine) {
-                    prefix  += this.newLineCharacter;
-                }
-            }
-            if (prefix) {
-                text = prefix + text;
-            }
-            let suffix = "";
-            if (change.suffix) {
-                suffix = change.suffix;
-            }
-            else {
-                if (change.separatorAfter) {
-                    suffix += tokenToString(change.separatorAfter.kind);
-                }
-                if (options.insertTrailingNewLine) {
-                    suffix = suffix + this.newLineCharacter;
-                }
-            }
-            if (suffix) {
-                text += suffix;
-            }
-            return text;
+            return (options.prefix || "") + text + (options.suffix || "");
         }
 
         private static normalize(changes: Change[]) {
