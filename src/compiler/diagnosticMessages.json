@@ -3355,9 +3355,17 @@
         "category": "Message",
         "code": 90017
     },
-    "Initialize property '{0}' in the constructor.": {
+    "Disable checking for this file.": {
         "category": "Message",
         "code": 90018
+    },
+    "Suppress this error message.": {
+        "category": "Message",
+        "code": 90019
+    },
+    "Initialize property '{0}' in the constructor.": {
+        "category": "Message",
+        "code": 90020
     },
 
     "Octal literal types must use ES2015 syntax. Use the syntax '{0}'.": {
