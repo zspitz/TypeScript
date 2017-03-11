@@ -565,5 +565,90 @@ const /*x*/ x = 1,
                 changeTracker.insertNodeInListAfter(sourceFile, findChild("y", sourceFile), createVariableDeclaration("z", /*type*/ undefined, createLiteral(1)));
             });
         }
+        {
+            const text = `
+import {
+    x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter10", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(createIdentifier("b"), createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x // this is x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter11", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(createIdentifier("b"), createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter12", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(undefined, createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x // this is x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter13", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(undefined, createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x0,
+    x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter14", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(createIdentifier("b"), createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x0,
+    x // this is x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter15", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(createIdentifier("b"), createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x0,
+    x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter16", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(undefined, createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x0,
+    x // this is x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter17", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(undefined, createIdentifier("a")));
+            })
+        }
+        {
+            const text = `
+import {
+    x0, x
+} from "bar"`;
+            runSingleFileTest("insertNodeInListAfter18", noop, text, /*validateNodes*/ false, (sourceFile, changeTracker) => {
+                changeTracker.insertNodeInListAfter(sourceFile, findChild("x", sourceFile), createImportSpecifier(undefined, createIdentifier("a")));
+            })
+        }
     });
 }

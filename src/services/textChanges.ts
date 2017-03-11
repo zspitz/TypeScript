@@ -38,6 +38,19 @@ namespace ts.textChanges {
         return skipTrivia(text, start, /*stopAfterLineBreak*/ false, /*stopAtComments*/ true);
     }
 
+    function hasCommentsBeforeLineBreak(text: string, start: number) {
+        let i = start;
+        while (i < text.length) {
+            const ch = text.charCodeAt(i);
+            if (isWhiteSpaceSingleLine(ch)) {
+                i++;
+                continue;
+            }
+            return ch === CharacterCodes.slash;
+        }
+        return false;
+    }
+
     function getPosition(node: Node, sourceFile: SourceFile, position: Position) {
         switch (position) {
             case Position.FullStart:
@@ -269,16 +282,39 @@ namespace ts.textChanges {
             if (index < 0) {
                 return this;
             }
+            const end = after.getEnd();
             if (containingList.length === 1) {
-                // list with one element - format as single line
-                const endPosition = getAdjustedEndPosition(sourceFile, after, options);
-                this.changes.push({
-                    sourceFile,
-                    range: { pos: endPosition, end: endPosition },
-                    node: newNode,
-                    useIndentationFromFile: true,
-                    options: { prefix: ", " }
-                });
+                // list with one element
+                // check if element has non-whitespace only trailing trivia 
+                // if yes - format list as multiline
+                // if no - format as singleline
+                if (!hasCommentsBeforeLineBreak(sourceFile.text, end)) {
+                    // format as single line
+                    this.changes.push({
+                        sourceFile,
+                        range: { pos: end, end },
+                        node: newNode,
+                        useIndentationFromFile: true,
+                        options: { prefix: ", " }
+                    });
+                }
+                else {
+                    const adjustedEndPosition = getAdjustedEndPosition(sourceFile, after, options);
+                    // format as multiline
+                    // 1. insert comma after 'after' node
+                    this.changes.push({
+                        sourceFile,
+                        range: { pos: end, end },
+                        node: createToken(SyntaxKind.CommaToken),
+                        options: {}
+                    });
+                    this.changes.push({
+                        sourceFile,
+                        range: { pos: adjustedEndPosition, end: adjustedEndPosition },
+                        node: newNode,
+                        options: {}
+                    });
+                }
             }
             else if (index !== containingList.length - 1) {
                 // any element except the last one
@@ -335,29 +371,47 @@ namespace ts.textChanges {
                 // - determine if list is a multiline
                 const afterMinusOne = containingList[index - 1];
                 const separatorBefore = <Token<SyntaxKind.CommaToken | SyntaxKind.SemicolonToken>>getSeparator(sourceFile, afterMinusOne);
-                const endPosition = getAdjustedEndPosition(sourceFile, after, options);
-                const range = { pos: endPosition, end: endPosition };
+                const end = after.getEnd();
                 const afterMinusOneStartLinePosition = getLineStartPositionForPosition(afterMinusOne.getStart(sourceFile), sourceFile);
                 const afterStart = after.getStart(sourceFile);
                 const afterStartLinePosition = getLineStartPositionForPosition(afterStart, sourceFile);
-                if (afterMinusOneStartLinePosition !== afterStartLinePosition) {
-                    // multiline list
-                    // use the same indentation as 'after' item
-                    const indentation = formatting.SmartIndenter.findFirstNonWhitespaceColumn(afterStartLinePosition, afterStart, sourceFile, this.rulesProvider.getFormatOptions());
+                let prefix = "";
+                // insert separator following 'after item' if 'after' has some trailing trivia
+                if (hasCommentsBeforeLineBreak(sourceFile.text, after.end)) {
                     this.changes.push({
                         sourceFile,
-                        range,
-                        node: newNode,
-                        options: { prefix: `${getSeparatorCharacter(separatorBefore)}${this.newLineCharacter}`, indentation },
+                        range: { pos: end, end },
+                        node: separatorBefore,
+                        options: {}
                     });
                 }
                 else {
+                    // prepend separtor to prefix
+                    prefix = getSeparatorCharacter(separatorBefore);
+                }
+                if (afterMinusOneStartLinePosition !== afterStartLinePosition) {
+                    // multiline list
+                    // use the same indentation as 'after' item
+                    let p = skipTrivia(sourceFile.text, end, /*stopAfterLineBreak*/ true, /*stopAtComments*/ false);
+                    if (p !== end && isLineBreak(sourceFile.text.charCodeAt(p - 1))) {
+                        p--
+                    }
+                    const indentation = formatting.SmartIndenter.findFirstNonWhitespaceColumn(afterStartLinePosition, afterStart, sourceFile, this.rulesProvider.getFormatOptions());
+                    this.changes.push({
+                        sourceFile,
+                        range: { pos: p, end: p },
+                        node: newNode,
+                        options: { prefix: `${prefix}${this.newLineCharacter}`, indentation },
+                    });
+                }
+                else {
+                    //const adjustedEndPosition = getAdjustedEndPosition(sourceFile, after, options);
                     // single line list
                     this.changes.push({
                         sourceFile,
-                        range,
+                        range: { pos: end, end: end },
                         node: newNode,
-                        options: { prefix: `${getSeparatorCharacter(separatorBefore)} ` }, // ensure that new item is separate from previous item by one whitespace
+                        options: { prefix: `${prefix} ` }, // ensure that new item is separate from previous item by one whitespace
                     })
                 }
             }
