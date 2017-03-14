@@ -313,7 +313,7 @@ namespace ts.textChanges {
                         useIndentationFromFile: true,
                         range: { pos: adjustedEndPosition, end: adjustedEndPosition },
                         node: newNode,
-                        options: {}
+                        options: { suffix: getLineOfLocalPosition(sourceFile, after.end) !== getLineOfLocalPosition(sourceFile, adjustedEndPosition) ? this.newLineCharacter: "" }
                     });
                 }
             }
