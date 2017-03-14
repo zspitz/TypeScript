@@ -131,7 +131,6 @@ namespace ts.codefix {
             // this is a module id -> module import declaration map
             const cachedImportDeclarations: (ImportDeclaration | ImportEqualsDeclaration)[][] = [];
             let lastImportDeclaration: Node;
-            //let cachedNewImportInsertPosition: number;
 
             const currentTokenMeaning = getMeaningFromLocation(token);
             if (context.errorCode === Diagnostics._0_refers_to_a_UMD_global_but_the_current_file_is_a_module_Consider_adding_an_import_instead.code) {
@@ -314,25 +313,8 @@ namespace ts.codefix {
                         if (!importList || importList.elements.length === 0) {
                             const newImportClause = createImportClause(importClause.name, createNamedImports([newImportSpecifier]));
                             return createChangeTracker().replaceNode(sourceFile, importClause, newImportClause).getChanges();
-                            // const start = importClause.name.getEnd();
-                            // return {
-                            //     newText: `, { ${newImportText} }`,
-                            //     span: { start, length: 0 }
-                            // };
                         }
 
-                        // if (importList.elements.length === 0) {
-                        //     const start = importList.getStart();
-                        //     return {
-                        //         newText: `{ ${newImportText} }`,
-                        //         span: { start, length: importList.getEnd() - start }
-                        //     };
-                        // }
-
-                        // case 3:
-                        // original text: import { foo, bar } from "module"
-                        // change to: import { foo, bar, name } from "module"
-                        //const insertPoint = importList.elements[importList.elements.length - 1].getEnd();
                         /**
                          * If the import list has one import per line, preserve that. Otherwise, insert on same line as last element
                          *     import {
@@ -346,10 +328,6 @@ namespace ts.codefix {
                             sourceFile,
                             importList.elements[importList.elements.length - 1],
                             newImportSpecifier).getChanges();
-                        // return {
-                        //     newText: `,${oneImportPerLine ? context.newLineCharacter : " "}${newImportText}`,
-                        //     span: { start: insertPoint, length: 0 }
-                        // };
                     }
 
                     function getCodeActionForNamespaceImport(declaration: ImportDeclaration | ImportEqualsDeclaration): ImportCodeAction {
@@ -408,11 +386,6 @@ namespace ts.codefix {
                     else {
                         changeTracker.insertNodeAfter(sourceFile, lastImportDeclaration, importDecl, { suffix: context.newLineCharacter });
                     }
-                    // const importStatementText = isDefault
-                    //     ? `import ${name} from "${moduleSpecifierWithoutQuotes}"`
-                    //     : isNamespaceImport
-                    //         ? `import * as ${name} from "${moduleSpecifierWithoutQuotes}"`
-                    //         : `import { ${name} } from "${moduleSpecifierWithoutQuotes}"`;
 
                     // if this file doesn't have any import statements, insert an import statement and then insert a new line
                     // between the only import statement and user code. Otherwise just insert the statement because chances
