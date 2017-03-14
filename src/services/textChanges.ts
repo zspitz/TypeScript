@@ -310,6 +310,7 @@ namespace ts.textChanges {
                     });
                     this.changes.push({
                         sourceFile,
+                        useIndentationFromFile: true,
                         range: { pos: adjustedEndPosition, end: adjustedEndPosition },
                         node: newNode,
                         options: {}
