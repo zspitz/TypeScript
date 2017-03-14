@@ -321,9 +321,6 @@ namespace ts.codefix {
                          *         foo
                          *     } from "./module";
                          */
-                        // const startLine = getLineOfLocalPosition(sourceFile, importList.getStart());
-                        // const endLine = getLineOfLocalPosition(sourceFile, importList.getEnd());
-                        // const oneImportPerLine = endLine - startLine > importList.elements.length;
                         return createChangeTracker().insertNodeInListAfter(
                             sourceFile,
                             importList.elements[importList.elements.length - 1],
@@ -390,10 +387,6 @@ namespace ts.codefix {
                     // if this file doesn't have any import statements, insert an import statement and then insert a new line
                     // between the only import statement and user code. Otherwise just insert the statement because chances
                     // are there are already a new line seperating code and import statements.
-                    // const newText = cachedNewImportInsertPosition === sourceFile.getStart()
-                    //     ? `${importStatementText};${context.newLineCharacter}${context.newLineCharacter}`
-                    //     : `${context.newLineCharacter}${importStatementText};`;
-
                     return createCodeAction(
                         Diagnostics.Import_0_from_1,
                         [name, `"${moduleSpecifierWithoutQuotes}"`],
