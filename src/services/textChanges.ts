@@ -277,7 +277,7 @@ namespace ts.textChanges {
                     // create change for adding 'e' after 'a' as
                     // - find start of next element after a (it is b)
                     // - use this start as start and end position in final change
-                    // - build text of change by formatting the text of node + separator + leading trivia of b
+                    // - build text of change by formatting the text of node + separator + whitespace trivia of b
 
                     // in multiline case it will work as
                     //   a,
@@ -288,18 +288,31 @@ namespace ts.textChanges {
                     //***insertedtext<separator>#
                     //###b,
                     //   c,
+                    // find line and character of the next element
                     const lineAndCharOfNextElement = getLineAndCharacterOfPosition(sourceFile, skipWhitespacesAndLineBreaks(sourceFile.text, containingList[index + 1].getFullStart()));
+                    // find line and character of the token that precedes next element (usually it is separator)
                     const lineAndCharOfNextToken = getLineAndCharacterOfPosition(sourceFile, nextToken.end);
                     let prefix: string;
                     let startPos: number;
                     if (lineAndCharOfNextToken.line === lineAndCharOfNextElement.line) {
-                        // same line
-                        // replace all text
+                        // next element is located on the same line with separator: 
+                        // a,$$$$b
+                        //  ^    ^
+                        //  |    |-next element
+                        //  |-separator
+                        // where $$$ is some leading trivia
+                        // for a newly inserted node we'll maintain the same relative position comparing to separator and replace leading trivia with spaces
+                        // a,    x,$$$$b
+                        //  ^    ^     ^
+                        //  |    |     |-next element
+                        //  |    |-new inserted node padded with spaces
+                        //  |-separator
                         startPos = nextToken.end;
                         prefix = spaces(lineAndCharOfNextElement.character - lineAndCharOfNextToken.character);
                     }
                     else {
-                        // different lines
+                        // next element is located on different line that separator
+                        // let insert position be the beginning of the line that contains next element
                         startPos = getStartPositionOfLine(lineAndCharOfNextElement.line, sourceFile);
                     }
 
@@ -310,6 +323,7 @@ namespace ts.textChanges {
                         useIndentationFromFile: true,
                         options: {
                             prefix,
+                            // write separator and leading trivia of the next element as suffix
                             suffix: `${tokenToString(nextToken.kind)}${sourceFile.text.substring(nextToken.end, containingList[index + 1].getStart(sourceFile))}`
                         }
                     });
@@ -318,7 +332,7 @@ namespace ts.textChanges {
             else {
                 const afterStart = after.getStart(sourceFile);
                 const afterStartLinePosition = getLineStartPositionForPosition(afterStart, sourceFile);
-                
+
                 let separator: SyntaxKind.CommaToken | SyntaxKind.SemicolonToken;
                 let multilineList = false;
 
