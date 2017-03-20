@@ -1,4 +1,4 @@
-﻿/// <reference path="moduleNameResolver.ts"/>
+/// <reference path="moduleNameResolver.ts"/>
 /// <reference path="binder.ts"/>
 
 /* @internal */
@@ -3369,16 +3369,6 @@ namespace ts {
             return strictNullChecks && optional ? includeFalsyTypes(type, TypeFlags.Undefined) : type;
         }
 
-        /** remove undefined from the annotated type of a parameter when there is an initializer (that doesn't include undefined) */
-        function removeOptionalityFromAnnotation(annotatedType: Type, declaration: VariableLikeDeclaration): Type {
-            const annotationIncludesUndefined = strictNullChecks &&
-                declaration.kind === SyntaxKind.Parameter &&
-                declaration.initializer &&
-                getFalsyFlags(annotatedType) & TypeFlags.Undefined &&
-                !(getFalsyFlags(checkExpression(declaration.initializer)) & TypeFlags.Undefined);
-            return annotationIncludesUndefined ? getNonNullableType(annotatedType) : annotatedType;
-        }
-
         // Return the inferred type for a variable, parameter, or property declaration
         function getTypeForVariableLikeDeclaration(declaration: VariableLikeDeclaration, includeOptionality: boolean): Type {
             if (declaration.flags & NodeFlags.JavaScriptFile) {
@@ -3413,7 +3403,7 @@ namespace ts {
 
             // Use type from type annotation if one is present
             if (declaration.type) {
-                const declaredType = removeOptionalityFromAnnotation(getTypeFromTypeNode(declaration.type), declaration);
+                const declaredType = getTypeFromTypeNode(declaration.type);
                 return addOptionality(declaredType, /*optional*/ declaration.questionToken && includeOptionality);
             }
 
@@ -3983,7 +3973,7 @@ namespace ts {
                 return true;
             }
             if (type.flags & TypeFlags.TypeVariable) {
-                const constraint = getBaseConstraintOfType(<TypeVariable>type);
+                const constraint = getBaseConstraintOfType(type);
                 return constraint && isValidBaseType(constraint) && isMixinConstructorType(constraint);
             }
             return false;
@@ -4999,16 +4989,32 @@ namespace ts {
         }
 
         function getConstraintOfType(type: TypeVariable | UnionOrIntersectionType): Type {
-            return type.flags & TypeFlags.TypeParameter ? getConstraintOfTypeParameter(<TypeParameter>type) : getBaseConstraintOfType(type);
+            return type.flags & TypeFlags.TypeParameter ? getConstraintOfTypeParameter(<TypeParameter>type) :
+                type.flags & TypeFlags.IndexedAccess ? getConstraintOfIndexedAccess(<IndexedAccessType>type) :
+                getBaseConstraintOfType(type);
         }
 
         function getConstraintOfTypeParameter(typeParameter: TypeParameter): Type {
             return hasNonCircularBaseConstraint(typeParameter) ? getConstraintFromTypeParameter(typeParameter) : undefined;
         }
 
-        function getBaseConstraintOfType(type: TypeVariable | UnionOrIntersectionType): Type {
-            const constraint = getResolvedBaseConstraint(type);
-            return constraint !== noConstraintType && constraint !== circularConstraintType ? constraint : undefined;
+        function getConstraintOfIndexedAccess(type: IndexedAccessType) {
+            const baseObjectType = getBaseConstraintOfType(type.objectType);
+            const baseIndexType = getBaseConstraintOfType(type.indexType);
+            return baseObjectType || baseIndexType ? getIndexedAccessType(baseObjectType || type.objectType, baseIndexType || type.indexType) : undefined;
+        }
+
+        function getBaseConstraintOfType(type: Type): Type {
+            if (type.flags & (TypeFlags.TypeVariable | TypeFlags.UnionOrIntersection)) {
+                const constraint = getResolvedBaseConstraint(<TypeVariable | UnionOrIntersectionType>type);
+                if (constraint !== noConstraintType && constraint !== circularConstraintType) {
+                    return constraint;
+                }
+            }
+            else if (type.flags & TypeFlags.Index) {
+                return stringType;
+            }
+            return undefined;
         }
 
         function hasNonCircularBaseConstraint(type: TypeVariable): boolean {
@@ -5106,7 +5112,7 @@ namespace ts {
          * type itself. Note that the apparent type of a union type is the union type itself.
          */
         function getApparentType(type: Type): Type {
-            const t = type.flags & TypeFlags.TypeVariable ? getBaseConstraintOfType(<TypeVariable>type) || emptyObjectType : type;
+            const t = type.flags & TypeFlags.TypeVariable ? getBaseConstraintOfType(type) || emptyObjectType : type;
             return t.flags & TypeFlags.Intersection ? getApparentTypeOfIntersectionType(<IntersectionType>t) :
                 t.flags & TypeFlags.StringLike ? globalStringType :
                 t.flags & TypeFlags.NumberLike ? globalNumberType :
@@ -7931,7 +7937,7 @@ namespace ts {
                     }
                     // A type S is related to a type T[K] if S is related to A[K], where K is string-like and
                     // A is the apparent type of S.
-                    const constraint = getBaseConstraintOfType(<IndexedAccessType>target);
+                    const constraint = getBaseConstraintOfType(target);
                     if (constraint) {
                         if (result = isRelatedTo(source, constraint, reportErrors)) {
                             errorInfo = saveErrorInfo;
@@ -7971,7 +7977,7 @@ namespace ts {
                 else if (source.flags & TypeFlags.IndexedAccess) {
                     // A type S[K] is related to a type T if A[K] is related to T, where K is string-like and
                     // A is the apparent type of S.
-                    const constraint = getBaseConstraintOfType(<IndexedAccessType>source);
+                    const constraint = getConstraintOfType(<IndexedAccessType>source);
                     if (constraint) {
                         if (result = isRelatedTo(constraint, target, reportErrors)) {
                             errorInfo = saveErrorInfo;
@@ -9194,13 +9200,14 @@ namespace ts {
             }
         }
 
-        function createInferenceContext(signature: Signature, inferUnionTypes: boolean): InferenceContext {
+        function createInferenceContext(signature: Signature, inferUnionTypes: boolean, useAnyForNoInferences: boolean): InferenceContext {
             const inferences = map(signature.typeParameters, createTypeInferencesObject);
             return {
                 signature,
                 inferUnionTypes,
                 inferences,
                 inferredTypes: new Array(signature.typeParameters.length),
+                useAnyForNoInferences
             };
         }
 
@@ -9614,7 +9621,7 @@ namespace ts {
                                 getInferenceMapper(context)));
                     }
                     else {
-                        inferredType = emptyObjectType;
+                        inferredType = context.useAnyForNoInferences ? anyType : emptyObjectType;
                     }
 
                     inferenceSucceeded = true;
@@ -9883,7 +9890,7 @@ namespace ts {
                 return strictNullChecks ? TypeFacts.ObjectStrictFacts : TypeFacts.ObjectFacts;
             }
             if (flags & TypeFlags.TypeVariable) {
-                return getTypeFacts(getBaseConstraintOfType(<TypeVariable>type) || emptyObjectType);
+                return getTypeFacts(getBaseConstraintOfType(type) || emptyObjectType);
             }
             if (flags & TypeFlags.UnionOrIntersection) {
                 return getTypeFactsOfTypes((<UnionOrIntersectionType>type).types);
@@ -10265,14 +10272,11 @@ namespace ts {
             return false;
         }
 
-        function getFlowTypeOfReference(reference: Node, declaredType: Type, assumeInitialized: boolean, flowContainer: Node) {
+        function getFlowTypeOfReference(reference: Node, declaredType: Type, initialType = declaredType, flowContainer?: Node, couldBeUninitialized?: boolean) {
             let key: string;
-            if (!reference.flowNode || assumeInitialized && !(declaredType.flags & TypeFlags.Narrowable)) {
+            if (!reference.flowNode || !couldBeUninitialized && !(declaredType.flags & TypeFlags.Narrowable)) {
                 return declaredType;
             }
-            const initialType = assumeInitialized ? declaredType :
-                declaredType === autoType || declaredType === autoArrayType ? undefinedType :
-                includeFalsyTypes(declaredType, TypeFlags.Undefined);
             const visitedFlowStart = visitedFlowCount;
             const evolvedType = getTypeFromFlowType(getTypeAtFlowNode(reference.flowNode));
             visitedFlowCount = visitedFlowStart;
@@ -10698,7 +10702,7 @@ namespace ts {
                             return targetType;
                         }
                         if (type.flags & TypeFlags.TypeVariable) {
-                            const constraint = getBaseConstraintOfType(<TypeVariable>type) || anyType;
+                            const constraint = getBaseConstraintOfType(type) || anyType;
                             if (isTypeSubtypeOf(targetType, constraint)) {
                                 return getIntersectionType([type, targetType]);
                             }
@@ -10951,6 +10955,16 @@ namespace ts {
             return symbol.flags & SymbolFlags.Variable && (getDeclarationNodeFlagsFromSymbol(symbol) & NodeFlags.Const) !== 0 && getTypeOfSymbol(symbol) !== autoArrayType;
         }
 
+        /** remove undefined from the annotated type of a parameter when there is an initializer (that doesn't include undefined) */
+        function removeOptionalityFromDeclaredType(declaredType: Type, declaration: VariableLikeDeclaration): Type {
+            const annotationIncludesUndefined = strictNullChecks &&
+                declaration.kind === SyntaxKind.Parameter &&
+                declaration.initializer &&
+                getFalsyFlags(declaredType) & TypeFlags.Undefined &&
+                !(getFalsyFlags(checkExpression(declaration.initializer)) & TypeFlags.Undefined);
+            return annotationIncludesUndefined ? getTypeWithFacts(declaredType, TypeFacts.NEUndefined) : declaredType;
+        }
+
         function checkIdentifier(node: Identifier): Type {
             const symbol = getResolvedSymbol(node);
             if (symbol === unknownSymbol) {
@@ -11069,7 +11083,10 @@ namespace ts {
             const assumeInitialized = isParameter || isOuterVariable ||
                 type !== autoType && type !== autoArrayType && (!strictNullChecks || (type.flags & TypeFlags.Any) !== 0 || isInTypeQuery(node)) ||
                 isInAmbientContext(declaration);
-            const flowType = getFlowTypeOfReference(node, type, assumeInitialized, flowContainer);
+            const initialType = assumeInitialized ? (isParameter ? removeOptionalityFromDeclaredType(type, getRootDeclaration(declaration) as VariableLikeDeclaration) : type) :
+                type === autoType || type === autoArrayType ? undefinedType :
+                includeFalsyTypes(type, TypeFlags.Undefined);
+            const flowType = getFlowTypeOfReference(node, type, initialType, flowContainer, !assumeInitialized);
             // A variable is considered uninitialized when it is possible to analyze the entire control flow graph
             // from declaration to use, and when the variable's declared type doesn't include undefined but the
             // control flow based type does include undefined.
@@ -11335,7 +11352,7 @@ namespace ts {
             if (isClassLike(container.parent)) {
                 const symbol = getSymbolOfNode(container.parent);
                 const type = hasModifier(container, ModifierFlags.Static) ? getTypeOfSymbol(symbol) : (<InterfaceType>getDeclaredTypeOfSymbol(symbol)).thisType;
-                return getFlowTypeOfReference(node, type, /*assumeInitialized*/ true, /*flowContainer*/ undefined);
+                return getFlowTypeOfReference(node, type);
             }
 
             if (isInJavaScriptFile(node)) {
@@ -13327,7 +13344,7 @@ namespace ts {
                 !(prop.flags & SymbolFlags.Method && propType.flags & TypeFlags.Union)) {
                 return propType;
             }
-            const flowType = getFlowTypeOfReference(node, propType, /*assumeInitialized*/ true, /*flowContainer*/ undefined);
+            const flowType = getFlowTypeOfReference(node, propType);
             return assignmentKind ? getBaseTypeOfLiteralType(flowType) : flowType;
         }
 
@@ -13652,7 +13669,7 @@ namespace ts {
 
         // Instantiate a generic signature in the context of a non-generic signature (section 3.8.5 in TypeScript spec)
         function instantiateSignatureInContextOf(signature: Signature, contextualSignature: Signature, contextualMapper: TypeMapper): Signature {
-            const context = createInferenceContext(signature, /*inferUnionTypes*/ true);
+            const context = createInferenceContext(signature, /*inferUnionTypes*/ true, /*useAnyForNoInferences*/ false);
             forEachMatchingParameterType(contextualSignature, signature, (source, target) => {
                 // Type parameters from outer context referenced by source type are fixed by instantiation of the source type
                 inferTypesWithContext(context, instantiateType(source, contextualMapper), target);
@@ -14353,7 +14370,7 @@ namespace ts {
                     let candidate: Signature;
                     let typeArgumentsAreValid: boolean;
                     const inferenceContext = originalCandidate.typeParameters
-                        ? createInferenceContext(originalCandidate, /*inferUnionTypes*/ false)
+                        ? createInferenceContext(originalCandidate, /*inferUnionTypes*/ false, /*useAnyForNoInferences*/ isInJavaScriptFile(node))
                         : undefined;
 
                     while (true) {
@@ -16233,7 +16250,7 @@ namespace ts {
         function isLiteralContextualType(contextualType: Type) {
             if (contextualType) {
                 if (contextualType.flags & TypeFlags.TypeVariable) {
-                    const constraint = getBaseConstraintOfType(<TypeVariable>contextualType) || emptyObjectType;
+                    const constraint = getBaseConstraintOfType(contextualType) || emptyObjectType;
                     // If the type parameter is constrained to the base primitive type we're checking for,
                     // consider this a literal context. For example, given a type parameter 'T extends string',
                     // this causes us to infer string literal types for T.
@@ -17123,7 +17140,7 @@ namespace ts {
             // Check if we're indexing with a numeric type and the object type is a generic
             // type with a constraint that has a numeric index signature.
             if (maybeTypeOfKind(objectType, TypeFlags.TypeVariable) && isTypeOfKind(indexType, TypeFlags.NumberLike)) {
-                const constraint = getBaseConstraintOfType(<TypeVariable | UnionOrIntersectionType>objectType);
+                const constraint = getBaseConstraintOfType(objectType);
                 if (constraint && getIndexInfoOfType(constraint, IndexKind.Number)) {
                     return type;
                 }

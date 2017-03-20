@@ -1,4 +1,4 @@
-﻿namespace ts {
+namespace ts {
     /**
      * Type of objects whose values are all of the same type.
      * The `in` and `for-in` operators can *not* be safely used,
@@ -1813,7 +1813,7 @@
         kind: SyntaxKind.ModuleDeclaration;
         parent?: ModuleBody | SourceFile;
         name: ModuleName;
-        body?: ModuleBody | JSDocNamespaceDeclaration | Identifier;
+        body?: ModuleBody | JSDocNamespaceDeclaration;
     }
 
     export type NamespaceBody = ModuleBlock | NamespaceDeclaration;
@@ -1838,6 +1838,11 @@
 
     export type ModuleReference = EntityName | ExternalModuleReference;
 
+    /**
+     * One of:
+     * - import x = require("mod");
+     * - import x = M.x;
+     */
     export interface ImportEqualsDeclaration extends DeclarationStatement {
         kind: SyntaxKind.ImportEqualsDeclaration;
         parent?: SourceFile | ModuleBlock;
@@ -1889,7 +1894,6 @@
     export interface NamespaceExportDeclaration extends DeclarationStatement {
         kind: SyntaxKind.NamespaceExportDeclaration;
         name: Identifier;
-        moduleReference: LiteralLikeNode;
     }
 
     export interface ExportDeclaration extends DeclarationStatement {
@@ -2204,6 +2208,16 @@
         path: string;
         name: string;
     }
+
+    /* @internal */
+    /**
+     * Subset of properties from SourceFile that are used in multiple utility functions
+     */
+    export interface SourceFileLike {
+        readonly text: string;
+        lineMap: number[];
+    }
+
 
     // Source files are declarations when they are external modules.
     export interface SourceFile extends Declaration {
@@ -3235,6 +3249,7 @@
         mapper?: TypeMapper;                // Type mapper for this inference context
         failedTypeParameterIndex?: number;  // Index of type parameter for which inference failed
         // It is optional because in contextual signature instantiation, nothing fails
+        useAnyForNoInferences?: boolean;    // Use any instead of {} for no inferences
     }
 
     /* @internal */
@@ -4131,6 +4146,8 @@
         /*@internal*/ onEmitSourceMapOfPosition?: (pos: number) => void;
         /*@internal*/ onEmitHelpers?: (node: Node, writeLines: (text: string) => void) => void;
         /*@internal*/ onSetSourceFile?: (node: SourceFile) => void;
+        /*@internal*/ onBeforeEmitNodeArray?: (nodes: NodeArray<any>) => void;
+        /*@internal*/ onAfterEmitNodeArray?: (nodes: NodeArray<any>) => void;
     }
 
     export interface PrinterOptions {
