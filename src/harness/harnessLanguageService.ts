@@ -785,6 +785,82 @@ namespace Harness.LanguageService {
                         }),
                         error: undefined
                     };
+                case "mock-vue":
+                    return {
+                        module: () => ({
+                            create(info: ts.server.PluginCreateInfo) {
+                                return info;
+                            },
+                            changeSourceFiles() {
+                                const clssf = ts.createLanguageServiceSourceFile;
+                                const ulssf = ts.updateLanguageServiceSourceFile;
+                                return {
+                                    createLanguageServiceSourceFile(fileName: string, scriptSnapshot: ts.IScriptSnapshot, scriptTarget: ts.ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ts.ScriptKind): ts.SourceFile {
+                                        if (interested(fileName)) {
+                                            const wrapped = scriptSnapshot;
+                                            scriptSnapshot = {
+                                                getChangeRange: old => wrapped.getChangeRange(old),
+                                                getLength: () => wrapped.getLength(),
+                                                getText: (start, end) => parse(fileName, wrapped.getText(0, wrapped.getLength())).slice(start, end),
+                                            };
+                                        }
+                                        var sourceFile = clssf(fileName, scriptSnapshot, scriptTarget, version, setNodeParents, scriptKind);
+                                        if (interested(fileName)) {
+                                            modifyVueSource(sourceFile);
+                                        }
+                                        return sourceFile;
+                                    },
+                                    updateLanguageServiceSourceFile(sourceFile: ts.SourceFile, scriptSnapshot: ts.IScriptSnapshot, version: string, textChangeRange: ts.TextChangeRange, aggressiveChecks?: boolean): ts.SourceFile {
+                                        if (interested(sourceFile.fileName)) {
+                                            const wrapped = scriptSnapshot;
+                                            scriptSnapshot = {
+                                                getChangeRange: old => wrapped.getChangeRange(old),
+                                                getLength: () => wrapped.getLength(),
+                                                getText: (start, end) => parse(sourceFile.fileName, wrapped.getText(0, wrapped.getLength())).slice(start, end),
+                                            };
+                                        }
+                                        var sourceFile = ulssf(sourceFile, scriptSnapshot, version, textChangeRange, aggressiveChecks);
+                                        if (interested(sourceFile.fileName)) {
+                                            modifyVueSource(sourceFile);
+                                        }
+                                        return sourceFile;
+                                    }
+                                }
+
+                                function interested(filename: string) {
+                                    return filename.length;
+                                }
+                                function modifyVueSource(sourcefile: ts.SourceFile) {
+                                    return sourcefile;
+                                }
+                                function parse(filename: string, text: string) {
+                                    return interested(filename) ? text : text;
+                                }
+                            },
+                            resolveModules() {
+                                return (rmn: any) =>
+                                    (moduleName: string, containingFile: string, compilerOptions: ts.CompilerOptions, host: ts.ModuleResolutionHost, cache?: ts.ModuleResolutionCache) => {
+                                        if (importInterested(moduleName)) {
+                                            return {
+                                                resolvedModule: {
+                                                    extension: ts.Extension.Ts,
+                                                    isExternalLibraryImport: true,
+                                                    // TODO: Fake this
+                                                    resolvedFileName: path.join(path.dirname(containingFile), path.basename(moduleName)),
+                                                }
+                                            }
+                                        }
+                                        else {
+                                            return rmn(moduleName, containingFile, compilerOptions, host, cache);
+                                        }
+                                    };
+                                function importInterested(filename: string) {
+                                    return filename.length;
+                                }
+                            }
+                        }),
+                        error: undefined
+                    };
 
                 default:
                     return {
