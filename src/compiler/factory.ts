@@ -185,6 +185,212 @@ namespace ts {
         return <BooleanLiteral>createSynthesizedNode(SyntaxKind.FalseKeyword);
     }
 
+    // Types
+
+    export function createTypePredicateNode(parameterName: Identifier | ThisTypeNode, type: TypeNode): TypePredicateNode {
+        const node = <TypePredicateNode>createSynthesizedNode(SyntaxKind.TypePredicate);
+        node.parameterName = parameterName;
+        node.type = type;
+        return node;
+    }
+
+    export function updateTypePredicate(node: TypePredicateNode, parameterName: Identifier | ThisTypeNode, type: TypeNode): TypePredicateNode {
+        return node.parameterName !== parameterName
+            || node.type !== type
+            ? updateNode(createTypePredicateNode(parameterName, type), node)
+            : node;
+    }
+
+    export function createTypeReferenceNode(typeName: EntityName, typeArguments?: TypeNode[]): TypeReferenceNode {
+        const node = <TypeReferenceNode>createSynthesizedNode(SyntaxKind.TypeReference);
+        node.typeName = typeName;
+        node.typeArguments = asNodeArray(typeArguments);
+        return node;
+    }
+
+    export function updateTypeReferenceNode(node: TypeReferenceNode, typeName: EntityName, typeArguments?: TypeNode[]) {
+        return node.typeName !== typeName
+            || node.typeArguments !== typeArguments
+            ? updateNode(createTypeReferenceNode(typeName, typeArguments), node)
+            : node;
+    }
+
+    export function createFunctionTypeNode(name?: PropertyName, typeParameters?: TypeParameterDeclaration[], parameters?: ParameterDeclaration[], type?: TypeNode) {
+        const node = <FunctionTypeNode>createSynthesizedNode(SyntaxKind.FunctionType);
+        node.name = asName(name);
+        node.typeParameters = asNodeArray(typeParameters);
+        node.parameters = asNodeArray(parameters);
+        node.type = type;
+        return node;
+    }
+
+    export function updateFunctionTypeNode(node: FunctionTypeNode, name?: PropertyName, typeParameters?: TypeParameterDeclaration[], parameters?: ParameterDeclaration[], type?: TypeNode): FunctionTypeNode {
+        return node.name !== name
+            || node.typeParameters !== typeParameters
+            || node.parameters !== parameters
+            || node.type == type
+            ? updateNode(createFunctionTypeNode(name, typeParameters, parameters, type), node)
+            : node;
+    }
+
+    export function createConstructorTypeNode(name?: PropertyName, typeParameters?: TypeParameterDeclaration[], parameters?: ParameterDeclaration[], type?: TypeNode) {
+        const node = <ConstructorTypeNode>createSynthesizedNode(SyntaxKind.ConstructorType);
+        node.name = asName(name);
+        node.typeParameters = asNodeArray(typeParameters);
+        node.parameters = asNodeArray(parameters);
+        node.type = type;
+        return node;
+    }
+
+    export function updateConstructorTypeNode(node: ConstructorTypeNode, name?: PropertyName, typeParameters?: TypeParameterDeclaration[], parameters?: ParameterDeclaration[], type?: TypeNode): ConstructorTypeNode {
+        return node.name !== name
+            || node.typeParameters !== typeParameters
+            || node.parameters !== parameters
+            || node.type == type
+            ? updateNode(createConstructorTypeNode(name, typeParameters, parameters, type), node)
+            : node;
+    }
+
+    export function createTypeQueryNode(exprName: EntityName): TypeQueryNode {
+        const node = <TypeQueryNode>createSynthesizedNode(SyntaxKind.TypeQuery);
+        node.exprName = exprName;
+        return node;
+    }
+
+    export function updateTypeQueryNode(node: TypeQueryNode, exprName: EntityName): TypeQueryNode {
+        return node.exprName !== exprName
+            ? updateNode(createTypeQueryNode(exprName), node)
+            : node;
+    }
+
+    export function createTypeLiteralNode(members: TypeElement[]): TypeLiteralNode {
+        const node = <TypeLiteralNode>createSynthesizedNode(SyntaxKind.TypeLiteral);
+        node.members = asNodeArray(members);
+        return node;
+    }
+
+    export function updateTypeLiteralNode(node: TypeLiteralNode, members: TypeElement[]): TypeLiteralNode {
+        return node.members !== members
+            ? updateNode(createTypeLiteralNode(members), node)
+            : node;
+    }
+
+    export function createArrayTypeNode(elementType: TypeNode): ArrayTypeNode {
+        const node = <ArrayTypeNode>createSynthesizedNode(SyntaxKind.ArrayType);
+        node.elementType = elementType;
+        return node;
+    }
+
+    export function updateArrayTypeNode(node: ArrayTypeNode, elementType: TypeNode): ArrayTypeNode {
+        return node.elementType !== elementType
+            ? updateNode(createArrayTypeNode(elementType), node)
+            : node;
+    }
+
+    export function createTupleTypeNode(elementTypes: TypeNode[]): TupleTypeNode {
+        const node = <TupleTypeNode>createSynthesizedNode(SyntaxKind.TupleType);
+        node.elementTypes = asNodeArray(elementTypes);
+        return node;
+    }
+
+    export function updateTupleTypeNode(node: TupleTypeNode, elementTypes: TypeNode[]): TupleTypeNode {
+        return node.elementTypes !== elementTypes
+            ? updateNode(createTupleTypeNode(elementTypes), node)
+            : node;
+    }
+
+    export function createUnionOrIntersectionTypeNode(kind: UnionOrIntersectionTypeNode["kind"], types: TypeNode[]): UnionOrIntersectionTypeNode {
+        const node = <UnionOrIntersectionTypeNode>createSynthesizedNode(kind);
+        node.types = asNodeArray(types);
+        return node;
+    }
+
+    export function updateUnionOrIntersectionTypeNode(node: UnionOrIntersectionTypeNode, types: TypeNode[]): UnionOrIntersectionTypeNode {
+        return node.types !== types
+            ? updateNode(createUnionOrIntersectionTypeNode(node.kind, types), node)
+            : node;
+    }
+
+    export function createUnionTypeNode(types: TypeNode[]): UnionOrIntersectionTypeNode {
+        return createUnionOrIntersectionTypeNode(SyntaxKind.UnionType, types);
+    }
+
+    export function createIntersectionTypeNode(types: TypeNode[]): UnionOrIntersectionTypeNode {
+        return createUnionOrIntersectionTypeNode(SyntaxKind.IntersectionType, types);
+    }
+
+    export function createParenthesizedTypeNode(type: TypeNode): ParenthesizedTypeNode {
+        const node = <ParenthesizedTypeNode>createSynthesizedNode(SyntaxKind.ParenthesizedType);
+        node.type = type;
+        return node;
+    }
+
+    export function updateParenthesizedTypeNode(node: ParenthesizedTypeNode, type: TypeNode): ParenthesizedTypeNode {
+        return node.type !== type
+            ? updateNode(createParenthesizedTypeNode(type), node)
+            : node;
+    }
+
+    export function createThisTypeNode(): ThisTypeNode {
+        return <ThisTypeNode>createSynthesizedNode(SyntaxKind.ThisType);
+    }
+
+    export function createTypeOperatorNode(type: TypeNode): TypeOperatorNode {
+        const node = <TypeOperatorNode>createSynthesizedNode(SyntaxKind.TypeOperator);
+        node.type = type;
+        return node;
+    }
+
+    export function updateTypeOperatorNode(node: TypeOperatorNode, type: TypeNode): TypeOperatorNode {
+        return node.type !== type
+            ? updateNode(createTypeOperatorNode(type), node)
+            : node;
+    }
+
+    export function createIndexedAccessTypeNode(objectType: TypeNode, indexType: TypeNode): IndexedAccessTypeNode {
+        const node = <IndexedAccessTypeNode>createSynthesizedNode(SyntaxKind.IndexedAccessType);
+        node.objectType = objectType;
+        node.indexType = indexType;
+        return node;
+    }
+
+    export function updateIndexedAccessTypeNode(node: IndexedAccessTypeNode, objectType: TypeNode, indexType: TypeNode): IndexedAccessTypeNode {
+        return node.objectType !== objectType
+            || node.indexType !== indexType
+            ? updateNode(createIndexedAccessTypeNode(objectType, indexType), node)
+            : node;
+    }
+
+    export function createMappedTypeNode(readonlyToken?: ReadonlyToken, typeParameter?: TypeParameterDeclaration, questionToken?: QuestionToken, type?: TypeNode): MappedTypeNode {
+        const node = <MappedTypeNode>createSynthesizedNode(SyntaxKind.MappedType);
+        node.readonlyToken = readonlyToken;
+        node.typeParameter = typeParameter;
+        node.questionToken = questionToken;
+        node.type = type;
+        return node;
+    }
+
+    export function updateMappedTypeNode(node: MappedTypeNode, readonlyToken?: ReadonlyToken, typeParameter?: TypeParameterDeclaration, questionToken?: QuestionToken, type?: TypeNode): MappedTypeNode {
+        return node.readonlyToken !== readonlyToken
+            || node.typeParameter !== typeParameter
+            || node.questionToken !== questionToken
+            || node.type !== type
+            ? updateNode(createMappedTypeNode(readonlyToken, typeParameter, questionToken, type), node)
+            : node;
+    }
+
+    export function createLiteralTypeNode(literal: Expression): LiteralTypeNode {
+        const node = <LiteralTypeNode>createSynthesizedNode(SyntaxKind.LiteralType);
+        node.literal = literal;
+        return node;
+    }
+
+    export function updateLiteralTypeNode(node: LiteralTypeNode, literal: Expression): LiteralTypeNode {
+        return node.literal !== literal
+            ? updateNode(createLiteralTypeNode(literal), node)
+            : node;
+    }
+
     // Names
 
     export function createQualifiedName(left: EntityName, right: string | Identifier) {

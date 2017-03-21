@@ -84,7 +84,7 @@ namespace ts.textChanges {
     }
 
     export interface ChangeNodesOptions {
-        nodesSeparator?: string
+        nodesSeparator?: string;
     }
 
     export type ChangeNodeOptions = ConfigurableStartEnd & InsertNodeOptions;

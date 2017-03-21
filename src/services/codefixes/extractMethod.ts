@@ -4,7 +4,7 @@ namespace ts.codefix.extractMethod {
     // TODO: put into diagnostic messages
     namespace Messages {
         function m(message: string): DiagnosticMessage {
-            return { message, code: 0, category: DiagnosticCategory.Message, key: message }
+            return { message, code: 0, category: DiagnosticCategory.Message, key: message };
         }
 
         // TODO provide more information in errors
@@ -159,7 +159,7 @@ namespace ts.codefix.extractMethod {
                     switch (n.parent.kind) {
                         case SyntaxKind.IfStatement:
                             if ((<IfStatement>n.parent).thenStatement === n || (<IfStatement>n.parent).elseStatement === n) {
-                                // forbid all jumps inside thenStatement or elseStatement 
+                                // forbid all jumps inside thenStatement or elseStatement
                                 permittedJumps = PermittedJumps.None;
                             }
                             break;
@@ -291,7 +291,7 @@ namespace ts.codefix.extractMethod {
                     scope,
                     scopeDescription: getDescriptionForScope(scope),
                     errors
-                }
+                };
             }
             return extractFunctionInScope(target, scope, usagesPerScope[i], targetRange, context);
         });
@@ -377,7 +377,7 @@ namespace ts.codefix.extractMethod {
             // always create private method
             const modifiers: Modifier[] = [createToken(SyntaxKind.PrivateKeyword)];
             if (range.facts & RangeFacts.IsAsyncFunction) {
-                modifiers.push(createToken(SyntaxKind.AsyncKeyword))
+                modifiers.push(createToken(SyntaxKind.AsyncKeyword));
             }
             newFunction = createMethod(
                 /*decorators*/ undefined,
@@ -454,7 +454,7 @@ namespace ts.codefix.extractMethod {
             newNodes,
             {
                 nodesSeparator: context.newLineCharacter,
-                suffix: isArray(range.range) ? context.newLineCharacter : undefined // insert newline only when replacing statements 
+                suffix: isArray(range.range) ? context.newLineCharacter : undefined // insert newline only when replacing statements
             });
 
         return {
@@ -464,7 +464,7 @@ namespace ts.codefix.extractMethod {
         };
 
         function getPropertyAssignmentsForWrites(writes: UsageEntry[]) {
-            return writes.map(w => createShorthandPropertyAssignment(w.symbol.name))
+            return writes.map(w => createShorthandPropertyAssignment(w.symbol.name));
         }
 
         function generateReturnValueProperty() {
@@ -481,16 +481,16 @@ namespace ts.codefix.extractMethod {
             const statements = createNodeArray(isBlock(n) ? n.statements.slice(0) : [isStatement(n) ? n : createStatement(<Expression>n)]);
             // rewrite body if either there are writes that should be propagated back via return statements or there are substitutions
             if (writes || substitutions.size) {
-                let rewrittenStatements = visitNodes(statements, visitor);
+                const rewrittenStatements = visitNodes(statements, visitor);
                 if (writes && !(range.facts & RangeFacts.HasReturn)) {
                     // add return at the end to propagate writes back in case if control flow falls out of the function body
                     // it is ok to know that range has at least one return since it we only allow unconditional returns
-                    rewrittenStatements.push(createReturn(createObjectLiteral(getPropertyAssignmentsForWrites(writes))))
+                    rewrittenStatements.push(createReturn(createObjectLiteral(getPropertyAssignmentsForWrites(writes))));
                 }
-                return { body: createBlock(rewrittenStatements), returnValueProperty: returnValueProperty }
+                return { body: createBlock(rewrittenStatements), returnValueProperty: returnValueProperty };
             }
             else {
-                return { body: createBlock(statements), returnValueProperty: undefined }
+                return { body: createBlock(statements), returnValueProperty: undefined };
             }
 
             function visitor(node: Node): VisitResult<Node> {
@@ -573,10 +573,10 @@ namespace ts.codefix.extractMethod {
 
         const usagesPerScope: ScopeUsages[] = [];
         const substitutionsPerScope: Map<Node>[] = [];
-        let errorsPerScope: Diagnostic[][] = [];
+        const errorsPerScope: Diagnostic[][] = [];
 
         // initialize results
-        for (let _ of scopes) {
+        for (const _ of scopes) {
             usagesPerScope.push({ usages: createMap<UsageEntry>(), substitutions: createMap<Expression>() });
             substitutionsPerScope.push(createMap<Expression>());
             errorsPerScope.push([]);
@@ -589,7 +589,7 @@ namespace ts.codefix.extractMethod {
 
         forEachChild(target, collectUsages);
 
-        return { target, usagesPerScope, errorsPerScope }
+        return { target, usagesPerScope, errorsPerScope };
 
         function collectUsages(n: Node) {
             if (isAssignmentExpression(n)) {
@@ -631,14 +631,14 @@ namespace ts.codefix.extractMethod {
                     // push substitution from map<symbolId, subst> to map<nodeId, subst> to simplify rewriting
                     const substitition = substitutionsPerScope[i].get(symbolId);
                     if (substitition) {
-                        usagesPerScope[i].substitutions.set(getNodeId(n).toString(), substitition)
+                        usagesPerScope[i].substitutions.set(getNodeId(n).toString(), substitition);
                     }
                 }
             }
         }
 
         function recordUsagebySymbol(n: Identifier, usage: Usage, isTypeName: boolean) {
-            var symbol = checker.getSymbolAtLocation(n);
+            const symbol = checker.getSymbolAtLocation(n);
             if (!symbol) {
                 // cannot find symbol - do nothing
                 return undefined;
@@ -647,10 +647,10 @@ namespace ts.codefix.extractMethod {
             const lastUsage = seenUsages.get(symbolId);
             // there are two kinds of value usages
             // - reads - if range contains a read from the value located outside of the range then value should be passed as a parameter
-            // - writes - if range contains a write to a value located outside the range the value should be passed as a parameter and 
+            // - writes - if range contains a write to a value located outside the range the value should be passed as a parameter and
             //   returned as a return value
             // 'write' case is a superset of 'read' so if we already have processed 'write' of some symbol there is not need to handle 'read'
-            // since all information is already recorded 
+            // since all information is already recorded
             if (lastUsage && lastUsage >= usage) {
                 return symbolId;
             }

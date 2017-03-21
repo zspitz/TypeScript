@@ -210,20 +210,87 @@ namespace ts {
         if (node === undefined) {
             return undefined;
         }
-        noop
-
         const kind = node.kind;
         // No need to visit nodes with no children.
         if ((kind > SyntaxKind.FirstToken && kind <= SyntaxKind.LastToken)) {
             return node;
         }
 
-        // We do not yet support types.
-        if ((kind >= SyntaxKind.TypePredicate && kind <= SyntaxKind.LiteralType)) {
-            return node;
-        }
-
         switch (node.kind) {
+            // TODO: add tests for visit* operations for type nodes
+            case SyntaxKind.TypePredicate:
+                return updateTypePredicate(<TypePredicateNode>node,
+                    visitNode((<TypePredicateNode>node).parameterName, visitor),
+                    visitNode((<TypePredicateNode>node).type, visitor));
+
+            case SyntaxKind.TypeReference:
+                return updateTypeReferenceNode(<TypeReferenceNode>node,
+                    visitNode((<TypeReferenceNode>node).typeName, visitor),
+                    nodesVisitor((<TypeReferenceNode>node).typeArguments, visitor));
+
+            case SyntaxKind.FunctionType:
+                return updateFunctionTypeNode(<FunctionTypeNode>node,
+                    visitNode((<FunctionTypeNode>node).name, visitor),
+                    nodesVisitor((<FunctionTypeNode>node).typeParameters, visitor),
+                    nodesVisitor((<FunctionTypeNode>node).parameters, visitor),
+                    visitNode((<FunctionTypeNode>node).type, visitor));
+
+            case SyntaxKind.ConstructorType:
+                return updateConstructorTypeNode(<ConstructorTypeNode>node,
+                    visitNode((<ConstructorTypeNode>node).name, visitor),
+                    nodesVisitor((<ConstructorTypeNode>node).typeParameters, visitor),
+                    nodesVisitor((<ConstructorTypeNode>node).parameters, visitor),
+                    visitNode((<ConstructorTypeNode>node).type, visitor));
+
+            case SyntaxKind.TypeQuery:
+                return updateTypeQueryNode(<TypeQueryNode>node,
+                    visitNode((<TypeQueryNode>node).exprName, visitor));
+
+            case SyntaxKind.TypeLiteral:
+                return updateTypeLiteralNode(<TypeLiteralNode>node,
+                    nodesVisitor((<TypeLiteralNode>node).members, visitor));
+
+            case SyntaxKind.ArrayType:
+                return updateArrayTypeNode(<ArrayTypeNode>node,
+                    visitNode((<ArrayTypeNode>node).elementType, visitor));
+
+            case SyntaxKind.TupleType:
+                return updateTupleTypeNode(<TupleTypeNode>node,
+                    nodesVisitor((<TupleTypeNode>node).elementTypes, visitor));
+
+            case SyntaxKind.UnionType:
+            case SyntaxKind.IntersectionType:
+                return updateUnionOrIntersectionTypeNode(<UnionOrIntersectionTypeNode>node,
+                    nodesVisitor((<UnionOrIntersectionTypeNode>node).types, visitor));
+
+            case SyntaxKind.ParenthesizedType:
+                return updateParenthesizedTypeNode(<ParenthesizedTypeNode>node,
+                    visitNode((<ParenthesizedTypeNode>node).type, visitor));
+
+            case SyntaxKind.ThisType:
+                // ThisType does not have child nodes
+                return node;
+
+            case SyntaxKind.TypeOperator:
+                return updateTypeOperatorNode(<TypeOperatorNode>node,
+                    visitNode((<TypeOperatorNode>node).type, visitor));
+
+            case SyntaxKind.IndexedAccessType:
+                return updateIndexedAccessTypeNode(<IndexedAccessTypeNode>node,
+                    visitNode((<IndexedAccessTypeNode>node).objectType, visitor),
+                    visitNode((<IndexedAccessTypeNode>node).indexType, visitor));
+
+            case SyntaxKind.MappedType:
+                return updateMappedTypeNode(<MappedTypeNode>node,
+                    visitNode((<MappedTypeNode>node).readonlyToken, visitor), // TODO: use tokenVisitor
+                    visitNode((<MappedTypeNode>node).typeParameter, visitor),
+                    visitNode((<MappedTypeNode>node).questionToken, visitor), // TODO: use tokenVisitor
+                    visitNode((<MappedTypeNode>node).type, visitor));
+
+            case SyntaxKind.LiteralType:
+                return updateLiteralTypeNode(<LiteralTypeNode>node,
+                    visitNode((<LiteralTypeNode>node).literal, visitor));
+
             case SyntaxKind.SemicolonClassElement:
             case SyntaxKind.EmptyStatement:
             case SyntaxKind.OmittedExpression:

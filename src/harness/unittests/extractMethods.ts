@@ -561,7 +561,7 @@ namespace A {
                     content: t.source
                 };
                 const host = projectSystem.createServerHost([f]);
-                const projectService = projectSystem.createProjectService(host)
+                const projectService = projectSystem.createProjectService(host);
                 projectService.openClientFile(f.path);
                 const program = projectService.inferredProjects[0].getLanguageService().getProgram();
                 const sourceFile = program.getSourceFile(f.path);
@@ -574,13 +574,13 @@ namespace A {
                     sourceFile,
                     span: undefined,
                     rulesProvider: getRuleProvider()
-                }
+                };
                 const result = codefix.extractMethod.getRangeToExtract(sourceFile, createTextSpanFromBounds(selectionRange.start, selectionRange.end));
                 assert.equal(result.errors, undefined, "expect no errors");
                 const results = codefix.extractMethod.extractRange(result.targetRange, sourceFile, context);
                 const data: string[] = [];
                 data.push(`==ORIGINAL==`);
-                data.push(sourceFile.text)
+                data.push(sourceFile.text);
                 for (const r of results) {
                     data.push(`==SCOPE::${r.scopeDescription}==`);
                     data.push(textChanges.applyChanges(sourceFile.text, r.changes[0].textChanges));
