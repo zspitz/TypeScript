@@ -1,3 +1,4 @@
+///<reference path='extractMethod.ts' />
 /// <reference path="fixClassIncorrectlyImplementsInterface.ts" />
 /// <reference path="fixAddMissingMember.ts" />
 /// <reference path="fixClassDoesntImplementInheritedAbstractMember.ts" />
