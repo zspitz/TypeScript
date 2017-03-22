@@ -5601,6 +5601,37 @@ namespace ts {
             }
         }
 
+        function containsArgumentsReference(declaration: FunctionLikeDeclaration): boolean {
+            const links = getNodeLinks(declaration);
+            if (links.containsArgumentsReference === undefined) {
+                if (links.flags & NodeCheckFlags.CaptureArguments) {
+                    links.containsArgumentsReference = true;
+                }
+                else {
+                    links.containsArgumentsReference = traverse(declaration.body);
+                }
+            }
+            return links.containsArgumentsReference;
+
+            function traverse(node: Node): boolean {
+                if (!node) return false;
+                switch (node.kind) {
+                    case SyntaxKind.Identifier:
+                        return (<Identifier>node).text === "arguments" && isPartOfExpression(node);
+
+                    case SyntaxKind.PropertyDeclaration:
+                    case SyntaxKind.MethodDeclaration:
+                    case SyntaxKind.GetAccessor:
+                    case SyntaxKind.SetAccessor:
+                        return (<Declaration>node).name.kind === SyntaxKind.ComputedPropertyName
+                            && traverse((<Declaration>node).name);
+
+                    default:
+                        return !nodeStartsNewLexicalEnvironment(node) && !isPartOfTypeNode(node) && forEachChild(node, traverse);
+                }
+            }
+        }
+
         function getSignaturesOfSymbol(symbol: Symbol): Signature[] {
             if (!symbol) return emptyArray;
             const result: Signature[] = [];
@@ -11034,9 +11065,7 @@ namespace ts {
                     }
                 }
 
-                if (node.flags & NodeFlags.AwaitContext) {
-                    getNodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
-                }
+                getNodeLinks(container).flags |= NodeCheckFlags.CaptureArguments;
                 return getTypeOfSymbol(symbol);
             }
 
@@ -14272,6 +14301,20 @@ namespace ts {
                 // We already perform checking on the type arguments on the class declaration itself.
                 if ((<CallExpression>node).expression.kind !== SyntaxKind.SuperKeyword) {
                     forEach(typeArguments, checkSourceElement);
+                }
+            }
+
+            if (isInJavaScriptFile(node) && signatures.length === 1) {
+                const declaration = signatures[0].declaration;
+                if (declaration && isInJavaScriptFile(declaration) && !hasJSDocParameterTags(declaration)) {
+                    if (containsArgumentsReference(<FunctionLikeDeclaration>declaration)) {
+                        const signatureWithRest = cloneSignature(signatures[0]);
+                        const syntheticArgsSymbol = createSymbol(SymbolFlags.Variable, "args");
+                        syntheticArgsSymbol.type = anyArrayType;
+                        signatureWithRest.parameters = concatenate(signatureWithRest.parameters, [syntheticArgsSymbol]);
+                        signatureWithRest.hasRestParameter = true;
+                        signatures = [signatureWithRest];
+                    }
                 }
             }
 
