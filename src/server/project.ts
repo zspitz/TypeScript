@@ -103,13 +103,7 @@ namespace ts.server {
         create(createInfo: PluginCreateInfo): LanguageService;
         getExternalFiles?(proj: Project): string[];
         resolveModules?(createInfo: PluginCreateInfo): PluginResolveModules;
-        changeSourceFiles?(createInfo: PluginCreateInfo): PluginSourceFileChange;
     }
-
-    export type PluginSourceFileChange = {
-        createLanguageServiceSourceFile(fileName: string, scriptSnapshot: IScriptSnapshot, scriptTarget: ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ScriptKind, cheat?: string): SourceFile,
-        updateLanguageServiceSourceFile(sourceFile: SourceFile, scriptSnapshot: IScriptSnapshot, version: string, textChangeRange: TextChangeRange, aggressiveChecks?: boolean, cheat?: string): SourceFile,
-    };
 
     export type ModuleResolver = (moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache) => ResolvedModuleWithFailedLookupLocations;
 
@@ -917,11 +911,6 @@ namespace ts.server {
 
                 const pluginModule = pluginModuleFactory({ typescript: ts });
                 this.languageService = pluginModule.create(info);
-                if (pluginModule.changeSourceFiles) {
-                    const chg = pluginModule.changeSourceFiles(info);
-                    ts.createLanguageServiceSourceFile = chg.createLanguageServiceSourceFile;
-                    ts.updateLanguageServiceSourceFile = chg.updateLanguageServiceSourceFile;
-                }
                 if (pluginModule.resolveModules) {
                     this.lsHost.overrideResolveModuleName(pluginModule.resolveModules(info));
                 }
