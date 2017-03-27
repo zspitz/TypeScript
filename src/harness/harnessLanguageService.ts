@@ -792,8 +792,7 @@ namespace Harness.LanguageService {
                                 const clssf = ts.createLanguageServiceSourceFile;
                                 const ulssf = ts.updateLanguageServiceSourceFile;
                                 ts.overrideCreateupdateLanguageServiceSourceFile(
-                                    
-                                    (fileName: string, scriptSnapshot: ts.IScriptSnapshot, scriptTarget: ts.ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ts.ScriptKind): ts.SourceFile => {
+                                    (fileName, scriptSnapshot, scriptTarget, version, setNodeParents, scriptKind?) => {
                                         if (interested(fileName)) {
                                             const wrapped = scriptSnapshot;
                                             scriptSnapshot = {
@@ -805,7 +804,7 @@ namespace Harness.LanguageService {
                                         var sourceFile = clssf(fileName, scriptSnapshot, scriptTarget, version, setNodeParents, scriptKind);
                                         return sourceFile;
                                     },
-                                    (sourceFile: ts.SourceFile, scriptSnapshot: ts.IScriptSnapshot, version: string, textChangeRange: ts.TextChangeRange, aggressiveChecks?: boolean): ts.SourceFile => {
+                                    (sourceFile, scriptSnapshot, version, textChangeRange, aggressiveChecks?) => {
                                         if (interested(sourceFile.fileName)) {
                                             const wrapped = scriptSnapshot;
                                             scriptSnapshot = {
@@ -836,7 +835,6 @@ namespace Harness.LanguageService {
                                                 resolvedModule: {
                                                     extension: ts.Extension.Ts,
                                                     isExternalLibraryImport: true,
-                                                    // TODO: Fake this
                                                     resolvedFileName: containingFile.slice(0, containingFile.lastIndexOf("/")) + "/" + moduleName,
                                                 }
                                             }
