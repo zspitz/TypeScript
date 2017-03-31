@@ -17,6 +17,7 @@ namespace ts {
         newLine: string;
         useCaseSensitiveFileNames: boolean;
         write(s: string): void;
+        trace?(s: string): void;
         readFile(path: string, encoding?: string): string;
         getFileSize?(path: string): number;
         writeFile(path: string, data: string, writeByteOrderMark?: boolean): void;
@@ -129,6 +130,7 @@ namespace ts {
                         watcher.referenceCount += 1;
                         return;
                     }
+                    ts.ops.watchDir++;
                     watcher = _fs.watch(
                         dirPath,
                         { persistent: true },
@@ -194,6 +196,7 @@ namespace ts {
             const useCaseSensitiveFileNames = isFileSystemCaseSensitive();
 
             function readFile(fileName: string, _encoding?: string): string {
+                ts.ops.readFile++;
                 if (!fileExists(fileName)) {
                     return undefined;
                 }
@@ -243,6 +246,7 @@ namespace ts {
 
             function getAccessibleFileSystemEntries(path: string): FileSystemEntries {
                 try {
+                    ts.ops.readDir++;
                     const entries = _fs.readdirSync(path || ".").sort();
                     const files: string[] = [];
                     const directories: string[] = [];
@@ -286,6 +290,7 @@ namespace ts {
             }
 
             function fileSystemEntryExists(path: string, entryKind: FileSystemEntryKind): boolean {
+                ts.ops.entryExists++;
                 try {
                     const stat = _fs.statSync(path);
                     switch (entryKind) {
@@ -328,6 +333,7 @@ namespace ts {
                         };
                     }
                     else {
+                        ts.ops.watchFile++;
                         _fs.watchFile(fileName, { persistent: true, interval: pollingInterval || 250 }, fileChanged);
                         return {
                             close: () => _fs.unwatchFile(fileName, fileChanged)
@@ -358,6 +364,7 @@ namespace ts {
                         options = { persistent: true };
                     }
 
+                    ts.ops.watchDir++;
                     return _fs.watch(
                         directoryName,
                         options,

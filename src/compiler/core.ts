@@ -23,6 +23,16 @@ namespace ts {
         True = -1
     }
 
+    export namespace ops {
+        declare var require: any;
+        export const fs = require("fs");
+        export let watchDir = 0;
+        export let watchFile = 0;
+        export let readFile = 0;
+        export let readDir = 0;
+        export let entryExists = 0;
+    }
+
     // More efficient to create a collator once and use its `compare` than to call `a.localeCompare(b)` many times.
     export const collator: { compare(a: string, b: string): number } = typeof Intl === "object" && typeof Intl.Collator === "function" ? new Intl.Collator(/*locales*/ undefined, { usage: "sort", sensitivity: "accent" }) : undefined;
     // Intl is missing in Safari, and node 0.10 treats "a" as greater than "B".

@@ -26,7 +26,7 @@
 
 // In the imperative section, you can write any valid TypeScript code.
 
-//---------------------------------------
+// ---------------------------------------
 // For API editors:
 // When editting this file, and only while editing this file, enable the reference comments
 // and comment out the declarations in this section to get proper type information.
@@ -42,7 +42,7 @@
 //
 // TODO: figure out a better solution to the API exposure problem.
 
-declare module ts {
+declare namespace ts {
     export type MapKey = string | number;
     export interface Map<T> {
         forEach(action: (value: T, key: string) => void): void;
@@ -78,7 +78,7 @@ declare namespace FourSlashInterface {
         data?: any;
     }
     interface EditorOptions {
-        BaseIndentSize?: number,
+        BaseIndentSize?: number;
         IndentSize: number;
         TabSize: number;
         NewLineCharacter: string;
@@ -274,6 +274,7 @@ declare namespace FourSlashInterface {
         getSyntacticDiagnostics(expected: string): void;
         getSemanticDiagnostics(expected: string): void;
         ProjectInfo(expected: string[]): void;
+        synchronizeHostData(_maximumIOOperations: number): void;
         allRangesAppearInImplementationList(markerName: string): void;
     }
     class edit {
@@ -320,7 +321,7 @@ declare namespace FourSlashInterface {
         resetCancelled(): void;
         setCancelled(numberOfCalls?: number): void;
     }
-    module classification {
+    namespace classification {
         function comment(text: string, position?: number): {
             classificationType: string;
             text: string;

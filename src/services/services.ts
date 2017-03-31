@@ -1081,7 +1081,11 @@ namespace ts {
             return ruleProvider;
         }
 
+        let iOOperations = 0;
+
         function synchronizeHostData(): void {
+            host.trace && host.trace("===========BEGIN SYNC===========");
+            const startTime = Date.now();
             // perform fast check if host supports it
             if (host.getProjectVersion) {
                 const hostProjectVersion = host.getProjectVersion();
@@ -1141,17 +1145,21 @@ namespace ts {
                 getCurrentDirectory: () => currentDirectory,
                 fileExists: (fileName): boolean => {
                     // stub missing host functionality
+                    iOOperations++;
                     return hostCache.getOrCreateEntry(fileName) !== undefined;
                 },
                 readFile: (fileName): string => {
                     // stub missing host functionality
+                    iOOperations++;
                     const entry = hostCache.getOrCreateEntry(fileName);
                     return entry && entry.scriptSnapshot.getText(0, entry.scriptSnapshot.getLength());
                 },
                 directoryExists: directoryName => {
+                    iOOperations++;
                     return directoryProbablyExists(directoryName, host);
                 },
                 getDirectories: path => {
+                    iOOperations++;
                     return host.getDirectories ? host.getDirectories(path) : [];
                 }
             };
@@ -1192,6 +1200,26 @@ namespace ts {
             // Make sure all the nodes in the program are both bound, and have their parent
             // pointers set property.
             program.getTypeChecker();
+
+            const endTime = Date.now();
+            ts.ops.fs.appendFileSync("C:\\test\\synchronizePerfOutput.txt",
+            `---------------------\r
+            Start:        ${new Date(startTime)}\r
+            End:          ${new Date(endTime)}\r
+            Elapsed (ms): ${endTime - startTime}\r
+            ioOperations: ${iOOperations}\r\n\r
+            watchDir:     ${ts.ops.watchDir}\r
+            watchFile:    ${ts.ops.watchFile}\r
+            readFile:     ${ts.ops.readFile}\r
+            readDir:      ${ts.ops.readDir}\r
+            entryExists:  ${ts.ops.entryExists}\r\n`);
+            host.trace && host.trace("===========END SYNC===========");
+            iOOperations = 0;
+            ts.ops.watchDir    = 0;
+            ts.ops.watchFile   = 0;
+            ts.ops.readFile    = 0;
+            ts.ops.readDir     = 0;
+            ts.ops.entryExists = 0;
             return;
 
             function getOrCreateSourceFile(fileName: string): SourceFile {
@@ -1968,6 +1996,7 @@ namespace ts {
 
         return {
             dispose,
+            synchronizeHostData,
             cleanupSemanticCache,
             getSyntacticDiagnostics,
             getSemanticDiagnostics,

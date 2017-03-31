@@ -2128,6 +2128,10 @@ namespace FourSlash {
             }
         }
 
+        public verifySynchronizeHostData() {
+            this.languageService.synchronizeHostData();
+        }
+
         public verifySemanticClassifications(expected: { classificationType: string; text: string }[]) {
             const actual = this.languageService.getSemanticClassifications(this.activeFile.fileName,
                 ts.createTextSpan(0, this.activeFile.content.length));
@@ -3716,6 +3720,10 @@ namespace FourSlashInterface {
 
         public ProjectInfo(expected: string[]) {
             this.state.verifyProjectInfo(expected);
+        }
+
+        public synchronizeHostData(_maximumIOOperations: number) {
+            this.state.verifySynchronizeHostData();
         }
 
         public allRangesAppearInImplementationList(markerName: string) {

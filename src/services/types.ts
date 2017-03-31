@@ -275,6 +275,9 @@ namespace ts {
         getSourceFile(fileName: string): SourceFile;
 
         dispose(): void;
+
+        /* @internal */
+        synchronizeHostData(): void;
     }
 
     export interface Classifications {

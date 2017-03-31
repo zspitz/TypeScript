@@ -198,6 +198,10 @@ namespace ts.server {
             };
         }
 
+        synchronizeHostData(): void {
+            throw new Error("Method not implemented.");
+        }
+
         getCompletionsAtPosition(fileName: string, position: number): CompletionInfo {
             const lineOffset = this.positionToOneBasedLineOffset(fileName, position);
             const args: protocol.CompletionsRequestArgs = {

@@ -317,7 +317,10 @@ namespace Harness.LanguageService {
         }
         readDirectoryNames = ts.notImplemented;
         readFileNames = ts.notImplemented;
-        fileExists(fileName: string) { return this.getScriptInfo(fileName) !== undefined; }
+        fileExists(fileName: string) {
+            this.log(`ShimLanguageServiceHost.fileExists: ${fileName}`);
+            return this.getScriptInfo(fileName) !== undefined;
+        }
         readFile(fileName: string) {
             const snapshot = this.nativeHost.getScriptSnapshot(fileName);
             return snapshot && snapshot.getText(0, snapshot.getLength());
@@ -325,7 +328,8 @@ namespace Harness.LanguageService {
         log(s: string): void { this.nativeHost.log(s); }
         trace(s: string): void { this.nativeHost.trace(s); }
         error(s: string): void { this.nativeHost.error(s); }
-        directoryExists(): boolean {
+        directoryExists(directoryName: string): boolean {
+            this.log(`ShimLanguageServiceHost.directoryExists: ${directoryName}`);
             // for tests pessimistically assume that directory always exists
             return true;
         }
@@ -379,6 +383,9 @@ namespace Harness.LanguageService {
         }
         cleanupSemanticCache(): void {
             this.shim.cleanupSemanticCache();
+        }
+        synchronizeHostData(): void {
+            throw new Error("Method not implemented.");
         }
         getSyntacticDiagnostics(fileName: string): ts.Diagnostic[] {
             return unwrapJSONCallResult(this.shim.getSyntacticDiagnostics(fileName));
