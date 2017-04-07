@@ -286,12 +286,56 @@ namespace ts {
         return result;
     }
 
+
+    // // /**
+    // //  * LSHost is going to know:
+    // //  * * base of path? at least the filename, maybe basepaths value.
+    // //  * * module name as string.
+    // //  * the module resolver should be the one to invoke the cache, so moduel resolver is responsible for
+    // //  * marshalling those values into something the cache can consume.
+    // //  * So any use of the cache is local. The caller has a reference to the cache but can't use it themselves.
+    // //  * * TODO(aozgaa): (later) failedlookuplocations should only be obtainable via a flag.
+    // //  */
+
+    // export const enum NonRelativeCacheKind2 {
+    //     NonBaseUrl = 0,
+    //     BaseUrl = 1
+    // }
+
+    // export interface BaseUrlModuleResolutionCache2 {
+    //     kind: NonRelativeCacheKind2.BaseUrl;
+    //     /** Maps module names to the module resolution result
+    //      */
+    //     cache: Map<ResolvedModuleWithFailedLookupLocations>;
+    // }
+
+    // export interface NonRelativeModuleNameResolutionCache2 {
+    //     kind: NonRelativeCacheKind2.NonBaseUrl;
+    //     /** Maps module names to an object that maps directories to the
+    //      * resolved module found by starting a query in that directory.
+    //      */
+    //     cache: Map<PerModuleNameCache>;
+    // }
+
+    // export interface RelativeModuleNameResolutionCache2 {
+    //     /** Maps module names to an object that maps directories to the
+    //      * resolved module located at that directory.
+    //      */
+    //     cache: Map<PerModuleNameCache>;
+    // }
+
+    // export interface ModuleNameResolutionCache2 {
+    //     relativeCache: RelativeModuleNameResolutionCache2;
+    //     nonRelativeCache: NonRelativeModuleNameResolutionCache2 | BaseUrlModuleResolutionCache2;
+    // }
+
     /**
      * Cached module resolutions per containing directory.
      * This assumes that any module id will have the same resolution for sibling files located in the same folder.
      */
     export interface ModuleResolutionCache extends NonRelativeModuleNameResolutionCache {
-        getOrCreateCacheForDirectory(directoryName: string): Map<ResolvedModuleWithFailedLookupLocations>;
+        getOrCreateCacheForDirectory(directoryName: string): PerModuleNameCache;
+        removeFile(path: Path): void;
     }
 
     /**
@@ -300,6 +344,7 @@ namespace ts {
      */
     export interface NonRelativeModuleNameResolutionCache {
         getOrCreateCacheForModuleName(nonRelativeModuleName: string): PerModuleNameCache;
+        usedSuccessfully: boolean;
     }
 
     export interface PerModuleNameCache {
@@ -311,7 +356,7 @@ namespace ts {
         const directoryToModuleNameMap = createFileMap<Map<ResolvedModuleWithFailedLookupLocations>>();
         const moduleNameToDirectoryMap = createMap<PerModuleNameCache>();
 
-        return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName };
+        return { getOrCreateCacheForDirectory, getOrCreateCacheForModuleName, usedSuccessfully: false, removeFile };
 
         function getOrCreateCacheForDirectory(directoryName: string) {
             const path = toPath(directoryName, currentDirectory, getCanonicalFileName);
@@ -336,6 +381,10 @@ namespace ts {
         }
 
         function createPerModuleNameCache(): PerModuleNameCache {
+
+            /** Adds a level of indirection in directoryPathMap for removing files */
+            // type Ref<T> = { ref: T | undefined };
+
             const directoryPathMap = createFileMap<ResolvedModuleWithFailedLookupLocations>();
 
             return { get, set };
@@ -405,9 +454,18 @@ namespace ts {
                 return directory.substr(0, sep);
             }
         }
+
+        function removeFile(_path: Path): void {
+            // TODO: actually implement
+        }
     }
 
-    export function resolveModuleName(moduleName: string, containingFile: string, compilerOptions: CompilerOptions, host: ModuleResolutionHost, cache?: ModuleResolutionCache): ResolvedModuleWithFailedLookupLocations {
+    export function resolveModuleName(
+        moduleName: string,
+        containingFile: string,
+        compilerOptions: CompilerOptions,
+        host: ModuleResolutionHost,
+        cache?: ModuleResolutionCache): ResolvedModuleWithFailedLookupLocations {
         const traceEnabled = isTraceEnabled(compilerOptions, host);
         if (traceEnabled) {
             trace(host, Diagnostics.Resolving_module_0_from_1, moduleName, containingFile);
@@ -420,6 +478,7 @@ namespace ts {
             if (traceEnabled) {
                 trace(host, Diagnostics.Resolution_for_module_0_was_found_in_cache, moduleName);
             }
+            cache.usedSuccessfully = true;
         }
         else {
             let moduleResolution = compilerOptions.moduleResolution;
@@ -926,6 +985,7 @@ namespace ts {
             if (getBaseFileName(ancestorDirectory) !== "node_modules") {
                 const resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, ancestorDirectory, state.traceEnabled, state.host);
                 if (resolutionFromCache) {
+                    cache.usedSuccessfully = true;
                     return resolutionFromCache;
                 }
                 return toSearchResult(loadModuleFromNodeModulesOneLevel(extensions, moduleName, ancestorDirectory, failedLookupLocations, state, typesOnly));
@@ -989,6 +1049,7 @@ namespace ts {
                 const resolved = forEachAncestorDirectory(containingDirectory, directory => {
                     const resolutionFromCache = tryFindNonRelativeModuleNameInCache(perModuleNameCache, moduleName, directory, traceEnabled, host);
                     if (resolutionFromCache) {
+                        cache.usedSuccessfully = true;
                         return resolutionFromCache;
                     }
                     const searchName = normalizePath(combinePaths(directory, moduleName));

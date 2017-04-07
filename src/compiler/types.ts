@@ -3778,6 +3778,7 @@ namespace ts {
 
     export interface ResolvedModuleWithFailedLookupLocations {
         resolvedModule: ResolvedModuleFull | undefined;
+        /** Used for unit-testing checked locations. */
         /* @internal */
         failedLookupLocations: string[];
     }
@@ -3801,6 +3802,7 @@ namespace ts {
         getDefaultLibFileName(options: CompilerOptions): string;
         getDefaultLibLocation?(): string;
         writeFile: WriteFileCallback;
+        /** TODO: Get's the root directory of the project? Or the directory we invoked tsc from? */
         getCurrentDirectory(): string;
         getDirectories(path: string): string[];
         getCanonicalFileName(fileName: string): string;
