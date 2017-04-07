@@ -170,7 +170,7 @@ namespace ts.server {
                 resolvedModuleNames.push(result.resolvedModule);
 
             }
-            if (this.resolvedModuleNamesCache.usedSuccessfully) {
+            if (this.resolvedModuleNamesCache.usedSuccessfully && this.filesWithChangedSetOfUnresolvedImports) {
                 const path = toPath(containingFile, this.host.getCurrentDirectory(), this.getCanonicalFileName);
                 this.filesWithChangedSetOfUnresolvedImports.push(path);
                 // Reset cache usage tracker.

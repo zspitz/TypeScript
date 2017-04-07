@@ -199,8 +199,8 @@ namespace ts {
             rootScriptInfo.editContent(0, root.content.length, `import {y} from "bar"`);
 
             diags = project.getLanguageService().getSemanticDiagnostics(root.name);
-            assert.isTrue(fileExistsCalledForBar, "'fileExists' should be called");
             assert.isTrue(diags.length === 0);
+            assert.isTrue(fileExistsCalledForBar, "'fileExists' should be called");
         });
     });
 }
