@@ -6715,7 +6715,7 @@ namespace ts {
             return links.resolvedType;
         }
 
-        function getTypeFromTypeQueryNode(node: TypeQueryNode): Type {
+        function getTypeFromTypeQueryNode(node: TypeQueryNode | JSDocTypeQueryType): Type {
             const links = getNodeLinks(node);
             if (!links.resolvedType) {
                 // TypeScript 1.0 spec (April 2014): 3.6.3
@@ -7642,7 +7642,8 @@ namespace ts {
                 case SyntaxKind.ExpressionWithTypeArguments:
                     return getTypeFromTypeReference(<ExpressionWithTypeArguments>node);
                 case SyntaxKind.TypeQuery:
-                    return getTypeFromTypeQueryNode(<TypeQueryNode>node);
+                case SyntaxKind.JSDocTypeQueryType:
+                    return getTypeFromTypeQueryNode(<TypeQueryNode | JSDocTypeQueryType>node);
                 case SyntaxKind.ArrayType:
                 case SyntaxKind.JSDocArrayType:
                     return getTypeFromArrayTypeNode(<ArrayTypeNode>node);

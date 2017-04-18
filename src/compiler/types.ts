@@ -369,6 +369,7 @@ namespace ts {
         JSDocFunctionType,
         JSDocVariadicType,
         JSDocConstructorType,
+        JSDocTypeQueryType,
         JSDocThisType,
         JSDocComment,
         JSDocTag,
@@ -2055,6 +2056,11 @@ namespace ts {
     export interface JSDocConstructorType extends JSDocType {
         kind: SyntaxKind.JSDocConstructorType;
         type: JSDocType;
+    }
+
+    export interface JSDocTypeQueryType extends JSDocType {
+        kind: SyntaxKind.JSDocTypeQueryType;
+        exprName: EntityName;
     }
 
     export interface JSDocThisType extends JSDocType {

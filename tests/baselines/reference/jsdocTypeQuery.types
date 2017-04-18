@@ -1,0 +1,46 @@
+=== tests/cases/conformance/jsdoc/a.js ===
+var x = 0;
+>x : number
+>0 : 0
+
+/**
+ * @type {typeof x}
+ */
+var y;
+>y : number
+
+
+/**
+ * @type {Array<typeof x>}
+ */
+var y_a;
+>y_a : number[]
+
+/**
+ * @type {[typeof x, typeof x]}
+ */
+var y_t;
+>y_t : [number, number]
+
+=== tests/cases/conformance/jsdoc/b.ts ===
+var z: number;
+>z : number
+
+var z = y;
+>z : number
+>y : number
+
+var z_a: number[];
+>z_a : number[]
+
+var z_a = y_a;
+>z_a : number[]
+>y_a : number[]
+
+var z_t: [number, number];
+>z_t : [number, number]
+
+var z_t = y_t;
+>z_t : [number, number]
+>y_t : [number, number]
+

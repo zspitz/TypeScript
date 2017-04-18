@@ -410,6 +410,8 @@ namespace ts {
                 return visitNode(cbNode, (<JSDocVariadicType>node).type);
             case SyntaxKind.JSDocConstructorType:
                 return visitNode(cbNode, (<JSDocConstructorType>node).type);
+            case SyntaxKind.JSDocTypeQueryType:
+                return visitNode(cbNode, (<JSDocTypeQueryType>node).exprName);
             case SyntaxKind.JSDocThisType:
                 return visitNode(cbNode, (<JSDocThisType>node).type);
             case SyntaxKind.JSDocRecordMember:
@@ -6071,6 +6073,8 @@ namespace ts {
                         return parseJSDocVariadicType();
                     case SyntaxKind.NewKeyword:
                         return parseJSDocConstructorType();
+                    case SyntaxKind.TypeOfKeyword:
+                        return parseJSDocTypeQueryType();
                     case SyntaxKind.ThisKeyword:
                         return parseJSDocThisType();
                     case SyntaxKind.AnyKeyword:
@@ -6107,6 +6111,13 @@ namespace ts {
                 nextToken();
                 parseExpected(SyntaxKind.ColonToken);
                 result.type = parseJSDocType();
+                return finishNode(result);
+            }
+
+            function parseJSDocTypeQueryType(): JSDocTypeQueryType {
+                const result = <JSDocTypeQueryType>createNode(SyntaxKind.JSDocTypeQueryType);
+                nextToken();
+                result.exprName = parseEntityName(/*allowReservedWords*/ true);
                 return finishNode(result);
             }
 

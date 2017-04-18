@@ -1,0 +1,45 @@
+=== tests/cases/conformance/jsdoc/a.js ===
+var x = 0;
+>x : Symbol(x, Decl(a.js, 0, 3))
+
+/**
+ * @type {typeof x}
+ */
+var y;
+>y : Symbol(y, Decl(a.js, 5, 3))
+
+
+/**
+ * @type {Array<typeof x>}
+ */
+var y_a;
+>y_a : Symbol(y_a, Decl(a.js, 11, 3))
+
+/**
+ * @type {[typeof x, typeof x]}
+ */
+var y_t;
+>y_t : Symbol(y_t, Decl(a.js, 16, 3))
+
+=== tests/cases/conformance/jsdoc/b.ts ===
+var z: number;
+>z : Symbol(z, Decl(b.ts, 0, 3), Decl(b.ts, 1, 3))
+
+var z = y;
+>z : Symbol(z, Decl(b.ts, 0, 3), Decl(b.ts, 1, 3))
+>y : Symbol(y, Decl(a.js, 5, 3))
+
+var z_a: number[];
+>z_a : Symbol(z_a, Decl(b.ts, 3, 3), Decl(b.ts, 4, 3))
+
+var z_a = y_a;
+>z_a : Symbol(z_a, Decl(b.ts, 3, 3), Decl(b.ts, 4, 3))
+>y_a : Symbol(y_a, Decl(a.js, 11, 3))
+
+var z_t: [number, number];
+>z_t : Symbol(z_t, Decl(b.ts, 6, 3), Decl(b.ts, 7, 3))
+
+var z_t = y_t;
+>z_t : Symbol(z_t, Decl(b.ts, 6, 3), Decl(b.ts, 7, 3))
+>y_t : Symbol(y_t, Decl(a.js, 16, 3))
+
