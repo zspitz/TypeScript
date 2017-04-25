@@ -3536,7 +3536,10 @@
         "category": "Message",
         "code": 90021
     },
-
+    "Change identifier to '{0}'.": {
+        "category": "Message",
+        "code": 90022
+    },
 
     "Octal literal types must use ES2015 syntax. Use the syntax '{0}'.": {
         "category": "Error",
