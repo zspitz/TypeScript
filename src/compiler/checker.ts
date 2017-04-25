@@ -14124,7 +14124,7 @@ namespace ts {
                     }
                 }
             }
-            const suggestion = getSuggestionForNonexistentProperty(containingType);
+            const suggestion = getSuggestionForNonexistentProperty(propNode, containingType);
             if (suggestion) {
                 errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1_Did_you_mean_2, declarationNameToString(propNode), typeToString(containingType), suggestion);
             }
@@ -14134,10 +14134,10 @@ namespace ts {
             diagnostics.add(createDiagnosticForNodeFromMessageChain(propNode, errorInfo));
         }
 
-        function getSuggestionForNonexistentProperty(containingType: Type): string | undefined {
+        function getSuggestionForNonexistentProperty(node: Identifier, containingType: Type): string | undefined {
             for (const prop of getPropertiesOfObjectType(containingType)) {
                 // temporary fake suggestion
-                if (prop.name) {
+                if (prop.name && Math.abs(prop.name.length - node.text.length) < 4) {
                     return prop.name;
                 }
             }
