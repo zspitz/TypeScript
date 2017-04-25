@@ -9,23 +9,29 @@ namespace ts.codefix {
         const sourceFile = context.sourceFile;
 
         // This is the identifier of the misspelled word. eg:
-        // this.missing = 1;
-        const token = getTokenAtPosition(sourceFile, context.span.start);
-        if (token.kind !== SyntaxKind.Identifier) {
+        // this.speling = 1;
+        //      ^^^^^^^
+        const identifier = getTokenAtPosition(sourceFile, context.span.start);
+        if (identifier.kind !== SyntaxKind.Identifier) {
             return undefined;
         }
-        if (!isPropertyAccessExpression(token.parent)) {
+        if (!isPropertyAccessExpression(identifier.parent)) {
             return undefined;
         }
-        // TODO: Retrieve the *correct* spelling from, probably, the CodeFixContext.
-        // Or else by re-typechecking and re-calling getSuggestion. Which seems pointless.
+        const checker = context.program.getTypeChecker();
+        const containingType = checker.getTypeAtLocation(identifier.parent.expression)
+        const suggestion = checker.getSuggestionForNonexistentProperty(identifier as Identifier, containingType);
+        if (!suggestion) {
+            return undefined;
+        }
+
         return [{
-            description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_identifier_to_0), ["chunks"]),
+            description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_identifier_to_0), [suggestion]),
             changes: [{
                 fileName: sourceFile.fileName,
                 textChanges: [{
-                    span: { start: token.pos, length: token.end - token.pos },
-                    newText: "chunks"
+                    span: { start: identifier.pos, length: identifier.end - identifier.pos },
+                    newText: suggestion
                 }],
             }],
         }];
