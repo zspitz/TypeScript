@@ -14124,8 +14124,23 @@ namespace ts {
                     }
                 }
             }
-            errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
+            const suggestion = getSuggestionForNonexistentProperty(containingType);
+            if (suggestion) {
+                errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1_Did_you_mean_2, declarationNameToString(propNode), typeToString(containingType), suggestion);
+            }
+            else {
+                errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
+            }
             diagnostics.add(createDiagnosticForNodeFromMessageChain(propNode, errorInfo));
+        }
+
+        function getSuggestionForNonexistentProperty(containingType: Type): string | undefined {
+            for (const prop of getPropertiesOfObjectType(containingType)) {
+                // temporary fake suggestion
+                if (prop.name) {
+                    return prop.name;
+                }
+            }
         }
 
         function markPropertyAsReferenced(prop: Symbol) {
