@@ -708,6 +708,21 @@ namespace ts {
             // return undefined if we can't find a symbol.
         }
 
+        function getCandidateSymbols(symbols: SymbolTable, meaning: SymbolFlags): Symbol[] {
+            if (meaning) {
+                let environment: Symbol[] = [];
+                // Debug.assert(!(symbols.get(failedName) && symbols.get(failedName).flags & meaning), "Should only be called in the failure case");
+                symbols.forEach(symbol => {
+                    if (symbol.flags & meaning) { // ||
+                        // symbol.flags & SymbolFlags.Alias && resolveAlias(symbol).flags & meaning) {
+                        environment.push(symbol);
+                    }
+                });
+                return environment;
+            }
+            return emptyArray;
+        }
+
         /**
          * Get symbols that represent parameter-property-declaration as parameter and as property declaration
          * @param parameter a parameterDeclaration node
@@ -841,8 +856,9 @@ namespace ts {
         // Resolve a given name for a given meaning at a given location. An error is reported if the name was not found and
         // the nameNotFoundMessage argument is not undefined. Returns the resolved symbol, or undefined if no symbol with
         // the given name can be found.
-        function resolveName(location: Node | undefined, name: string, meaning: SymbolFlags, nameNotFoundMessage: DiagnosticMessage, nameArg: string | Identifier): Symbol {
+        function resolveName(location: Node | undefined, name: string, meaning: SymbolFlags, nameNotFoundMessage: DiagnosticMessage, nameArg: string | Identifier, suggestedNameNotFoundMessage?: DiagnosticMessage): Symbol {
             let result: Symbol;
+            let environment: Symbol[] = []; // TODO: This is basically wrong!
             let lastLocation: Node;
             let propertyWithInvalidInitializer: Node;
             const errorLocation = location;
@@ -891,6 +907,7 @@ namespace ts {
                             result = undefined;
                         }
                     }
+                    addRange(environment, getCandidateSymbols(location.locals, meaning));
                 }
                 switch (location.kind) {
                     case SyntaxKind.SourceFile:
@@ -933,11 +950,13 @@ namespace ts {
                         if (result = getSymbol(moduleExports, name, meaning & SymbolFlags.ModuleMember)) {
                             break loop;
                         }
+                        addRange(environment, getCandidateSymbols(moduleExports, meaning & SymbolFlags.ModuleMember));
                         break;
                     case SyntaxKind.EnumDeclaration:
                         if (result = getSymbol(getSymbolOfNode(location).exports, name, meaning & SymbolFlags.EnumMember)) {
                             break loop;
                         }
+                        addRange(environment, getCandidateSymbols(getSymbolOfNode(location).exports, meaning & SymbolFlags.EnumMember));
                         break;
                     case SyntaxKind.PropertyDeclaration:
                     case SyntaxKind.PropertySignature:
@@ -954,6 +973,7 @@ namespace ts {
                                     // Remember the property node, it will be used later to report appropriate error
                                     propertyWithInvalidInitializer = location;
                                 }
+                                addRange(environment, getCandidateSymbols(ctor.locals, meaning & SymbolFlags.Value));
                             }
                         }
                         break;
@@ -982,6 +1002,8 @@ namespace ts {
                                 break loop;
                             }
                         }
+
+                        addRange(environment, getCandidateSymbols(getSymbolOfNode(location).members, meaning & SymbolFlags.Type));
                         break;
 
                     // It is not legal to reference a class's own type parameters from a computed property name that
@@ -1000,6 +1022,7 @@ namespace ts {
                                 error(errorLocation, Diagnostics.A_computed_property_name_cannot_reference_a_type_parameter_from_its_containing_type);
                                 return undefined;
                             }
+                            addRange(environment, getCandidateSymbols(getSymbolOfNode(grandparent).members, meaning & SymbolFlags.Type));
                         }
                         break;
                     case SyntaxKind.MethodDeclaration:
@@ -1061,6 +1084,9 @@ namespace ts {
 
             if (!result) {
                 result = getSymbol(globals, name, meaning);
+                if (!result) {
+                    addRange(environment, getCandidateSymbols(globals, meaning));
+                }
             }
 
             if (!result) {
@@ -1071,7 +1097,14 @@ namespace ts {
                         !checkAndReportErrorForUsingTypeAsNamespace(errorLocation, name, meaning) &&
                         !checkAndReportErrorForUsingTypeAsValue(errorLocation, name, meaning) &&
                         !checkAndReportErrorForUsingNamespaceModuleAsValue(errorLocation, name, meaning))  {
-                        error(errorLocation, nameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg));
+                        if (suggestedNameNotFoundMessage) {
+                            const suggestion = suggestedNameNotFoundMessage && getSuggestionForNonexistentSymbol(name, environment);
+                            // TODO: Not sure why the error can't use name instead of nameArg
+                            error(errorLocation, suggestedNameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg), suggestion);
+                        }
+                        else {
+                            error(errorLocation, nameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg));
+                        }
                     }
                 }
                 return undefined;
@@ -1116,6 +1149,15 @@ namespace ts {
                 }
             }
             return result;
+        }
+
+        // TODO: Move this function somewhere else
+        function getSuggestionForNonexistentSymbol(name: string, environment: Symbol[]): string {
+            for (const symbol of environment) {
+                if (symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
+                    return symbol.name;
+                }
+            }
         }
 
         function isTypeParameterSymbolDeclaredInContainer(symbol: Symbol, container: Node) {
@@ -10412,7 +10454,7 @@ namespace ts {
         function getResolvedSymbol(node: Identifier): Symbol {
             const links = getNodeLinks(node);
             if (!links.resolvedSymbol) {
-                links.resolvedSymbol = !nodeIsMissing(node) && resolveName(node, node.text, SymbolFlags.Value | SymbolFlags.ExportValue, Diagnostics.Cannot_find_name_0, node) || unknownSymbol;
+                links.resolvedSymbol = !nodeIsMissing(node) && resolveName(node, node.text, SymbolFlags.Value | SymbolFlags.ExportValue, Diagnostics.Cannot_find_name_0, node, Diagnostics.Cannot_find_name_0_Did_you_mean_1) || unknownSymbol;
             }
             return links.resolvedSymbol;
         }
