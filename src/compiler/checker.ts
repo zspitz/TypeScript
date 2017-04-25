@@ -14051,44 +14051,6 @@ namespace ts {
             return checkPropertyAccessExpressionOrQualifiedName(node, node.left, node.right);
         }
 
-        function reportNonexistentProperty(propNode: Identifier, containingType: Type) {
-            let errorInfo: DiagnosticMessageChain;
-            if (containingType.flags & TypeFlags.Union && !(containingType.flags & TypeFlags.Primitive)) {
-                for (const subtype of (containingType as UnionType).types) {
-                    if (!getPropertyOfType(subtype, propNode.text)) {
-                        errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
-                        break;
-                    }
-                }
-            }
-            errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
-            diagnostics.add(createDiagnosticForNodeFromMessageChain(propNode, errorInfo));
-        }
-
-        function markPropertyAsReferenced(prop: Symbol) {
-            if (prop &&
-                noUnusedIdentifiers &&
-                (prop.flags & SymbolFlags.ClassMember) &&
-                prop.valueDeclaration && (getModifierFlags(prop.valueDeclaration) & ModifierFlags.Private)) {
-                if (getCheckFlags(prop) & CheckFlags.Instantiated) {
-                    getSymbolLinks(prop).target.isReferenced = true;
-                }
-                else {
-                    prop.isReferenced = true;
-                }
-            }
-        }
-
-        function isInPropertyInitializer(node: Node): boolean {
-            while (node) {
-                if (node.parent && node.parent.kind === SyntaxKind.PropertyDeclaration && (node.parent as PropertyDeclaration).initializer === node) {
-                    return true;
-                }
-                node = node.parent;
-            }
-            return false;
-        }
-
         function checkPropertyAccessExpressionOrQualifiedName(node: PropertyAccessExpression | QualifiedName, left: Expression | QualifiedName, right: Identifier) {
             const type = checkNonNullExpression(left);
             if (isTypeAny(type) || type === silentNeverType) {
@@ -14150,6 +14112,44 @@ namespace ts {
             }
             const flowType = getFlowTypeOfReference(node, propType);
             return assignmentKind ? getBaseTypeOfLiteralType(flowType) : flowType;
+        }
+
+        function reportNonexistentProperty(propNode: Identifier, containingType: Type) {
+            let errorInfo: DiagnosticMessageChain;
+            if (containingType.flags & TypeFlags.Union && !(containingType.flags & TypeFlags.Primitive)) {
+                for (const subtype of (containingType as UnionType).types) {
+                    if (!getPropertyOfType(subtype, propNode.text)) {
+                        errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(subtype));
+                        break;
+                    }
+                }
+            }
+            errorInfo = chainDiagnosticMessages(errorInfo, Diagnostics.Property_0_does_not_exist_on_type_1, declarationNameToString(propNode), typeToString(containingType));
+            diagnostics.add(createDiagnosticForNodeFromMessageChain(propNode, errorInfo));
+        }
+
+        function markPropertyAsReferenced(prop: Symbol) {
+            if (prop &&
+                noUnusedIdentifiers &&
+                (prop.flags & SymbolFlags.ClassMember) &&
+                prop.valueDeclaration && (getModifierFlags(prop.valueDeclaration) & ModifierFlags.Private)) {
+                if (getCheckFlags(prop) & CheckFlags.Instantiated) {
+                    getSymbolLinks(prop).target.isReferenced = true;
+                }
+                else {
+                    prop.isReferenced = true;
+                }
+            }
+        }
+
+        function isInPropertyInitializer(node: Node): boolean {
+            while (node) {
+                if (node.parent && node.parent.kind === SyntaxKind.PropertyDeclaration && (node.parent as PropertyDeclaration).initializer === node) {
+                    return true;
+                }
+                node = node.parent;
+            }
+            return false;
         }
 
         function isValidPropertyAccess(node: PropertyAccessExpression | QualifiedName, propertyName: string): boolean {
