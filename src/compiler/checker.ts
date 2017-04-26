@@ -856,9 +856,26 @@ namespace ts {
         // Resolve a given name for a given meaning at a given location. An error is reported if the name was not found and
         // the nameNotFoundMessage argument is not undefined. Returns the resolved symbol, or undefined if no symbol with
         // the given name can be found.
-        function resolveName(location: Node | undefined, name: string, meaning: SymbolFlags, nameNotFoundMessage: DiagnosticMessage, nameArg: string | Identifier, suggestedNameNotFoundMessage?: DiagnosticMessage): Symbol {
+        function resolveName(
+            location: Node | undefined,
+            name: string,
+            meaning: SymbolFlags,
+            nameNotFoundMessage: DiagnosticMessage,
+            nameArg: string | Identifier,
+            suggestedNameNotFoundMessage?: DiagnosticMessage): Symbol {
+            return resolveNameHelper(location, name, meaning, nameNotFoundMessage, nameArg, getSymbol, suggestedNameNotFoundMessage);
+        }
+
+        function resolveNameHelper(
+            location: Node | undefined,
+            name: string,
+            meaning: SymbolFlags,
+            nameNotFoundMessage: DiagnosticMessage,
+            nameArg: string | Identifier,
+            lookup: (symbols: SymbolTable, name: string, meaning: SymbolFlags) => Symbol,
+            suggestedNameNotFoundMessage?: DiagnosticMessage): Symbol {
+            const originalLocation = location; // needed for did-you-mean error reporting, which gathers candidates starting from the original location
             let result: Symbol;
-            let environment: Symbol[] = []; // TODO: This is basically wrong!
             let lastLocation: Node;
             let propertyWithInvalidInitializer: Node;
             const errorLocation = location;
@@ -868,7 +885,7 @@ namespace ts {
             loop: while (location) {
                 // Locals of a source file are not in scope (because they get merged into the global symbol table)
                 if (location.locals && !isGlobalSourceFile(location)) {
-                    if (result = getSymbol(location.locals, name, meaning)) {
+                    if (result = lookup(location.locals, name, meaning)) {
                         let useResult = true;
                         if (isFunctionLike(location) && lastLocation && lastLocation !== (<FunctionLikeDeclaration>location).body) {
                             // symbol lookup restrictions for function-like declarations
@@ -907,7 +924,6 @@ namespace ts {
                             result = undefined;
                         }
                     }
-                    addRange(environment, getCandidateSymbols(location.locals, meaning));
                 }
                 switch (location.kind) {
                     case SyntaxKind.SourceFile:
@@ -939,6 +955,7 @@ namespace ts {
                             //     2. We check === SymbolFlags.Alias in order to check that the symbol is *purely*
                             //        an alias. If we used &, we'd be throwing out symbols that have non alias aspects,
                             //        which is not the desired behavior.
+                            // TODO: Might need to alter this for candidate generation
                             const moduleExport = moduleExports.get(name);
                             if (moduleExport &&
                                 moduleExport.flags === SymbolFlags.Alias &&
@@ -947,16 +964,14 @@ namespace ts {
                             }
                         }
 
-                        if (result = getSymbol(moduleExports, name, meaning & SymbolFlags.ModuleMember)) {
+                        if (result = lookup(moduleExports, name, meaning & SymbolFlags.ModuleMember)) {
                             break loop;
                         }
-                        addRange(environment, getCandidateSymbols(moduleExports, meaning & SymbolFlags.ModuleMember));
                         break;
                     case SyntaxKind.EnumDeclaration:
-                        if (result = getSymbol(getSymbolOfNode(location).exports, name, meaning & SymbolFlags.EnumMember)) {
+                        if (result = lookup(getSymbolOfNode(location).exports, name, meaning & SymbolFlags.EnumMember)) {
                             break loop;
                         }
-                        addRange(environment, getCandidateSymbols(getSymbolOfNode(location).exports, meaning & SymbolFlags.EnumMember));
                         break;
                     case SyntaxKind.PropertyDeclaration:
                     case SyntaxKind.PropertySignature:
@@ -969,18 +984,17 @@ namespace ts {
                         if (isClassLike(location.parent) && !(getModifierFlags(location) & ModifierFlags.Static)) {
                             const ctor = findConstructorDeclaration(<ClassLikeDeclaration>location.parent);
                             if (ctor && ctor.locals) {
-                                if (getSymbol(ctor.locals, name, meaning & SymbolFlags.Value)) {
+                                if (lookup(ctor.locals, name, meaning & SymbolFlags.Value)) {
                                     // Remember the property node, it will be used later to report appropriate error
                                     propertyWithInvalidInitializer = location;
                                 }
-                                addRange(environment, getCandidateSymbols(ctor.locals, meaning & SymbolFlags.Value));
                             }
                         }
                         break;
                     case SyntaxKind.ClassDeclaration:
                     case SyntaxKind.ClassExpression:
                     case SyntaxKind.InterfaceDeclaration:
-                        if (result = getSymbol(getSymbolOfNode(location).members, name, meaning & SymbolFlags.Type)) {
+                        if (result = lookup(getSymbolOfNode(location).members, name, meaning & SymbolFlags.Type)) {
                             if (!isTypeParameterSymbolDeclaredInContainer(result, location)) {
                                 // ignore type parameters not declared in this container
                                 result = undefined;
@@ -1003,7 +1017,6 @@ namespace ts {
                             }
                         }
 
-                        addRange(environment, getCandidateSymbols(getSymbolOfNode(location).members, meaning & SymbolFlags.Type));
                         break;
 
                     // It is not legal to reference a class's own type parameters from a computed property name that
@@ -1018,11 +1031,10 @@ namespace ts {
                         grandparent = location.parent.parent;
                         if (isClassLike(grandparent) || grandparent.kind === SyntaxKind.InterfaceDeclaration) {
                             // A reference to this grandparent's type parameters would be an error
-                            if (result = getSymbol(getSymbolOfNode(grandparent).members, name, meaning & SymbolFlags.Type)) {
+                            if (result = lookup(getSymbolOfNode(grandparent).members, name, meaning & SymbolFlags.Type)) {
                                 error(errorLocation, Diagnostics.A_computed_property_name_cannot_reference_a_type_parameter_from_its_containing_type);
                                 return undefined;
                             }
-                            addRange(environment, getCandidateSymbols(getSymbolOfNode(grandparent).members, meaning & SymbolFlags.Type));
                         }
                         break;
                     case SyntaxKind.MethodDeclaration:
@@ -1083,10 +1095,7 @@ namespace ts {
             }
 
             if (!result) {
-                result = getSymbol(globals, name, meaning);
-                if (!result) {
-                    addRange(environment, getCandidateSymbols(globals, meaning));
-                }
+                result = lookup(globals, name, meaning);
             }
 
             if (!result) {
@@ -1098,8 +1107,8 @@ namespace ts {
                         !checkAndReportErrorForUsingTypeAsValue(errorLocation, name, meaning) &&
                         !checkAndReportErrorForUsingNamespaceModuleAsValue(errorLocation, name, meaning))  {
                         if (suggestedNameNotFoundMessage) {
-                            const suggestion = suggestedNameNotFoundMessage && getSuggestionForNonexistentSymbol(name, environment);
-                            // TODO: Not sure why the error can't use name instead of nameArg
+                            const suggestion = getSuggestionForNonexistentSymbol(originalLocation, name, meaning);
+                            // TODO: I guess nameArg is the "error reporting" version of name
                             error(errorLocation, suggestedNameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg), suggestion);
                         }
                         else {
@@ -1152,11 +1161,21 @@ namespace ts {
         }
 
         // TODO: Move this function somewhere else
-        function getSuggestionForNonexistentSymbol(name: string, environment: Symbol[]): string {
-            for (const symbol of environment) {
-                if (symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
-                    return symbol.name;
+        function getSuggestionForNonexistentSymbol(location: Node, name: string, meaning: SymbolFlags): string {
+            const result = resolveNameHelper(location, name, meaning, /*nameNotFoundMessage*/ undefined, name, (symbols, name, meaning) => {
+                const symbol = getSymbol(symbols, name, meaning);
+                if (symbol) {
+                    // I don't think this should happen!
+                    return symbol;
                 }
+                for (const symbol of getCandidateSymbols(symbols, meaning)) {
+                    if (symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
+                        return symbol;
+                    }
+                }
+            });
+            if (result) {
+                return result.name;
             }
         }
 
