@@ -15,4 +15,6 @@ ns.f1();`,
 `import d, * as ns from "./module"   ;
 import { f1 } from "./module";
 f1();`,
+`import d, * as ns from "./module"   ;
+NaN();`
 ]);

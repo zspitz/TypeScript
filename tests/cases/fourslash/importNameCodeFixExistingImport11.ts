@@ -15,6 +15,10 @@
 verify.importFixAtPosition([
 `{
     v1, v2,
+    v3
+}`,
+`{
+    v1, v2,
     v3,
     f1
 }`

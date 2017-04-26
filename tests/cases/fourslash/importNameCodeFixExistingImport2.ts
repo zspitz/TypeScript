@@ -9,8 +9,10 @@
 
 verify.importFixAtPosition([
 `import * as ns from "./module";
+NaN();`,
+`import * as ns from "./module";
 import { f1 } from "./module";
 f1();`,
 `import * as ns from "./module";
-ns.f1();`
+ns.f1();`,
 ]);

@@ -9,6 +9,7 @@
 //// }
 
 verify.importFixAtPosition([
+`NaN();`,
 `import { f1 } from "ambient-module";
 
 f1();`

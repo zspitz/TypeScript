@@ -15,6 +15,10 @@ verify.importFixAtPosition([
 `/*
  * I'm a license or something
  */
+NaN();`,
+`/*
+ * I'm a license or something
+ */
 import { f1 } from "ambient-module";
 
 f1();`

@@ -9,6 +9,8 @@
 //// export default var d1 = 6;
 
 verify.importFixAtPosition([
+`import d from "./module";
+NaN();`,
 `import d, { f1 } from "./module";
 f1();`
 ]);

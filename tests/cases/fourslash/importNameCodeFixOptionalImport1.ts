@@ -10,6 +10,7 @@
 //// export { foo } from "bar"; 
 
 verify.importFixAtPosition([
+`NaN();`,
 `import { foo } from "./foo";
 
 foo();`,

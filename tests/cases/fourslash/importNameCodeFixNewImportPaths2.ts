@@ -22,6 +22,7 @@
 //// }
 
 verify.importFixAtPosition([
+`NaN();`,
 `import { foo } from "b";
 
 foo();`
