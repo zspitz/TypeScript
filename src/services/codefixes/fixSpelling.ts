@@ -24,13 +24,13 @@ namespace ts.codefix {
             suggestion = checker.getSuggestionForNonexistentSymbol(node, getTextOfNode(node), convertSemanticMeaningToSymbolFlags(meaning));
         }
         if (suggestion) {
-            // TODO: Change message someday ...
+            // TODO: Remove periods from messages
             return [{
                 description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_spelling_to_0), [suggestion]),
                 changes: [{
                     fileName: sourceFile.fileName,
                     textChanges: [{
-                        span: { start: node.pos, length: node.end - node.pos },
+                        span: { start: node.getStart(), length: node.getWidth() },
                         newText: suggestion
                     }],
                 }],
