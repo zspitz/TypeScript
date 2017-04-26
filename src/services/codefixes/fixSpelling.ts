@@ -16,7 +16,7 @@ namespace ts.codefix {
         const checker = context.program.getTypeChecker();
         let suggestion: string;
         if (node.kind === SyntaxKind.Identifier && isPropertyAccessExpression(node.parent)) {
-            const containingType = checker.getTypeAtLocation(node.parent.expression)
+            const containingType = checker.getTypeAtLocation(node.parent.expression);
             suggestion = checker.getSuggestionForNonexistentProperty(node as Identifier, containingType);
         }
         else {
@@ -26,7 +26,7 @@ namespace ts.codefix {
         if (suggestion) {
             // TODO: Change message someday ...
             return [{
-                description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_identifier_to_0), [suggestion]),
+                description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_spelling_to_0), [suggestion]),
                 changes: [{
                     fileName: sourceFile.fileName,
                     textChanges: [{

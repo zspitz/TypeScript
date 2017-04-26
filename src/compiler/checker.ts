@@ -709,21 +709,6 @@ namespace ts {
             // return undefined if we can't find a symbol.
         }
 
-        function getCandidateSymbols(symbols: SymbolTable, meaning: SymbolFlags): Symbol[] {
-            if (meaning) {
-                let environment: Symbol[] = [];
-                // Debug.assert(!(symbols.get(failedName) && symbols.get(failedName).flags & meaning), "Should only be called in the failure case");
-                symbols.forEach(symbol => {
-                    if (symbol.flags & meaning) { // ||
-                        // symbol.flags & SymbolFlags.Alias && resolveAlias(symbol).flags & meaning) {
-                        environment.push(symbol);
-                    }
-                });
-                return environment;
-            }
-            return emptyArray;
-        }
-
         /**
          * Get symbols that represent parameter-property-declaration as parameter and as property declaration
          * @param parameter a parameterDeclaration node
@@ -1168,8 +1153,8 @@ namespace ts {
                     // I don't think this should happen!
                     return symbol;
                 }
-                for (const symbol of getCandidateSymbols(symbols, meaning)) {
-                    if (symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
+                for (const symbol of arrayFrom(symbols.values())) {
+                    if (symbol.flags & meaning && symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
                         return symbol;
                     }
                 }
