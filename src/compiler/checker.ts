@@ -206,6 +206,7 @@ namespace ts {
             },
             getApparentType,
             getSuggestionForNonexistentProperty,
+            getSuggestionForNonexistentSymbol,
         };
 
         const tupleTypes: GenericType[] = [];
@@ -1016,7 +1017,6 @@ namespace ts {
                                 break loop;
                             }
                         }
-
                         break;
 
                     // It is not legal to reference a class's own type parameters from a computed property name that

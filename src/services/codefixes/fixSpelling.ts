@@ -1,7 +1,8 @@
 /* @internal */
 namespace ts.codefix {
     registerCodeFix({
-        errorCodes: [Diagnostics.Property_0_does_not_exist_on_type_1_Did_you_mean_2.code],
+        errorCodes: [Diagnostics.Property_0_does_not_exist_on_type_1_Did_you_mean_2.code,
+                     Diagnostics.Cannot_find_name_0_Did_you_mean_1.code],
         getCodeActions: getActionsForCorrectSpelling
     });
 
@@ -11,29 +12,43 @@ namespace ts.codefix {
         // This is the identifier of the misspelled word. eg:
         // this.speling = 1;
         //      ^^^^^^^
-        const identifier = getTokenAtPosition(sourceFile, context.span.start);
-        if (identifier.kind !== SyntaxKind.Identifier) {
-            return undefined;
-        }
-        if (!isPropertyAccessExpression(identifier.parent)) {
-            return undefined;
-        }
+        const node = getTokenAtPosition(sourceFile, context.span.start);
         const checker = context.program.getTypeChecker();
-        const containingType = checker.getTypeAtLocation(identifier.parent.expression)
-        const suggestion = checker.getSuggestionForNonexistentProperty(identifier as Identifier, containingType);
-        if (!suggestion) {
-            return undefined;
+        let suggestion: string;
+        if (node.kind === SyntaxKind.Identifier && isPropertyAccessExpression(node.parent)) {
+            const containingType = checker.getTypeAtLocation(node.parent.expression)
+            suggestion = checker.getSuggestionForNonexistentProperty(node as Identifier, containingType);
         }
-
-        return [{
-            description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_identifier_to_0), [suggestion]),
-            changes: [{
-                fileName: sourceFile.fileName,
-                textChanges: [{
-                    span: { start: identifier.pos, length: identifier.end - identifier.pos },
-                    newText: suggestion
+        else {
+            const meaning = getMeaningFromLocation(node);
+            suggestion = checker.getSuggestionForNonexistentSymbol(node, getTextOfNode(node), convertSemanticMeaningToSymbolFlags(meaning));
+        }
+        if (suggestion) {
+            // TODO: Change message someday ...
+            return [{
+                description: formatStringFromArgs(getLocaleSpecificMessage(Diagnostics.Change_identifier_to_0), [suggestion]),
+                changes: [{
+                    fileName: sourceFile.fileName,
+                    textChanges: [{
+                        span: { start: node.pos, length: node.end - node.pos },
+                        newText: suggestion
+                    }],
                 }],
-            }],
-        }];
+            }];
+        }
+    }
+
+    function convertSemanticMeaningToSymbolFlags(meaning: SemanticMeaning): SymbolFlags {
+        let flags = 0;
+        if (meaning & SemanticMeaning.Namespace) {
+            flags |= SymbolFlags.Namespace;
+        }
+        if (meaning & SemanticMeaning.Type) {
+            flags |= SymbolFlags.Type;
+        }
+        if (meaning & SemanticMeaning.Value) {
+            flags |= SymbolFlags.Value;
+        }
+        return flags;
     }
 }
