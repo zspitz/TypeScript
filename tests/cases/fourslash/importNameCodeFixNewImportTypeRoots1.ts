@@ -17,7 +17,7 @@
 //// }
 
 verify.importFixAtPosition([
-`NaN();`,
+`JSON();`,
 `import { foo } from "random";
 
 foo();`

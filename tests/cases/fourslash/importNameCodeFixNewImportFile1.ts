@@ -12,9 +12,9 @@
 
 verify.importFixAtPosition([
 `/// <reference path="./tripleSlashReference.ts" />
-NaN();`,
+x();`,
 `/// <reference path="./tripleSlashReference.ts" />
 import { f1 } from "./Module";
 
-f1();`
+f1()`
 ]);
