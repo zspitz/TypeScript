@@ -14180,6 +14180,7 @@ namespace ts {
         }
 
         function getSuggestionForNonexistentProperty(node: Identifier, containingType: Type): string | undefined {
+            // TODO: Switch meaning back to just Value
             const suggestion = getSpellingSuggestionForName(node.text, getPropertiesOfObjectType(containingType), SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace);
             return suggestion && suggestion.name;
         }
@@ -14193,23 +14194,18 @@ namespace ts {
          *    except for candidates:
          *      * With no name
          *      * Whose meaning doesn't match the `meaning` parameter.
-         *      * Of length 30 or greater.
          *      * Whose length differs from the target name by more than 3.
+         * Names longer than 30 characters don't get suggestions because Levenshtein distance is an n**2 algorithm.
          */
         function getSpellingSuggestionForName(name: string, symbols: Symbol[], meaning: SymbolFlags): Symbol | undefined {
-            let best = undefined;
-            //let bestDistance = Number.MIN_VALUE;
+            let bestCandidate = undefined;
+            let bestDistance = Number.MAX_VALUE;
             if (name.length >= 30) {
                 return undefined;
             }
             name = name.toLowerCase();
             for (const candidate of symbols) {
-                if (candidate.flags & meaning &&
-                    candidate.name &&
-                    Math.abs(candidate.name.length - name.length) < 4 &&
-                    candidate.name.length < 30) {
-                    return candidate;
-                    /*
+                if (candidate.flags & meaning && candidate.name && Math.abs(candidate.name.length - name.length) < 4) {
                     const candidateName = candidate.name.toLowerCase();
                     if (candidateName === name) {
                         return candidate;
@@ -14220,12 +14216,11 @@ namespace ts {
                     }
                     else if (distance < bestDistance) {
                         bestDistance = distance;
-                        best = candidate;
+                        bestCandidate = candidate;
                     }
-                    */
                 }
             }
-            return best;
+            return bestCandidate;
         }
 
         function markPropertyAsReferenced(prop: Symbol) {
