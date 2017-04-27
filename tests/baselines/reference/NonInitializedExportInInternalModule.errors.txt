@@ -1,5 +1,5 @@
 tests/cases/conformance/internalModules/exportDeclarations/NonInitializedExportInInternalModule.ts(2,8): error TS1123: Variable declaration list cannot be empty.
-tests/cases/conformance/internalModules/exportDeclarations/NonInitializedExportInInternalModule.ts(3,5): error TS2304: Cannot find name 'let'.
+tests/cases/conformance/internalModules/exportDeclarations/NonInitializedExportInInternalModule.ts(3,5): error TS2552: Cannot find name 'let'. Did you mean 'e'?
 tests/cases/conformance/internalModules/exportDeclarations/NonInitializedExportInInternalModule.ts(4,10): error TS1123: Variable declaration list cannot be empty.
 
 
@@ -10,7 +10,7 @@ tests/cases/conformance/internalModules/exportDeclarations/NonInitializedExportI
 !!! error TS1123: Variable declaration list cannot be empty.
         let;
         ~~~
-!!! error TS2304: Cannot find name 'let'.
+!!! error TS2552: Cannot find name 'let'. Did you mean 'e'?
         const;
              
 !!! error TS1123: Variable declaration list cannot be empty.

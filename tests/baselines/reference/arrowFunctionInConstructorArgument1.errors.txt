@@ -1,4 +1,4 @@
-tests/cases/compiler/arrowFunctionInConstructorArgument1.ts(4,30): error TS2304: Cannot find name 'asdf'.
+tests/cases/compiler/arrowFunctionInConstructorArgument1.ts(4,30): error TS2552: Cannot find name 'asdf'. Did you mean 'NaN'?
 
 
 ==== tests/cases/compiler/arrowFunctionInConstructorArgument1.ts (1 errors) ====
@@ -7,5 +7,5 @@ tests/cases/compiler/arrowFunctionInConstructorArgument1.ts(4,30): error TS2304:
     }
     var c = new C(() => { return asdf; } ) // should error
                                  ~~~~
-!!! error TS2304: Cannot find name 'asdf'.
+!!! error TS2552: Cannot find name 'asdf'. Did you mean 'NaN'?
     

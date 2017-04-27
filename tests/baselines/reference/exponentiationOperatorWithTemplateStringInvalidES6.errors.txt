@@ -9,7 +9,7 @@ tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTem
 tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(11,7): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
 tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(12,7): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
 tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(13,7): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
-tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(14,1): error TS2304: Cannot find name 'kj'.
+tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(14,1): error TS2552: Cannot find name 'kj'. Did you mean 'k'?
 tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTemplateStringInvalidES6.ts(14,8): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
 
 
@@ -51,6 +51,6 @@ tests/cases/conformance/es7/exponentiationOperator/exponentiationOperatorWithTem
 !!! error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
     kj **= `2${ 3 }4`;
     ~~
-!!! error TS2304: Cannot find name 'kj'.
+!!! error TS2552: Cannot find name 'kj'. Did you mean 'k'?
            ~~~~~~~~~~
 !!! error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.

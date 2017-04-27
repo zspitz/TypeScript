@@ -1,12 +1,12 @@
-tests/cases/compiler/asiPublicPrivateProtected.ts(1,1): error TS2304: Cannot find name 'public'.
-tests/cases/compiler/asiPublicPrivateProtected.ts(12,1): error TS2304: Cannot find name 'private'.
-tests/cases/compiler/asiPublicPrivateProtected.ts(23,1): error TS2304: Cannot find name 'protected'.
+tests/cases/compiler/asiPublicPrivateProtected.ts(1,1): error TS2552: Cannot find name 'public'. Did you mean 'eval'?
+tests/cases/compiler/asiPublicPrivateProtected.ts(12,1): error TS2552: Cannot find name 'private'. Did you mean 'Date'?
+tests/cases/compiler/asiPublicPrivateProtected.ts(23,1): error TS2552: Cannot find name 'protected'. Did you mean 'Object'?
 
 
 ==== tests/cases/compiler/asiPublicPrivateProtected.ts (3 errors) ====
     public
     ~~~~~~
-!!! error TS2304: Cannot find name 'public'.
+!!! error TS2552: Cannot find name 'public'. Did you mean 'eval'?
     class NonPublicClass {
         public s() {
         }
@@ -19,7 +19,7 @@ tests/cases/compiler/asiPublicPrivateProtected.ts(23,1): error TS2304: Cannot fi
     }
     private
     ~~~~~~~
-!!! error TS2304: Cannot find name 'private'.
+!!! error TS2552: Cannot find name 'private'. Did you mean 'Date'?
     class NonPrivateClass {
         private s() {
         }
@@ -32,7 +32,7 @@ tests/cases/compiler/asiPublicPrivateProtected.ts(23,1): error TS2304: Cannot fi
     }
     protected
     ~~~~~~~~~
-!!! error TS2304: Cannot find name 'protected'.
+!!! error TS2552: Cannot find name 'protected'. Did you mean 'Object'?
     class NonProtectedClass {
       protected s() {
       }

@@ -1,7 +1,7 @@
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,20): error TS2371: A parameter initializer is only allowed in a function or constructor implementation.
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,30): error TS1109: Expression expected.
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,33): error TS1138: Parameter declaration expected.
-tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,33): error TS2304: Cannot find name 'await'.
+tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,33): error TS2552: Cannot find name 'await'. Did you mean 'Math'?
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,38): error TS1005: ';' expected.
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,39): error TS1128: Declaration or statement expected.
 tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclaration10_es2017.ts(1,49): error TS2532: Object is possibly 'undefined'.
@@ -17,7 +17,7 @@ tests/cases/conformance/async/es2017/functionDeclarations/asyncFunctionDeclarati
                                     ~~~~~
 !!! error TS1138: Parameter declaration expected.
                                     ~~~~~
-!!! error TS2304: Cannot find name 'await'.
+!!! error TS2552: Cannot find name 'await'. Did you mean 'Math'?
                                          ~
 !!! error TS1005: ';' expected.
                                           ~

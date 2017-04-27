@@ -1,6 +1,6 @@
 tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,1): error TS1212: Identifier expected. 'yield' is a reserved word in strict mode.
-tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,1): error TS2304: Cannot find name 'yield'.
-tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,7): error TS2304: Cannot find name 'foo'.
+tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,1): error TS2552: Cannot find name 'yield'. Did you mean 'eval'?
+tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,7): error TS2552: Cannot find name 'foo'. Did you mean 'JSON'?
 
 
 ==== tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts (3 errors) ====
@@ -9,6 +9,6 @@ tests/cases/conformance/es6/yieldExpressions/YieldExpression18_es6.ts(2,7): erro
     ~~~~~
 !!! error TS1212: Identifier expected. 'yield' is a reserved word in strict mode.
     ~~~~~
-!!! error TS2304: Cannot find name 'yield'.
+!!! error TS2552: Cannot find name 'yield'. Did you mean 'eval'?
           ~~~
-!!! error TS2304: Cannot find name 'foo'.
+!!! error TS2552: Cannot find name 'foo'. Did you mean 'JSON'?

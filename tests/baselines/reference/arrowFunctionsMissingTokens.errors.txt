@@ -19,7 +19,7 @@ tests/cases/compiler/arrowFunctionsMissingTokens.ts(40,5): error TS1128: Declara
 tests/cases/compiler/arrowFunctionsMissingTokens.ts(41,1): error TS1128: Declaration or statement expected.
 tests/cases/compiler/arrowFunctionsMissingTokens.ts(44,14): error TS1109: Expression expected.
 tests/cases/compiler/arrowFunctionsMissingTokens.ts(46,21): error TS1005: '=>' expected.
-tests/cases/compiler/arrowFunctionsMissingTokens.ts(48,14): error TS2304: Cannot find name 'x'.
+tests/cases/compiler/arrowFunctionsMissingTokens.ts(48,14): error TS2552: Cannot find name 'x'. Did you mean 'a'?
 tests/cases/compiler/arrowFunctionsMissingTokens.ts(50,35): error TS1005: '=>' expected.
 tests/cases/compiler/arrowFunctionsMissingTokens.ts(52,41): error TS1005: '=>' expected.
 
@@ -116,7 +116,7 @@ tests/cases/compiler/arrowFunctionsMissingTokens.ts(52,41): error TS1005: '=>' e
     
         var c = (x);
                  ~
-!!! error TS2304: Cannot find name 'x'.
+!!! error TS2552: Cannot find name 'x'. Did you mean 'a'?
     
         var d = (x: number, y: string);
                                       ~
