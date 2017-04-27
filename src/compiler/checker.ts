@@ -1150,14 +1150,12 @@ namespace ts {
             const result = resolveNameHelper(location, name, meaning, /*nameNotFoundMessage*/ undefined, name, (symbols, name, meaning) => {
                 const symbol = getSymbol(symbols, name, meaning);
                 if (symbol) {
-                    // I don't think this should happen!
+                    // Sometimes the symbol is found when location is a return type of a function: `typeof x` and `x` is declared in the body of the function
+                    // So the table *contains* `x` but `x` isn't actually in scope.
+                    // However, resolveNameHelper will continue and call this callback again, so we'll eventually get a correct suggestion.
                     return symbol;
                 }
-                for (const symbol of arrayFrom(symbols.values())) {
-                    if (symbol.flags & meaning && symbol.name && Math.abs(name.length - symbol.name.length) < 4) {
-                        return symbol;
-                    }
-                }
+                return getSpellingSuggestionForName(name, arrayFrom(symbols.values()), meaning);
             });
             if (result) {
                 return result.name;
@@ -14182,12 +14180,52 @@ namespace ts {
         }
 
         function getSuggestionForNonexistentProperty(node: Identifier, containingType: Type): string | undefined {
-            for (const prop of getPropertiesOfObjectType(containingType)) {
-                // temporary fake suggestion
-                if (prop.name && Math.abs(prop.name.length - node.text.length) < 4) {
-                    return prop.name;
+            const suggestion = getSpellingSuggestionForName(node.text, getPropertiesOfObjectType(containingType), SymbolFlags.Value | SymbolFlags.Type | SymbolFlags.Namespace);
+            return suggestion && suggestion.name;
+        }
+
+        /**
+         * Given a name and a list of symbols whose names are *not* equal to the name, return a spelling suggestion if there is one that is close enough.
+         *
+         * If there is a candidate that's the same except for case, return that.
+         * If there is a candidate that's within one edit of the name, return that.
+         * Otherwise, return the candidate with the smallest Levenshtein distance,
+         *    except for candidates:
+         *      * With no name
+         *      * Whose meaning doesn't match the `meaning` parameter.
+         *      * Of length 30 or greater.
+         *      * Whose length differs from the target name by more than 3.
+         */
+        function getSpellingSuggestionForName(name: string, symbols: Symbol[], meaning: SymbolFlags): Symbol | undefined {
+            let best = undefined;
+            //let bestDistance = Number.MIN_VALUE;
+            if (name.length >= 30) {
+                return undefined;
+            }
+            name = name.toLowerCase();
+            for (const candidate of symbols) {
+                if (candidate.flags & meaning &&
+                    candidate.name &&
+                    Math.abs(candidate.name.length - name.length) < 4 &&
+                    candidate.name.length < 30) {
+                    return candidate;
+                    /*
+                    const candidateName = candidate.name.toLowerCase();
+                    if (candidateName === name) {
+                        return candidate;
+                    }
+                    const distance = levenshtein(candidateName, name);
+                    if (distance < 2) {
+                        return candidate;
+                    }
+                    else if (distance < bestDistance) {
+                        bestDistance = distance;
+                        best = candidate;
+                    }
+                    */
                 }
             }
+            return best;
         }
 
         function markPropertyAsReferenced(prop: Symbol) {
