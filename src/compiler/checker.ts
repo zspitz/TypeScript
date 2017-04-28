@@ -14189,6 +14189,7 @@ namespace ts {
 
         /**
          * Given a name and a list of symbols whose names are *not* equal to the name, return a spelling suggestion if there is one that is close enough.
+         * Names less than length 3 only check for case-insensitive equality, not levenshtein distance.
          *
          * If there is a candidate that's the same except for case, return that.
          * If there is a candidate that's within one edit of the name, return that.
@@ -14197,11 +14198,12 @@ namespace ts {
          *      * With no name
          *      * Whose meaning doesn't match the `meaning` parameter.
          *      * Whose length differs from the target name by more than 3.
-         *      * Whose levenshtein distance is more than 1.3 times the length of the name
+         *      * Whose levenshtein distance is more than 0.7 of the length of the name
+         *        (0.7 allows identifiers of length 3 to have a distance of 2 to allow for one substitution)
          * Names longer than 30 characters don't get suggestions because Levenshtein distance is an n**2 algorithm.
          */
         function getSpellingSuggestionForName(name: string, symbols: Symbol[], meaning: SymbolFlags): Symbol | undefined {
-            const worstDistance = Math.max(6, name.length * 1.3);
+            const worstDistance = name.length * 0.7;
             let bestDistance = Number.MAX_VALUE;
             let bestCandidate = undefined;
             if (name.length > 30) {
@@ -14213,6 +14215,9 @@ namespace ts {
                     const candidateName = candidate.name.toLowerCase();
                     if (candidateName === name) {
                         return candidate;
+                    }
+                    if (candidateName.length < 3) {
+                        continue;
                     }
                     const distance = levenshtein(candidateName, name);
                     if (distance < 2) {
