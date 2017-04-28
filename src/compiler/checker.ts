@@ -1091,12 +1091,14 @@ namespace ts {
                         !checkAndReportErrorForUsingTypeAsNamespace(errorLocation, name, meaning) &&
                         !checkAndReportErrorForUsingTypeAsValue(errorLocation, name, meaning) &&
                         !checkAndReportErrorForUsingNamespaceModuleAsValue(errorLocation, name, meaning))  {
+                        let suggestion: string | undefined;
                         if (suggestedNameNotFoundMessage) {
-                            const suggestion = getSuggestionForNonexistentSymbol(originalLocation, name, meaning);
-                            // TODO: I guess nameArg is the "error reporting" version of name
-                            error(errorLocation, suggestedNameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg), suggestion);
+                            suggestion = getSuggestionForNonexistentSymbol(originalLocation, name, meaning);
+                            if (suggestion) {
+                                error(errorLocation, suggestedNameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg), suggestion);
+                            }
                         }
-                        else {
+                        if (!suggestion) {
                             error(errorLocation, nameNotFoundMessage, typeof nameArg === "string" ? nameArg : declarationNameToString(nameArg));
                         }
                     }
@@ -14195,12 +14197,14 @@ namespace ts {
          *      * With no name
          *      * Whose meaning doesn't match the `meaning` parameter.
          *      * Whose length differs from the target name by more than 3.
+         *      * Whose levenshtein distance is more than 1.3 times the length of the name
          * Names longer than 30 characters don't get suggestions because Levenshtein distance is an n**2 algorithm.
          */
         function getSpellingSuggestionForName(name: string, symbols: Symbol[], meaning: SymbolFlags): Symbol | undefined {
-            let bestCandidate = undefined;
+            const worstDistance = Math.max(6, name.length * 1.3);
             let bestDistance = Number.MAX_VALUE;
-            if (name.length >= 30) {
+            let bestCandidate = undefined;
+            if (name.length > 30) {
                 return undefined;
             }
             name = name.toLowerCase();
@@ -14214,7 +14218,7 @@ namespace ts {
                     if (distance < 2) {
                         return candidate;
                     }
-                    else if (distance < bestDistance) {
+                    else if (distance < bestDistance && distance < worstDistance) {
                         bestDistance = distance;
                         bestCandidate = candidate;
                     }
