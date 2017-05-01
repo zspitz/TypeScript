@@ -12,9 +12,6 @@
 
 verify.importFixAtPosition([
 `import * as ns from "./foo";
-JSON();`,
-
-`import * as ns from "./foo";
 import { foo } from "./foo";
 foo();`,
 

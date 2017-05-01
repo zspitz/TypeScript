@@ -19,7 +19,6 @@
 //// { "main":"./notindex.js", "typings":"./notindex.d.ts" }
 
 verify.importFixAtPosition([
-`NaN();`,
 `import { f1 } from "fake-module";
 
 f1();`

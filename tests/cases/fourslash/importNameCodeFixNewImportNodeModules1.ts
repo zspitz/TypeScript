@@ -10,7 +10,6 @@
 //// export function f1();
 
 verify.importFixAtPosition([
-`NaN();`,
 `import { f1 } from "fake-module/nested";
 
 f1();`

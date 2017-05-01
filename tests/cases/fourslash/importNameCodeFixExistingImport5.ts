@@ -9,6 +9,4 @@
 
 verify.importFixAtPosition([`import "./module";
 import { f1 } from "./module";
-f1();`,
-`import "./module";
-NaN();`]);
+f1();`]);

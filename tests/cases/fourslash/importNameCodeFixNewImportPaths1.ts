@@ -16,7 +16,6 @@
 //// }
 
 verify.importFixAtPosition([
-`JSON();`,
 `import { foo } from "b/f2";
 
 foo();`

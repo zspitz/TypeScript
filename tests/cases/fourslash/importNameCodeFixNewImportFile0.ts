@@ -7,7 +7,6 @@
 //// export var v1 = 5;
 
 verify.importFixAtPosition([
-`NaN();`,
 `import { f1 } from "./module";
 
 f1();`

@@ -10,7 +10,6 @@
 //// export { foo } from "bar"; 
 
 verify.importFixAtPosition([
-`JSON();`,
 `import { foo } from "./foo";
 
 foo();`,
