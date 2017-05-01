@@ -1,6 +1,6 @@
 tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInterface05.ts(3,5): error TS1212: Identifier expected. 'interface' is a reserved word in strict mode.
 tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInterface05.ts(10,1): error TS1212: Identifier expected. 'interface' is a reserved word in strict mode.
-tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInterface05.ts(11,1): error TS2552: Cannot find name 'I'. Did you mean 'Intl'?
+tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInterface05.ts(11,1): error TS2304: Cannot find name 'I'.
 
 
 ==== tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInterface05.ts (3 errors) ====
@@ -20,5 +20,5 @@ tests/cases/conformance/interfaces/interfaceDeclarations/asiPreventsParsingAsInt
 !!! error TS1212: Identifier expected. 'interface' is a reserved word in strict mode.
     I           // This should be the identifier 'I'
     ~
-!!! error TS2552: Cannot find name 'I'. Did you mean 'Intl'?
+!!! error TS2304: Cannot find name 'I'.
     { }         // This should be a block body

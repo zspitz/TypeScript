@@ -1,5 +1,5 @@
-tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,11): error TS2552: Cannot find name 'async'. Did you mean 'NaN'?
-tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,18): error TS2552: Cannot find name 'a'. Did you mean 'NaN'?
+tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,11): error TS2304: Cannot find name 'async'.
+tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,18): error TS2304: Cannot find name 'a'.
 tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,37): error TS1005: ',' expected.
 tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,39): error TS2403: Subsequent variable declarations must have the same type.  Variable 'Promise' must be of type 'PromiseConstructor', but here has type 'void'.
 tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts(1,46): error TS1005: '=' expected.
@@ -9,9 +9,9 @@ tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es20
 ==== tests/cases/conformance/async/es2017/asyncArrowFunction/asyncArrowFunction9_es2017.ts (6 errors) ====
     var foo = async (a = await => await): Promise<void> => {
               ~~~~~
-!!! error TS2552: Cannot find name 'async'. Did you mean 'NaN'?
+!!! error TS2304: Cannot find name 'async'.
                      ~
-!!! error TS2552: Cannot find name 'a'. Did you mean 'NaN'?
+!!! error TS2304: Cannot find name 'a'.
                                         ~
 !!! error TS1005: ',' expected.
                                           ~~~~~~~

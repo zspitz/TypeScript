@@ -1,4 +1,4 @@
-tests/cases/conformance/statements/for-ofStatements/ES5For-of22.ts(3,5): error TS2552: Cannot find name 'console'. Did you mean 'Boolean'?
+tests/cases/conformance/statements/for-ofStatements/ES5For-of22.ts(3,5): error TS2304: Cannot find name 'console'.
 
 
 ==== tests/cases/conformance/statements/for-ofStatements/ES5For-of22.ts (1 errors) ====
@@ -6,5 +6,5 @@ tests/cases/conformance/statements/for-ofStatements/ES5For-of22.ts(3,5): error T
         let _a = 0;
         console.log(x);
         ~~~~~~~
-!!! error TS2552: Cannot find name 'console'. Did you mean 'Boolean'?
+!!! error TS2304: Cannot find name 'console'.
     }

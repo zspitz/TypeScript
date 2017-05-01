@@ -13,8 +13,8 @@ tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(
   Type 'string | number' is not assignable to type 'number'.
     Type 'string' is not assignable to type 'number'.
 tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(29,17): error TS1317: A parameter property cannot be declared using a rest parameter.
-tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(34,22): error TS2552: Cannot find name 'E1'. Did you mean 'a1'?
-tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(34,28): error TS2552: Cannot find name 'E'. Did you mean 'C'?
+tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(34,22): error TS2304: Cannot find name 'E1'.
+tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(34,28): error TS2304: Cannot find name 'E'.
 
 
 ==== tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts (12 errors) ====
@@ -78,9 +78,9 @@ tests/cases/conformance/es6/destructuring/destructuringParameterDeclaration4.ts(
     function foo1<T extends Number>(...a: T[]) { }
     foo1(1, 2, "string", E1.a, E.b);  // Error
                          ~~
-!!! error TS2552: Cannot find name 'E1'. Did you mean 'a1'?
+!!! error TS2304: Cannot find name 'E1'.
                                ~
-!!! error TS2552: Cannot find name 'E'. Did you mean 'C'?
+!!! error TS2304: Cannot find name 'E'.
     
     
     

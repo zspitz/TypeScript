@@ -1,5 +1,5 @@
-tests/cases/compiler/classImplementsClass6.ts(20,3): error TS2551: Property 'bar' does not exist on type 'C'. Did you mean 'foo'?
-tests/cases/compiler/classImplementsClass6.ts(21,4): error TS2551: Property 'bar' does not exist on type 'C2'. Did you mean 'foo'?
+tests/cases/compiler/classImplementsClass6.ts(20,3): error TS2339: Property 'bar' does not exist on type 'C'.
+tests/cases/compiler/classImplementsClass6.ts(21,4): error TS2339: Property 'bar' does not exist on type 'C2'.
 
 
 ==== tests/cases/compiler/classImplementsClass6.ts (2 errors) ====
@@ -24,7 +24,7 @@ tests/cases/compiler/classImplementsClass6.ts(21,4): error TS2551: Property 'bar
     c2 = c;
     c.bar(); // error
       ~~~
-!!! error TS2551: Property 'bar' does not exist on type 'C'. Did you mean 'foo'?
+!!! error TS2339: Property 'bar' does not exist on type 'C'.
     c2.bar(); // should error
        ~~~
-!!! error TS2551: Property 'bar' does not exist on type 'C2'. Did you mean 'foo'?
+!!! error TS2339: Property 'bar' does not exist on type 'C2'.

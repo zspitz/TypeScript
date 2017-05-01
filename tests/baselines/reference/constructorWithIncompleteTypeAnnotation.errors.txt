@@ -1,26 +1,26 @@
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(11,13): error TS2304: Cannot find name 'module'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(11,13): error TS2503: Cannot find namespace 'module'.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(11,13): error TS2552: Cannot find name 'module'. Did you mean 'Date'?
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(11,19): error TS1005: ';' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(22,35): error TS1005: ')' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(22,39): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(24,28): error TS1005: ':' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(24,29): error TS1005: ',' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(27,18): error TS1128: Declaration or statement expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(27,26): error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(27,26): error TS2304: Cannot find name 'bfs'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(28,30): error TS1005: '=' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(31,18): error TS1109: Expression expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(34,17): error TS2363: The right-hand side of an arithmetic operation must be of type 'any', 'number' or an enum type.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(34,26): error TS1005: ';' expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(34,28): error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(34,28): error TS2304: Cannot find name 'bfs'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(35,21): error TS2365: Operator '!=' cannot be applied to types 'boolean' and '0'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(38,17): error TS1109: Expression expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(40,28): error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(40,28): error TS2304: Cannot find name 'bfs'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(40,41): error TS1005: ';' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(40,45): error TS1002: Unterminated string literal.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(41,21): error TS2365: Operator '!=' cannot be applied to types 'boolean' and '0'.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(47,17): error TS2552: Cannot find name 'console'. Did you mean 'Program'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(47,17): error TS2304: Cannot find name 'console'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(49,13): error TS1068: Unexpected token. A constructor, method, accessor, or property was expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(53,13): error TS2552: Cannot find name 'console'. Did you mean 'Program'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(53,13): error TS2304: Cannot find name 'console'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(58,5): error TS1128: Declaration or statement expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(69,13): error TS1109: Expression expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(72,37): error TS1127: Invalid character.
@@ -35,7 +35,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(141,32): error T
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(143,13): error TS1005: 'try' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(159,24): error TS1109: Expression expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(159,30): error TS1005: '(' expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(159,31): error TS2552: Cannot find name 'Property'. Did you mean 'retVal'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(159,31): error TS2304: Cannot find name 'Property'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(166,13): error TS2365: Operator '+=' cannot be applied to types 'number' and 'void'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(180,40): error TS2447: The '^' operator is not allowed for boolean types. Consider using '!==' instead.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(181,13): error TS2322: Type 'boolean' is not assignable to type 'number'.
@@ -49,13 +49,13 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(223,23): error T
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(227,13): error TS1109: Expression expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(234,14): error TS1005: '{' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,9): error TS1128: Declaration or statement expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,16): error TS2552: Cannot find name 'method1'. Did you mean 'Math'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,16): error TS2304: Cannot find name 'method1'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,24): error TS2552: Cannot find name 'val'. Did you mean 'eval'?
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,27): error TS1005: ',' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,28): error TS2552: Cannot find name 'number'. Did you mean 'Number'?
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(235,36): error TS1005: ';' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(238,9): error TS1128: Declaration or statement expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(238,16): error TS2552: Cannot find name 'method2'. Did you mean 'Math'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(238,16): error TS2304: Cannot find name 'method2'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(238,26): error TS1005: ';' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(241,5): error TS1128: Declaration or statement expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(246,25): error TS2551: Property 'method1' does not exist on type 'B'. Did you mean 'method2'?
@@ -77,9 +77,9 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(257,43): error T
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(257,52): error TS2552: Cannot find name 'string'. Did you mean 'String'?
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(257,60): error TS1005: ';' expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(257,65): error TS1109: Expression expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,9): error TS2552: Cannot find name 'public'. Did you mean 'Fruit'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,9): error TS2304: Cannot find name 'public'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,16): error TS1005: ';' expected.
-tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,16): error TS2552: Cannot find name 'DefaultValue'. Did you mean 'EvalError'?
+tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,16): error TS2304: Cannot find name 'DefaultValue'.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,29): error TS2552: Cannot find name 'value'. Did you mean 'eval'?
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,35): error TS1109: Expression expected.
 tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(259,37): error TS2552: Cannot find name 'string'. Did you mean 'String'?
@@ -100,9 +100,9 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
     
     import fs = module("fs");
                 ~~~~~~
-!!! error TS2503: Cannot find namespace 'module'.
+!!! error TS2304: Cannot find name 'module'.
                 ~~~~~~
-!!! error TS2552: Cannot find name 'module'. Did you mean 'Date'?
+!!! error TS2503: Cannot find namespace 'module'.
                       ~
 !!! error TS1005: ';' expected.
     
@@ -135,7 +135,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
                      ~~~~
 !!! error TS1128: Declaration or statement expected.
                              ~~~
-!!! error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+!!! error TS2304: Cannot find name 'bfs'.
                     if (retValue != 0) {
                                  ~~
 !!! error TS1005: '=' expected.
@@ -152,7 +152,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
                              ~
 !!! error TS1005: ';' expected.
                                ~~~
-!!! error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+!!! error TS2304: Cannot find name 'bfs'.
                     if (retValue != 0) {
                         ~~~~~~~~~~~~~
 !!! error TS2365: Operator '!=' cannot be applied to types 'boolean' and '0'.
@@ -164,7 +164,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
     
                     retValue = bfs.OPERATOR ' );
                                ~~~
-!!! error TS2552: Cannot find name 'bfs'. Did you mean 'B'?
+!!! error TS2304: Cannot find name 'bfs'.
                                             ~~~~
 !!! error TS1005: ';' expected.
                                                 
@@ -179,7 +179,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
                 catch (e) {
                     console.log(e);
                     ~~~~~~~
-!!! error TS2552: Cannot find name 'console'. Did you mean 'Program'?
+!!! error TS2304: Cannot find name 'console'.
                 }
                 finally {
                 ~~~~~~~
@@ -189,7 +189,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
     
                 console.log('Done');
                 ~~~~~~~
-!!! error TS2552: Cannot find name 'console'. Did you mean 'Program'?
+!!! error TS2304: Cannot find name 'console'.
     
                 return 0;
     
@@ -325,7 +325,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
                                  ~
 !!! error TS1005: '(' expected.
                                   ~~~~~~~~
-!!! error TS2552: Cannot find name 'Property'. Did you mean 'retVal'?
+!!! error TS2304: Cannot find name 'Property'.
                 retVal += c.Member();
                 retVal += xx.Foo() ? 0 : 1;
     
@@ -429,7 +429,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
             ~~~~~~
 !!! error TS1128: Declaration or statement expected.
                    ~~~~~~~
-!!! error TS2552: Cannot find name 'method1'. Did you mean 'Math'?
+!!! error TS2304: Cannot find name 'method1'.
                            ~~~
 !!! error TS2552: Cannot find name 'val'. Did you mean 'eval'?
                               ~
@@ -444,7 +444,7 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
             ~~~~~~
 !!! error TS1128: Declaration or statement expected.
                    ~~~~~~~
-!!! error TS2552: Cannot find name 'method2'. Did you mean 'Math'?
+!!! error TS2304: Cannot find name 'method2'.
                              ~
 !!! error TS1005: ';' expected.
                 return 2 * this.method1(2);
@@ -509,11 +509,11 @@ tests/cases/compiler/constructorWithIncompleteTypeAnnotation.ts(261,1): error TS
     
             public DefaultValue(value?: string = "Hello") { }
             ~~~~~~
-!!! error TS2552: Cannot find name 'public'. Did you mean 'Fruit'?
+!!! error TS2304: Cannot find name 'public'.
                    ~~~~~~~~~~~~
 !!! error TS1005: ';' expected.
                    ~~~~~~~~~~~~
-!!! error TS2552: Cannot find name 'DefaultValue'. Did you mean 'EvalError'?
+!!! error TS2304: Cannot find name 'DefaultValue'.
                                 ~~~~~
 !!! error TS2552: Cannot find name 'value'. Did you mean 'eval'?
                                       ~

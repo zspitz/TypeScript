@@ -1,5 +1,5 @@
-tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts(3,1): error TS2552: Cannot find name 'abstract'. Did you mean 'Array'?
-tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts(6,1): error TS2552: Cannot find name 'abstract'. Did you mean 'Array'?
+tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts(3,1): error TS2304: Cannot find name 'abstract'.
+tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts(6,1): error TS2304: Cannot find name 'abstract'.
 tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbstractSingleLineDecl.ts(10,1): error TS2511: Cannot create an instance of the abstract class 'A'.
 
 
@@ -8,12 +8,12 @@ tests/cases/conformance/classes/classDeclarations/classAbstractKeyword/classAbst
     
     abstract
     ~~~~~~~~
-!!! error TS2552: Cannot find name 'abstract'. Did you mean 'Array'?
+!!! error TS2304: Cannot find name 'abstract'.
     class B {}
     
     abstract
     ~~~~~~~~
-!!! error TS2552: Cannot find name 'abstract'. Did you mean 'Array'?
+!!! error TS2304: Cannot find name 'abstract'.
     
     class C {}
     

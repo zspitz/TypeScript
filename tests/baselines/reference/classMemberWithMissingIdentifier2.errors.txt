@@ -1,11 +1,11 @@
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,11): error TS1146: Declaration expected.
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,12): error TS1005: '=' expected.
-tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,14): error TS2552: Cannot find name 'name'. Did you mean 'NaN'?
+tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,14): error TS2304: Cannot find name 'name'.
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,18): error TS1005: ']' expected.
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,19): error TS2552: Cannot find name 'string'. Did you mean 'String'?
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,25): error TS1005: ',' expected.
 tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,26): error TS1136: Property assignment expected.
-tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,27): error TS2552: Cannot find name 'VariableDeclaration'. Did you mean 'Uint8ClampedArray'?
+tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,27): error TS2304: Cannot find name 'VariableDeclaration'.
 
 
 ==== tests/cases/compiler/classMemberWithMissingIdentifier2.ts (8 errors) ====
@@ -16,7 +16,7 @@ tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,27): error TS2552: C
                ~
 !!! error TS1005: '=' expected.
                  ~~~~
-!!! error TS2552: Cannot find name 'name'. Did you mean 'NaN'?
+!!! error TS2304: Cannot find name 'name'.
                      ~
 !!! error TS1005: ']' expected.
                       ~~~~~~
@@ -26,5 +26,5 @@ tests/cases/compiler/classMemberWithMissingIdentifier2.ts(2,27): error TS2552: C
                              ~
 !!! error TS1136: Property assignment expected.
                               ~~~~~~~~~~~~~~~~~~~
-!!! error TS2552: Cannot find name 'VariableDeclaration'. Did you mean 'Uint8ClampedArray'?
+!!! error TS2304: Cannot find name 'VariableDeclaration'.
     }

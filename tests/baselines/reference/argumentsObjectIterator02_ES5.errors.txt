@@ -1,11 +1,11 @@
-tests/cases/compiler/argumentsObjectIterator02_ES5.ts(2,26): error TS2552: Cannot find name 'Symbol'. Did you mean 'blah'?
+tests/cases/compiler/argumentsObjectIterator02_ES5.ts(2,26): error TS2304: Cannot find name 'Symbol'.
 
 
 ==== tests/cases/compiler/argumentsObjectIterator02_ES5.ts (1 errors) ====
     function doubleAndReturnAsArray(x: number, y: number, z: number): [number, number, number] {
         let blah = arguments[Symbol.iterator];
                              ~~~~~~
-!!! error TS2552: Cannot find name 'Symbol'. Did you mean 'blah'?
+!!! error TS2304: Cannot find name 'Symbol'.
     
         let result = [];
         for (let arg of blah()) {

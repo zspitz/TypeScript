@@ -4,7 +4,7 @@ tests/cases/conformance/types/tuple/castingTuple.ts(29,10): error TS2352: Type '
   Type 'C' is not comparable to type 'A'.
     Property 'a' is missing in type 'C'.
 tests/cases/conformance/types/tuple/castingTuple.ts(30,5): error TS2403: Subsequent variable declarations must have the same type.  Variable 'array1' must be of type '{}[]', but here has type 'number[]'.
-tests/cases/conformance/types/tuple/castingTuple.ts(31,1): error TS2552: Cannot find name 't4'. Did you mean 't3'?
+tests/cases/conformance/types/tuple/castingTuple.ts(31,1): error TS2304: Cannot find name 't4'.
 
 
 ==== tests/cases/conformance/types/tuple/castingTuple.ts (4 errors) ====
@@ -49,5 +49,5 @@ tests/cases/conformance/types/tuple/castingTuple.ts(31,1): error TS2552: Cannot 
 !!! error TS2403: Subsequent variable declarations must have the same type.  Variable 'array1' must be of type '{}[]', but here has type 'number[]'.
     t4[2] = 10;
     ~~
-!!! error TS2552: Cannot find name 't4'. Did you mean 't3'?
+!!! error TS2304: Cannot find name 't4'.
     

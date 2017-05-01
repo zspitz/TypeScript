@@ -1,5 +1,5 @@
-tests/cases/compiler/classSideInheritance1.ts(12,3): error TS2551: Property 'bar' does not exist on type 'A'. Did you mean 'foo'?
-tests/cases/compiler/classSideInheritance1.ts(13,3): error TS2551: Property 'bar' does not exist on type 'C2'. Did you mean 'foo'?
+tests/cases/compiler/classSideInheritance1.ts(12,3): error TS2339: Property 'bar' does not exist on type 'A'.
+tests/cases/compiler/classSideInheritance1.ts(13,3): error TS2339: Property 'bar' does not exist on type 'C2'.
 
 
 ==== tests/cases/compiler/classSideInheritance1.ts (2 errors) ====
@@ -16,9 +16,9 @@ tests/cases/compiler/classSideInheritance1.ts(13,3): error TS2551: Property 'bar
     var c: C2;
     a.bar(); // static off an instance - should be an error
       ~~~
-!!! error TS2551: Property 'bar' does not exist on type 'A'. Did you mean 'foo'?
+!!! error TS2339: Property 'bar' does not exist on type 'A'.
     c.bar(); // static off an instance - should be an error
       ~~~
-!!! error TS2551: Property 'bar' does not exist on type 'C2'. Did you mean 'foo'?
+!!! error TS2339: Property 'bar' does not exist on type 'C2'.
     A.bar(); // valid
     C2.bar(); // valid

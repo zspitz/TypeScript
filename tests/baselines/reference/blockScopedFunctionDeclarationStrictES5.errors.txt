@@ -1,5 +1,5 @@
 tests/cases/compiler/blockScopedFunctionDeclarationStrictES5.ts(3,14): error TS1250: Function declarations are not allowed inside blocks in strict mode when targeting 'ES3' or 'ES5'.
-tests/cases/compiler/blockScopedFunctionDeclarationStrictES5.ts(6,1): error TS2552: Cannot find name 'foo'. Did you mean 'JSON'?
+tests/cases/compiler/blockScopedFunctionDeclarationStrictES5.ts(6,1): error TS2304: Cannot find name 'foo'.
 
 
 ==== tests/cases/compiler/blockScopedFunctionDeclarationStrictES5.ts (2 errors) ====
@@ -12,4 +12,4 @@ tests/cases/compiler/blockScopedFunctionDeclarationStrictES5.ts(6,1): error TS25
     }
     foo(); // Error to find name foo
     ~~~
-!!! error TS2552: Cannot find name 'foo'. Did you mean 'JSON'?
+!!! error TS2304: Cannot find name 'foo'.
