@@ -15197,14 +15197,22 @@ namespace ts {
             //  declare function f(a: { xa: number; xb: number; });
             //  f({ |
             if (!produceDiagnostics) {
-                for (let candidate of candidates) {
-                    if (hasCorrectArity(node, args, candidate)) {
-                        if (candidate.typeParameters && typeArguments) {
-                            candidate = getSignatureInstantiation(candidate, map(typeArguments, getTypeFromTypeNode));
+                if (candidates.length > 1) {
+                    for (let candidate of candidates) {
+                        if (hasCorrectArity(node, args, candidate)) {
+                            if (candidate.typeParameters && typeArguments) {
+                                candidate = getSignatureInstantiation(candidate, map(typeArguments, getTypeFromTypeNode));
+                            }
+                            return candidate;
                         }
-                        return candidate;
                     }
                 }
+                //Just return the first candidate then...
+                const candidate = candidates[0];
+                if (candidate.typeParameters && typeArguments) {
+                    return getSignatureInstantiation(candidate, map(typeArguments, getTypeFromTypeNode));
+                }
+                return candidate;
             }
 
             return resolveErrorCall(node);

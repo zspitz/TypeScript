@@ -499,7 +499,7 @@ namespace ts.SignatureHelp {
         return createTextSpan(applicableSpanStart, applicableSpanEnd - applicableSpanStart);
     }
 
-    export function getContainingArgumentInfo(node: Node, position: number, sourceFile: SourceFile): ArgumentListInfo {
+    function getContainingArgumentInfo(node: Node, position: number, sourceFile: SourceFile): ArgumentListInfo {
         for (let n = node; n.kind !== SyntaxKind.SourceFile; n = n.parent) {
             if (isFunctionBlock(n)) {
                 return undefined;
