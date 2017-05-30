@@ -9585,6 +9585,7 @@ namespace ts {
         declare class C {}
         export = C;
         */
+        //mv?
         function areNominallyTheSame(a: Type, b: Type): boolean {
             const sa = a.symbol;
             const sb = b.symbol;
@@ -9594,24 +9595,47 @@ namespace ts {
             const vb = sb.valueDeclaration;
 
             if (!va || !vb) return false;
+            //TODO: test with export default class expression too
             if (!isClassDeclaration(va) || !isClassDeclaration(vb)) return false;
 
-            //Must both be classes with the same name (TEST)
-            if (va.name.text !== vb.name.text) return false;
-
-            //must have same parent chain of namespaces to reach the source file (don't think a class can go in anything else?) (TEST) (TODO)
-
-            const sfa = ts.getSourceFileOfNode(va);
-            const sfb = ts.getSourceFileOfNode(vb);
-
-            if (sfa.packageName === undefined || sfb.packageName === undefined) return false;
-            return sfa.packageName === sfb.packageName;
+            return haveSameNominalOrigin(va, vb);
         }
 
-        //mv
-        //function getPackageName(sf: ts.SourceFile) {
-        //    sf.path;
-        //}
+        function haveSameNominalOrigin<T extends ClassDeclaration | ModuleDeclaration>(a: T, b: T): boolean {
+            if (a.name.text !== b.name.text) {
+                return false;
+            }
+
+            const pa = a.parent;
+            const pb = b.parent;
+            if (pa.kind !== pb.kind) {
+                return false;
+            }
+
+            //Must be exported in identical ways.
+            if (ts.getModifierFlags(a) !== ts.getModifierFlags(b)) {
+                return false;
+            }
+
+            switch (pa.kind) {
+                case SyntaxKind.ModuleBlock: {
+                    const mda = (pa as ModuleBlock).parent;
+                    const mdb = (pb as ModuleBlock).parent
+                    if (mda.name.text !== mdb.name.text) return false;
+                    return haveSameNominalOrigin(mda, mdb);
+                }
+
+                case SyntaxKind.SourceFile:
+                    const { packageName: pna } = pa as SourceFile;
+                    const { packageName: pnb } = pb as SourceFile;
+                    return pna !== undefined && pnb !== undefined && pna === pnb;
+
+                default:
+                    //Class declaration in a random block can't be nominally equivalent to class declaration in a different block.
+                    //(TEST)
+                    return false;
+            }
+        }
 
         // Invoke the callback for each underlying property symbol of the given symbol and return the first
         // value that isn't undefined.
@@ -9710,6 +9734,7 @@ namespace ts {
                 return Ternary.False;
             }
             if (sourcePropAccessibility) {
+                //Hmm, this will have to take into account nominal equivalence?
                 if (getTargetSymbol(sourceProp) !== getTargetSymbol(targetProp)) {
                     return Ternary.False;
                 }

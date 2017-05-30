@@ -1,31 +1,42 @@
 // @noImplicitReferences: true
 
 // @Filename: /node_modules/a/index.d.ts
-import X from "x";
-export function a(x: X): void;
+import { Z } from "x";
+export function a(x: Z.Y.X): void;
 
 // @Filename: /node_modules/a/node_modules/x/index.d.ts
-export default class X {
-    private x: number;
+export namespace Z {
+    namespace Y {
+        class X {
+            private x: number;
+        }
+    }
 }
 
 // @Filename: /node_modules/b/index.d.ts
-import X from "x";
-export const b: X;
+import { Z } from "x";
+export const b: Z.Y.X;
 
 // @Filename: /node_modules/b/node_modules/x/index.d.ts
-export default class X {
-    private x: number;
+export namespace Z {
+    namespace Y {
+        class X {
+            private x: number;
+        }
+    }
 }
 
 // @Filename: /node_modules/c/index.d.ts
-import X from "x";
-export const c: X;
+import { Y } from "x";
+export const c: Y.Z.X;
 
 // @Filename: /node_modules/c/node_modules/x/index.d.ts
-// Mismatch -- different type
-export default class X {
-    private x: string;
+export namespace Y {
+    namespace Z {
+        class X {
+            private x: number;
+        }
+    }
 }
 
 // @Filename: /node_modules/d/index.d.ts
@@ -38,12 +49,13 @@ export class X {
     private x: number;
 }
 
+//TODO: error if one is default export and other is const
+//TODO: test with class inside a namespace
+
 // @Filename: /src/a.ts
 import { a } from "a";
 import { b } from "b";
 import { c } from "c";
-import { d } from "d";
 a(b); // Works
 a(c); // Error
-a(d); // Error
 
