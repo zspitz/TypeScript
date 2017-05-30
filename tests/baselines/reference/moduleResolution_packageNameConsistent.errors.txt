@@ -1,0 +1,19 @@
+/a.ts(6,23): error TS6137: Cannot import type declaration files. Consider importing 'foo/' instead of '@types/foo/'.
+
+
+==== /a.ts (1 errors) ====
+    // These imports must all resolve with the same packageName of "foo",
+    // or else it will trigger an assertion in `setPackageName` in `program.ts`
+    
+    import * as foo from "foo";
+    import * as foo2 from "foo/";
+    import * as foo3 from "@types/foo/";
+                          ~~~~~~~~~~~~~
+!!! error TS6137: Cannot import type declaration files. Consider importing 'foo/' instead of '@types/foo/'.
+    import * as foo4 from "@types\\foo\\";
+    // Relative imports do not have any packageName, so ignored.
+    import * as foo5 from "./node_modules/@types/foo";
+    
+==== /node_modules/@types/foo/index.d.ts (0 errors) ====
+    export const x: number;
+    

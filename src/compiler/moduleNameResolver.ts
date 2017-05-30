@@ -19,17 +19,25 @@ namespace ts {
         push(value: T): void;
     }
 
-    //killme?
+    //name
     interface ResolvedMini {
         path: string;
         extension: Extension;
     }
 
-    function withPackageName(r: ResolvedMini, packageName: string | undefined): Resolved {
-        return { ...r, packageName };
+    function maybeWithPackageName(packageName: string | undefined, r: ResolvedMini | undefined): Resolved | undefined {
+        return r && { ...r, packageName: packageName && normalizePackageName(packageName) };
     }
-    function maybeWithPackageName(r: ResolvedMini | undefined, packageName: string | undefined): Resolved | undefined {
-        return r ? withPackageName(r, packageName) : undefined;
+
+    function normalizePackageName(packageName: string): string {
+        let components = getNormalizedPathComponents(packageName, "");
+        if (components[0] === "") {
+            components = components.slice(1);
+        }
+        if (components[0] === "@types") {
+            components = components.slice(1);
+        }
+        return getNormalizedPathFromPathComponents(components);
     }
 
     /**
@@ -60,6 +68,7 @@ namespace ts {
     }
 
     function createResolvedModuleWithFailedLookupLocations(resolved: Resolved | undefined, isExternalLibraryImport: boolean, failedLookupLocations: string[]): ResolvedModuleWithFailedLookupLocations {
+        Debug.assert(!resolved || resolved.path !== undefined); //kill
         return {
             resolvedModule: resolved && { resolvedFileName: resolved.path, extension: resolved.extension, packageName: resolved.packageName, isExternalLibraryImport },
             failedLookupLocations
@@ -552,10 +561,10 @@ namespace ts {
         failedLookupLocations: Push<string>, state: ModuleResolutionState): Resolved | undefined {
 
         if (moduleHasNonRelativeName(moduleName)) {
-            return maybeWithPackageName(tryLoadModuleUsingBaseUrl(extensions, moduleName, loader, failedLookupLocations, state), moduleName);
+            return maybeWithPackageName(moduleName, tryLoadModuleUsingBaseUrl(extensions, moduleName, loader, failedLookupLocations, state)); //TODO: Test with baseUrl settings...
         }
         else {
-            return maybeWithPackageName(tryLoadModuleUsingRootDirs(extensions, moduleName, containingDirectory, loader, failedLookupLocations, state), undefined);
+            return maybeWithPackageName(undefined, tryLoadModuleUsingRootDirs(extensions, moduleName, containingDirectory, loader, failedLookupLocations, state));
         }
     }
 
@@ -736,18 +745,14 @@ namespace ts {
                 // For node_modules lookups, get the real path so that multiple accesses to an `npm link`-ed module do not create duplicate files.
                 return resolved && {
                     value: resolved.value && {
-                        resolved: {
-                            path: realpath(resolved.value.path, host, traceEnabled),
-                            packageName: moduleName,
-                            extension: resolved.value.extension
-                        },
+                        resolved: maybeWithPackageName(moduleName, { path: realpath(resolved.value.path, host, traceEnabled), extension: resolved.value.extension }),
                         isExternalLibraryImport: true
                     }
                 };
             }
             else {
                 const candidate = normalizePath(combinePaths(containingDirectory, moduleName));
-                const resolved = maybeWithPackageName(nodeLoadModuleByRelativeName(extensions, candidate, failedLookupLocations, /*onlyRecordFailures*/ false, state, /*considerPackageJson*/ true), undefined);
+                const resolved = maybeWithPackageName(undefined, nodeLoadModuleByRelativeName(extensions, candidate, failedLookupLocations, /*onlyRecordFailures*/ false, state, /*considerPackageJson*/ true));
                 return resolved && toSearchResult({ resolved, isExternalLibraryImport: false });
             }
         }
@@ -1071,7 +1076,7 @@ namespace ts {
                         return resolutionFromCache;
                     }
                     const searchName = normalizePath(combinePaths(directory, moduleName));
-                    return toSearchResult(maybeWithPackageName(loadModuleFromFile(extensions, searchName, failedLookupLocations, /*onlyRecordFailures*/ false, state), moduleName));
+                    return toSearchResult(maybeWithPackageName(moduleName, loadModuleFromFile(extensions, searchName, failedLookupLocations, /*onlyRecordFailures*/ false, state)));
                 });
                 if (resolved) {
                     return resolved;
@@ -1079,12 +1084,12 @@ namespace ts {
                 if (extensions === Extensions.TypeScript) {
                     // If we didn't find the file normally, look it up in @types.
                     const x = loadModuleFromNodeModulesAtTypes(moduleName, containingDirectory, failedLookupLocations, state);
-                    return x ? (x.value ? { value: withPackageName(x.value, moduleName) } : { value: undefined }) : undefined;
+                    return x && { value: maybeWithPackageName(moduleName, x.value) }
                 }
             }
             else {
                 const candidate = normalizePath(combinePaths(containingDirectory, moduleName));
-                return toSearchResult(maybeWithPackageName(loadModuleFromFile(extensions, candidate, failedLookupLocations, /*onlyRecordFailures*/ false, state), undefined));
+                return toSearchResult(maybeWithPackageName(undefined, loadModuleFromFile(extensions, candidate, failedLookupLocations, /*onlyRecordFailures*/ false, state)));
             }
         }
     }
@@ -1101,7 +1106,7 @@ namespace ts {
         }
         const state: ModuleResolutionState = { compilerOptions, host, traceEnabled };
         const failedLookupLocations: string[] = [];
-        const resolved = withPackageName(loadModuleFromNodeModulesOneLevel(Extensions.DtsOnly, moduleName, globalCache, failedLookupLocations, state), moduleName);
+        const resolved = maybeWithPackageName(moduleName, loadModuleFromNodeModulesOneLevel(Extensions.DtsOnly, moduleName, globalCache, failedLookupLocations, state));
         return createResolvedModuleWithFailedLookupLocations(resolved, /*isExternalLibraryImport*/ true, failedLookupLocations);
     }
 
