@@ -944,8 +944,7 @@ namespace ts {
     //TODO: this is public, so packageName must go on the end and be optional
     export function createLanguageServiceSourceFile(fileName: string, scriptSnapshot: IScriptSnapshot, scriptTarget: ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ScriptKind): SourceFile {
         const text = scriptSnapshot.getText(0, scriptSnapshot.getLength());
-        const packageName = ""; //TODO
-        const sourceFile = createSourceFile(fileName, text, scriptTarget, setNodeParents, scriptKind, packageName);
+        const sourceFile = createSourceFile(fileName, text, scriptTarget, setNodeParents, scriptKind);
         setSourceFileFields(sourceFile, scriptSnapshot, version);
         return sourceFile;
     }

@@ -1,0 +1,62 @@
+/src/a.ts(6,3): error TS2345: Argument of type 'X' is not assignable to parameter of type 'X'.
+  Types of property 'x' are incompatible.
+    Type 'string' is not assignable to type 'number'.
+/src/a.ts(7,3): error TS2345: Argument of type 'X' is not assignable to parameter of type 'X'.
+  Types have separate declarations of a private property 'x'.
+
+
+==== /src/a.ts (2 errors) ====
+    import { a } from "a";
+    import { b } from "b";
+    import { c } from "c";
+    import { d } from "d";
+    a(b); // Works
+    a(c); // Error
+      ~
+!!! error TS2345: Argument of type 'X' is not assignable to parameter of type 'X'.
+!!! error TS2345:   Types of property 'x' are incompatible.
+!!! error TS2345:     Type 'string' is not assignable to type 'number'.
+    a(d); // Error
+      ~
+!!! error TS2345: Argument of type 'X' is not assignable to parameter of type 'X'.
+!!! error TS2345:   Types have separate declarations of a private property 'x'.
+    
+    
+==== /node_modules/a/index.d.ts (0 errors) ====
+    import X from "x";
+    export function a(x: X): void;
+    
+==== /node_modules/a/node_modules/x/index.d.ts (0 errors) ====
+    export default class X {
+        private x: number;
+    }
+    
+==== /node_modules/b/index.d.ts (0 errors) ====
+    import X from "x";
+    export const b: X;
+    
+==== /node_modules/b/node_modules/x/index.d.ts (0 errors) ====
+    export default class X {
+        private x: number;
+    }
+    
+==== /node_modules/c/index.d.ts (0 errors) ====
+    import X from "x";
+    export const c: X;
+    
+==== /node_modules/c/node_modules/x/index.d.ts (0 errors) ====
+    // Mismatch -- different type
+    export default class X {
+        private x: string;
+    }
+    
+==== /node_modules/d/index.d.ts (0 errors) ====
+    import { X } from "x";
+    export const d: X;
+    
+==== /node_modules/d/node_modules/x/index.d.ts (0 errors) ====
+    // Mismatch -- is a named export, not a default export
+    export class X {
+        private x: number;
+    }
+    

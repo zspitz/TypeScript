@@ -3883,10 +3883,8 @@ namespace ts {
     }
 
     export interface CompilerHost extends ModuleResolutionHost {
-        //!
-        getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile;
-        //!
-        getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile;
+        getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile;
+        getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile;
         getCancellationToken?(): CancellationToken;
         getDefaultLibFileName(options: CompilerOptions): string;
         getDefaultLibLocation?(): string;

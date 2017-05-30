@@ -302,7 +302,7 @@ namespace ts {
             return fileExists;
         }
 
-        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string) {
+        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void) {
             // Return existing SourceFile object if one is available
             if (cachedProgram) {
                 const sourceFile = cachedProgram.getSourceFile(fileName);
@@ -312,7 +312,7 @@ namespace ts {
                 }
             }
             // Use default host function
-            const sourceFile = hostGetSourceFile(fileName, languageVersion, onError, packageName);
+            const sourceFile = hostGetSourceFile(fileName, languageVersion, onError);
             if (sourceFile && isWatchSet(compilerOptions) && sys.watchFile) {
                 // Attach a file watcher
                 sourceFile.fileWatcher = sys.watchFile(sourceFile.fileName, (_fileName: string, removed?: boolean) => sourceFileChanged(sourceFile, removed));

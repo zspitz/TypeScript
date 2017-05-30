@@ -88,8 +88,7 @@ namespace ts {
             return sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
         }
 
-        //TODO: this probably shouldn't be responsible for setting packageName. Or else other hosts (e.g. in harness) must be updated too.
-        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile {
+        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile {
             let text: string;
             try {
                 performance.mark("beforeIORead");
@@ -104,7 +103,7 @@ namespace ts {
                 text = "";
             }
 
-            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes, /*scriptKind*/ undefined, packageName) : undefined;
+            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes, /*scriptKind*/ undefined) : undefined;
         }
 
         function directoryExists(directoryPath: string): boolean {
@@ -769,8 +768,9 @@ namespace ts {
 
             for (const oldSourceFile of oldProgram.getSourceFiles()) {
                 const newSourceFile = host.getSourceFileByPath
-                    ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.path, options.target, undefined, oldSourceFile.packageName)
-                    : host.getSourceFile(oldSourceFile.fileName, options.target, undefined, oldSourceFile.packageName);
+                    ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.path, options.target, undefined)
+                    : host.getSourceFile(oldSourceFile.fileName, options.target, undefined);
+                //may need to set newSourceFile.packageName === oldSourceFile.packageName ?
 
                 if (!newSourceFile) {
                     return oldProgram.structureIsReused = StructureIsReused.Not;
@@ -1569,7 +1569,7 @@ namespace ts {
                 else {
                     fileProcessingDiagnostics.add(createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage));
                 }
-            }, packageName);
+            });
 
             filesByName.set(path, file);
             if (file) {
