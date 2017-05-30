@@ -88,7 +88,8 @@ namespace ts {
             return sys.useCaseSensitiveFileNames ? fileName : fileName.toLowerCase();
         }
 
-        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile {
+        //TODO: this probably shouldn't be responsible for setting packageName. Or else other hosts (e.g. in harness) must be updated too.
+        function getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile {
             let text: string;
             try {
                 performance.mark("beforeIORead");
@@ -103,7 +104,7 @@ namespace ts {
                 text = "";
             }
 
-            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes) : undefined;
+            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes, /*scriptKind*/ undefined, packageName) : undefined;
         }
 
         function directoryExists(directoryPath: string): boolean {
@@ -449,6 +450,7 @@ namespace ts {
             resolveModuleNamesWorker = (moduleNames, containingFile) => host.resolveModuleNames(moduleNames, containingFile).map(resolved => {
                 // An older host may have omitted extension, in which case we should infer it from the file extension of resolvedFileName.
                 if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) {
+                    //Note: packageName may be undefined, I don't care
                     return resolved as ResolvedModuleFull;
                 }
                 const withExtension = clone(resolved) as ResolvedModuleFull;
@@ -767,8 +769,8 @@ namespace ts {
 
             for (const oldSourceFile of oldProgram.getSourceFiles()) {
                 const newSourceFile = host.getSourceFileByPath
-                    ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.path, options.target)
-                    : host.getSourceFile(oldSourceFile.fileName, options.target);
+                    ? host.getSourceFileByPath(oldSourceFile.fileName, oldSourceFile.path, options.target, undefined, oldSourceFile.packageName)
+                    : host.getSourceFile(oldSourceFile.fileName, options.target, undefined, oldSourceFile.packageName);
 
                 if (!newSourceFile) {
                     return oldProgram.structureIsReused = StructureIsReused.Not;
@@ -1501,7 +1503,8 @@ namespace ts {
         /** This has side effects through `findSourceFile`. */
         function processSourceFile(fileName: string, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): void {
             getSourceFileFromReferenceWorker(fileName,
-                fileName => findSourceFile(fileName, toPath(fileName, currentDirectory, getCanonicalFileName), isDefaultLib, refFile, refPos, refEnd),
+                //OK for packageName to be undefined?
+                fileName => findSourceFile(fileName, toPath(fileName, currentDirectory, getCanonicalFileName), /*packageName*/ undefined, isDefaultLib, refFile, refPos, refEnd),
                 (diagnostic, ...args) => {
                     fileProcessingDiagnostics.add(refFile !== undefined && refEnd !== undefined && refPos !== undefined
                         ? createFileDiagnostic(refFile, refPos, refEnd - refPos, diagnostic, ...args)
@@ -1521,9 +1524,13 @@ namespace ts {
         }
 
         // Get source file from normalized fileName
-        function findSourceFile(fileName: string, path: Path, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): SourceFile {
+        function findSourceFile(fileName: string, path: Path, packageName: string | undefined, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): SourceFile {
             if (filesByName.contains(path)) {
                 const file = filesByName.get(path);
+
+                //TODO: we do if (file) too much...
+                if (file) setPackageName(file, packageName);
+
                 // try to check if we've already seen this file but with a different casing in path
                 // NOTE: this only makes sense for case-insensitive file systems
                 if (file && options.forceConsistentCasingInFileNames && getNormalizedAbsolutePath(file.fileName, currentDirectory) !== getNormalizedAbsolutePath(fileName, currentDirectory)) {
@@ -1562,11 +1569,12 @@ namespace ts {
                 else {
                     fileProcessingDiagnostics.add(createCompilerDiagnostic(Diagnostics.Cannot_read_file_0_Colon_1, fileName, hostErrorMessage));
                 }
-            });
+            }, packageName);
 
             filesByName.set(path, file);
             if (file) {
                 sourceFilesFoundSearchingNodeModules.set(path, currentNodeModulesDepth > 0);
+                setPackageName(file, packageName);
                 file.path = path;
 
                 if (host.useCaseSensitiveFileNames()) {
@@ -1599,6 +1607,16 @@ namespace ts {
             }
 
             return file;
+        }
+        //neater
+        function setPackageName(file: SourceFile, packageName: string | undefined) {
+            if (packageName === undefined) return;
+            if (file.packageName === undefined) {
+                file.packageName = packageName;
+            } else {
+                Debug.assert(file.packageName === packageName, "Same source file loaded from two different packages", () =>
+                    `Packages are ${file.packageName} and ${packageName}`);
+            }
         }
 
         function processReferencedFiles(file: SourceFile, isDefaultLib: boolean) {
@@ -1725,7 +1743,7 @@ namespace ts {
                     else if (shouldAddFile) {
                         const path = toPath(resolvedFileName, currentDirectory, getCanonicalFileName);
                         const pos = skipTrivia(file.text, file.imports[i].pos);
-                        findSourceFile(resolvedFileName, path, /*isDefaultLib*/ false, file, pos, file.imports[i].end);
+                        findSourceFile(resolvedFileName, path, resolution.packageName, /*isDefaultLib*/ false, file, pos, file.imports[i].end);
                     }
 
                     if (isFromNodeModulesSearch) {

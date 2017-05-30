@@ -482,6 +482,7 @@ namespace ts {
         public kind: SyntaxKind.SourceFile;
         public _declarationBrand: any;
         public fileName: string;
+        public packageName: string | undefined;
         public path: Path;
         public text: string;
         public scriptSnapshot: IScriptSnapshot;
@@ -940,9 +941,11 @@ namespace ts {
         sourceFile.scriptSnapshot = scriptSnapshot;
     }
 
+    //TODO: this is public, so packageName must go on the end and be optional
     export function createLanguageServiceSourceFile(fileName: string, scriptSnapshot: IScriptSnapshot, scriptTarget: ScriptTarget, version: string, setNodeParents: boolean, scriptKind?: ScriptKind): SourceFile {
         const text = scriptSnapshot.getText(0, scriptSnapshot.getLength());
-        const sourceFile = createSourceFile(fileName, text, scriptTarget, setNodeParents, scriptKind);
+        const packageName = ""; //TODO
+        const sourceFile = createSourceFile(fileName, text, scriptTarget, setNodeParents, scriptKind, packageName);
         setSourceFileFields(sourceFile, scriptSnapshot, version);
         return sourceFile;
     }
@@ -1140,8 +1143,8 @@ namespace ts {
 
             // Now create a new compiler
             const compilerHost: CompilerHost = {
-                getSourceFile: getOrCreateSourceFile,
-                getSourceFileByPath: getOrCreateSourceFileByPath,
+                getSourceFile: getOrCreateSourceFile, //packageName
+                getSourceFileByPath: getOrCreateSourceFileByPath, //packageName
                 getCancellationToken: () => cancellationToken,
                 getCanonicalFileName,
                 useCaseSensitiveFileNames: () => useCaseSensitivefileNames,

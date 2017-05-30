@@ -8794,7 +8794,7 @@ namespace ts {
                 // both types are the same - covers 'they are the same primitive type or both are Any' or the same type parameter cases
                 if (source === target) return Ternary.True;
 
-                if (relation === identityRelation) {
+                if (relation === identityRelation) { //???
                     return isIdenticalTo(source, target);
                 }
 
@@ -9101,7 +9101,7 @@ namespace ts {
                 return result;
             }
 
-            function structuredTypeRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary {
+            function structuredTypeRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary { //!
                 let result: Ternary;
                 const saveErrorInfo = errorInfo;
                 if (target.flags & TypeFlags.TypeParameter) {
@@ -9215,7 +9215,7 @@ namespace ts {
                         else {
                             result = propertiesRelatedTo(source, target, reportStructuralErrors);
                             if (result) {
-                                result &= signaturesRelatedTo(source, target, SignatureKind.Call, reportStructuralErrors);
+                                result &= signaturesRelatedTo(source, target, SignatureKind.Call, reportStructuralErrors); //see here too...
                                 if (result) {
                                     result &= signaturesRelatedTo(source, target, SignatureKind.Construct, reportStructuralErrors);
                                     if (result) {
@@ -9273,7 +9273,7 @@ namespace ts {
 
             function propertiesRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary {
                 if (relation === identityRelation) {
-                    return propertiesIdenticalTo(source, target);
+                    return propertiesIdenticalTo(source, target); //check this out later
                 }
                 let result = Ternary.True;
                 const properties = getPropertiesOfObjectType(target);
@@ -9294,27 +9294,29 @@ namespace ts {
                             const sourcePropFlags = getDeclarationModifierFlagsFromSymbol(sourceProp);
                             const targetPropFlags = getDeclarationModifierFlagsFromSymbol(targetProp);
                             if (sourcePropFlags & ModifierFlags.Private || targetPropFlags & ModifierFlags.Private) {
-                                if (getCheckFlags(sourceProp) & CheckFlags.ContainsPrivate) {
-                                    if (reportErrors) {
-                                        reportError(Diagnostics.Property_0_has_conflicting_declarations_and_is_inaccessible_in_type_1, symbolToString(sourceProp), typeToString(source));
-                                    }
-                                    return Ternary.False;
-                                }
-                                if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
-                                    if (reportErrors) {
-                                        if (sourcePropFlags & ModifierFlags.Private && targetPropFlags & ModifierFlags.Private) {
-                                            reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
+                                if (!areNominallyTheSame(source, target)) { //TODO: wasn't hitting this. This only happens if it *contains* a private?
+                                    if (getCheckFlags(sourceProp) & CheckFlags.ContainsPrivate) {
+                                        if (reportErrors) {
+                                            reportError(Diagnostics.Property_0_has_conflicting_declarations_and_is_inaccessible_in_type_1, symbolToString(sourceProp), typeToString(source));
                                         }
-                                        else {
-                                            reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
-                                                typeToString(sourcePropFlags & ModifierFlags.Private ? source : target),
-                                                typeToString(sourcePropFlags & ModifierFlags.Private ? target : source));
-                                        }
+                                        return Ternary.False;
                                     }
-                                    return Ternary.False;
+                                    if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
+                                        if (reportErrors) {
+                                            if (sourcePropFlags & ModifierFlags.Private && targetPropFlags & ModifierFlags.Private) {
+                                                reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
+                                            }
+                                            else {
+                                                reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
+                                                    typeToString(sourcePropFlags & ModifierFlags.Private ? source : target),
+                                                    typeToString(sourcePropFlags & ModifierFlags.Private ? target : source));
+                                            }
+                                        }
+                                        return Ternary.False;
+                                    }
                                 }
                             }
-                            else if (targetPropFlags & ModifierFlags.Protected) {
+                            else if (targetPropFlags & ModifierFlags.Protected) { //check this later
                                 if (!isValidOverrideOf(sourceProp, targetProp)) {
                                     if (reportErrors) {
                                         reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2, symbolToString(targetProp),
@@ -9323,7 +9325,7 @@ namespace ts {
                                     return Ternary.False;
                                 }
                             }
-                            else if (sourcePropFlags & ModifierFlags.Protected) {
+                            else if (sourcePropFlags & ModifierFlags.Protected) { //check this later
                                 if (reportErrors) {
                                     reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2,
                                         symbolToString(targetProp), typeToString(source), typeToString(target));
@@ -9573,6 +9575,43 @@ namespace ts {
                 return false;
             }
         }
+
+        //TODO: test for classes exported in different ways
+        /*
+        export class C { }
+        vs
+        export default class C {}
+        vs
+        declare class C {}
+        export = C;
+        */
+        function areNominallyTheSame(a: Type, b: Type): boolean {
+            const sa = a.symbol;
+            const sb = b.symbol;
+
+            //Must both be classes (TEST)
+            const va = sa.valueDeclaration;
+            const vb = sb.valueDeclaration;
+
+            if (!va || !vb) return false;
+            if (!isClassDeclaration(va) || !isClassDeclaration(vb)) return false;
+
+            //Must both be classes with the same name (TEST)
+            if (va.name.text !== vb.name.text) return false;
+
+            //must have same parent chain of namespaces to reach the source file (don't think a class can go in anything else?) (TEST) (TODO)
+
+            const sfa = ts.getSourceFileOfNode(va);
+            const sfb = ts.getSourceFileOfNode(vb);
+
+            if (sfa.packageName === undefined || sfb.packageName === undefined) return false;
+            return sfa.packageName === sfb.packageName;
+        }
+
+        //mv
+        //function getPackageName(sf: ts.SourceFile) {
+        //    sf.path;
+        //}
 
         // Invoke the callback for each underlying property symbol of the given symbol and return the first
         // value that isn't undefined.

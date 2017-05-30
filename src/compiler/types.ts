@@ -2280,10 +2280,12 @@ namespace ts {
 
         fileName: string;
         /* @internal */ path: Path;
+        //This will be set if this is resolved by getting something from node_modules.
+        /* @internal */ packageName: string | undefined;
         text: string;
 
         amdDependencies: AmdDependency[];
-        moduleName: string;
+        moduleName: string; //This is set by an `/// <amd-module name="foo" />` directive.
         referencedFiles: FileReference[];
         typeReferenceDirectives: FileReference[];
         languageVariant: LanguageVariant;
@@ -3849,6 +3851,8 @@ namespace ts {
          * This is optional for backwards-compatibility, but will be added if not provided.
          */
         extension: Extension;
+        //Note: this is a breaking change...
+        packageName: string | undefined;
     }
 
     export enum Extension {
@@ -3879,8 +3883,10 @@ namespace ts {
     }
 
     export interface CompilerHost extends ModuleResolutionHost {
-        getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile;
-        getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void): SourceFile;
+        //!
+        getSourceFile(fileName: string, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile;
+        //!
+        getSourceFileByPath?(fileName: string, path: Path, languageVersion: ScriptTarget, onError?: (message: string) => void, packageName?: string): SourceFile;
         getCancellationToken?(): CancellationToken;
         getDefaultLibFileName(options: CompilerOptions): string;
         getDefaultLibLocation?(): string;
