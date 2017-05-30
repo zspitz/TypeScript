@@ -1,12 +1,19 @@
 // @noImplicitReferences: true
 
 // @Filename: /node_modules/a/index.d.ts
-import { Z } from "x";
-export function a(x: Z.Y.X): void;
+import { G } from "x";
+export function useMX(x: G.M.X): void;
+export function useNX(x: G.N.X): void;
+export const an: G.N.X;
 
 // @Filename: /node_modules/a/node_modules/x/index.d.ts
-export namespace Z {
-    namespace Y {
+export namespace G {
+    namespace M {
+        class X {
+            private x: number;
+        }
+    }
+    namespace N {
         class X {
             private x: number;
         }
@@ -14,48 +21,33 @@ export namespace Z {
 }
 
 // @Filename: /node_modules/b/index.d.ts
-import { Z } from "x";
-export const b: Z.Y.X;
+import { G } from "x";
+export const bm: G.M.X;
+export const bn: G.N.X;
 
 // @Filename: /node_modules/b/node_modules/x/index.d.ts
-export namespace Z {
-    namespace Y {
+export namespace G {
+    namespace M {
+        class X {
+            private x: number;
+        }
+    }
+
+    namespace N {
         class X {
             private x: number;
         }
     }
 }
-
-// @Filename: /node_modules/c/index.d.ts
-import { Y } from "x";
-export const c: Y.Z.X;
-
-// @Filename: /node_modules/c/node_modules/x/index.d.ts
-export namespace Y {
-    namespace Z {
-        class X {
-            private x: number;
-        }
-    }
-}
-
-// @Filename: /node_modules/d/index.d.ts
-import { X } from "x";
-export const d: X;
-
-// @Filename: /node_modules/d/node_modules/x/index.d.ts
-// Mismatch -- is a named export, not a default export
-export class X {
-    private x: number;
-}
-
-//TODO: error if one is default export and other is const
-//TODO: test with class inside a namespace
 
 // @Filename: /src/a.ts
-import { a } from "a";
-import { b } from "b";
-import { c } from "c";
-a(b); // Works
-a(c); // Error
+import { an, useMX, useNX } from "a";
+import { bm, bn } from "b";
 
+// Works:
+useMX(bm);
+useNX(bn);
+
+// Error:
+useMX(an);
+useMX(bn);
