@@ -1976,7 +1976,7 @@ namespace ts {
 
     export interface ExportAssignment extends DeclarationStatement {
         kind: SyntaxKind.ExportAssignment;
-        parent?: SourceFile;
+        parent?: SourceFile | ModuleBlock;
         isExportEquals?: boolean;
         expression: Expression;
     }

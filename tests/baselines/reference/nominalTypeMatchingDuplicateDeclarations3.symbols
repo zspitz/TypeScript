@@ -1,0 +1,43 @@
+=== /node_modules/a/index.d.ts ===
+import X = require("x");
+>X : Symbol(X, Decl(index.d.ts, 0, 0))
+
+export { X as A };
+>X : Symbol(A, Decl(index.d.ts, 1, 8))
+>A : Symbol(A, Decl(index.d.ts, 1, 8))
+
+=== /node_modules/a/node_modules/x/index.d.ts ===
+export = class {
+    private m(): void;
+>m : Symbol((Anonymous class).m, Decl(index.d.ts, 0, 16))
+}
+
+=== /node_modules/b/index.d.ts ===
+import X = require("x");
+>X : Symbol(X, Decl(index.d.ts, 0, 0))
+
+export { X as B };
+>X : Symbol(B, Decl(index.d.ts, 1, 8))
+>B : Symbol(B, Decl(index.d.ts, 1, 8))
+
+=== /node_modules/b/node_modules/x/index.d.ts ===
+export = class {
+    private m(): void;
+>m : Symbol((Anonymous class).m, Decl(index.d.ts, 0, 16))
+}
+
+=== /src/a.ts ===
+import { A } from "a";
+>A : Symbol(A, Decl(a.ts, 0, 8))
+
+import { B } from "b";
+>B : Symbol(B, Decl(a.ts, 1, 8))
+
+let a = new A();
+>a : Symbol(a, Decl(a.ts, 2, 3))
+>A : Symbol(A, Decl(a.ts, 0, 8))
+
+a = new B();
+>a : Symbol(a, Decl(a.ts, 2, 3))
+>B : Symbol(B, Decl(a.ts, 1, 8))
+

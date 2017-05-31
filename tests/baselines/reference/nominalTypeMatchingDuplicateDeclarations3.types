@@ -1,0 +1,50 @@
+=== /node_modules/a/index.d.ts ===
+import X = require("x");
+>X : typeof (Anonymous class)
+
+export { X as A };
+>X : typeof (Anonymous class)
+>A : typeof (Anonymous class)
+
+=== /node_modules/a/node_modules/x/index.d.ts ===
+export = class {
+>class {    private m(): void;} : typeof (Anonymous class)
+
+    private m(): void;
+>m : () => void
+}
+
+=== /node_modules/b/index.d.ts ===
+import X = require("x");
+>X : typeof (Anonymous class)
+
+export { X as B };
+>X : typeof (Anonymous class)
+>B : typeof (Anonymous class)
+
+=== /node_modules/b/node_modules/x/index.d.ts ===
+export = class {
+>class {    private m(): void;} : typeof (Anonymous class)
+
+    private m(): void;
+>m : () => void
+}
+
+=== /src/a.ts ===
+import { A } from "a";
+>A : typeof (Anonymous class)
+
+import { B } from "b";
+>B : typeof (Anonymous class)
+
+let a = new A();
+>a : (Anonymous class)
+>new A() : (Anonymous class)
+>A : typeof (Anonymous class)
+
+a = new B();
+>a = new B() : (Anonymous class)
+>a : (Anonymous class)
+>new B() : (Anonymous class)
+>B : typeof (Anonymous class)
+

@@ -24644,25 +24644,24 @@ namespace ts {
     function classPrivatesAreCompatible(a: Type, b: Type): boolean {
         const classA = a.symbol.valueDeclaration;
         const classB = b.symbol.valueDeclaration;
-        return classA && classB && isClassDeclaration(classA) && isClassDeclaration(classB) && nodesHavePrivateCompatibleOrigins(classA, classB);
+        return classA && classB && isClassLike(classA) && isClassLike(classB) && nodesHavePrivateCompatibleOrigins(classA, classB);
     }
 
-    function nodesHavePrivateCompatibleOrigins<T extends ClassDeclaration | ModuleDeclaration>(a: T, b: T): boolean {
-        if (a.name.text !== b.name.text || a.parent.kind !== b.parent.kind || getModifierFlags(a) !== getModifierFlags(b)) {
-            return false;
-        }
+    function nodesHavePrivateCompatibleOrigins<T extends ClassLikeDeclaration | ModuleDeclaration>(a: T, b: T): boolean {
+        return (a.name && a.name.text) === (b.name && b.name.text)
+            && getModifierFlags(a) === getModifierFlags(b)
+            && parentsHavePrivateCompatibleOrigins(a.parent, b.parent);
+    }
 
-        switch (a.parent.kind) {
-            case SyntaxKind.ModuleBlock: {
-                const moduleA = (a.parent as ModuleBlock).parent;
-                const moduleB = (b.parent as ModuleBlock).parent;
-                return moduleA.name.text === moduleB.name.text && nodesHavePrivateCompatibleOrigins(moduleA, moduleB);
-            }
-            case SyntaxKind.SourceFile: {
-                const { packageName: nameA } = a.parent as SourceFile;
-                const { packageName: nameB } = b.parent as SourceFile;
-                return nameA !== undefined && nameB !== undefined && nameA === nameB;
-            }
+    function parentsHavePrivateCompatibleOrigins(parentA: Node, parentB: Node): boolean {
+        if (parentA.kind !== parentB.kind) return false;
+        switch (parentA.kind) {
+            case SyntaxKind.ExportAssignment:
+                return parentsHavePrivateCompatibleOrigins(parentA.parent, parentB.parent);
+            case SyntaxKind.ModuleBlock:
+                return nodesHavePrivateCompatibleOrigins((parentA as ModuleBlock).parent, (parentB as ModuleBlock).parent);
+            case SyntaxKind.SourceFile:
+                return (parentA as SourceFile).packageName !== undefined && (parentA as SourceFile).packageName === (parentB as SourceFile).packageName;
             default:
                 return false;
         }
