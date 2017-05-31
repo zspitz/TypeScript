@@ -1,0 +1,23 @@
+/src/a.ts(4,1): error TS90010: Type 'C' is not assignable to type 'C'. Two different types with this name exist, but they are unrelated.
+  Types have separate declarations of a private property 'm'.
+
+
+==== /node_modules/a/c0.d.ts (0 errors) ====
+    export class C {
+        private m(): void;
+    }
+    
+==== /node_modules/a/c1.d.ts (0 errors) ====
+    export class C {
+        private m(): void;
+    }
+    
+==== /src/a.ts (1 errors) ====
+    import { C as C0 } from "a/c0";
+    import { C as C1 } from "a/c1";
+    let c = new C0();
+    c = new C1();
+    ~
+!!! error TS90010: Type 'C' is not assignable to type 'C'. Two different types with this name exist, but they are unrelated.
+!!! error TS90010:   Types have separate declarations of a private property 'm'.
+    
