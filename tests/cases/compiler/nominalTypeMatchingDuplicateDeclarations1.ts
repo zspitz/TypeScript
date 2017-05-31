@@ -1,5 +1,3 @@
-// @noImplicitReferences: true
-
 // @Filename: /node_modules/a/index.d.ts
 import { G } from "x";
 export function useMX(x: G.M.X): void;

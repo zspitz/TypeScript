@@ -756,7 +756,8 @@ namespace ts {
             sourceFile.languageVariant = getLanguageVariant(scriptKind);
             sourceFile.isDeclarationFile = fileExtensionIs(sourceFile.fileName, ".d.ts");
             sourceFile.scriptKind = scriptKind;
-            sourceFile.packageName = undefined; //doc
+            // This will be set in 'program.ts' if the file is imported from an external package.
+            sourceFile.packageName = undefined;
 
             return sourceFile;
         }

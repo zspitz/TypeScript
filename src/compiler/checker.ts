@@ -8794,7 +8794,7 @@ namespace ts {
                 // both types are the same - covers 'they are the same primitive type or both are Any' or the same type parameter cases
                 if (source === target) return Ternary.True;
 
-                if (relation === identityRelation) { //???
+                if (relation === identityRelation) {
                     return isIdenticalTo(source, target);
                 }
 
@@ -9101,7 +9101,7 @@ namespace ts {
                 return result;
             }
 
-            function structuredTypeRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary { //!
+            function structuredTypeRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary {
                 let result: Ternary;
                 const saveErrorInfo = errorInfo;
                 if (target.flags & TypeFlags.TypeParameter) {
@@ -9215,7 +9215,7 @@ namespace ts {
                         else {
                             result = propertiesRelatedTo(source, target, reportStructuralErrors);
                             if (result) {
-                                result &= signaturesRelatedTo(source, target, SignatureKind.Call, reportStructuralErrors); //see here too...
+                                result &= signaturesRelatedTo(source, target, SignatureKind.Call, reportStructuralErrors);
                                 if (result) {
                                     result &= signaturesRelatedTo(source, target, SignatureKind.Construct, reportStructuralErrors);
                                     if (result) {
@@ -9273,11 +9273,15 @@ namespace ts {
 
             function propertiesRelatedTo(source: Type, target: Type, reportErrors: boolean): Ternary {
                 if (relation === identityRelation) {
-                    return propertiesIdenticalTo(source, target); //check this out later
+                    return propertiesIdenticalTo(source, target);
                 }
                 let result = Ternary.True;
                 const properties = getPropertiesOfObjectType(target);
                 const requireOptionalProperties = relation === subtypeRelation && !(getObjectFlags(source) & ObjectFlags.ObjectLiteral);
+
+                let _privatesCompatible: boolean | undefined;
+                const privatesCompatible = () => _privatesCompatible !== undefined ? _privatesCompatible : _privatesCompatible = classPrivatesAreCompatible(source, target);
+
                 for (const targetProp of properties) {
                     const sourceProp = getPropertyOfType(source, targetProp.name);
 
@@ -9293,30 +9297,28 @@ namespace ts {
                         else if (!(targetProp.flags & SymbolFlags.Prototype)) {
                             const sourcePropFlags = getDeclarationModifierFlagsFromSymbol(sourceProp);
                             const targetPropFlags = getDeclarationModifierFlagsFromSymbol(targetProp);
-                            if (sourcePropFlags & ModifierFlags.Private || targetPropFlags & ModifierFlags.Private) {
-                                if (!areNominallyTheSame(source, target)) { //TODO: wasn't hitting this. This only happens if it *contains* a private?
-                                    if (getCheckFlags(sourceProp) & CheckFlags.ContainsPrivate) {
-                                        if (reportErrors) {
-                                            reportError(Diagnostics.Property_0_has_conflicting_declarations_and_is_inaccessible_in_type_1, symbolToString(sourceProp), typeToString(source));
-                                        }
-                                        return Ternary.False;
+                            if ((sourcePropFlags & ModifierFlags.Private || targetPropFlags & ModifierFlags.Private) && !privatesCompatible()) {
+                                if (getCheckFlags(sourceProp) & CheckFlags.ContainsPrivate) {
+                                    if (reportErrors) {
+                                        reportError(Diagnostics.Property_0_has_conflicting_declarations_and_is_inaccessible_in_type_1, symbolToString(sourceProp), typeToString(source));
                                     }
-                                    if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
-                                        if (reportErrors) {
-                                            if (sourcePropFlags & ModifierFlags.Private && targetPropFlags & ModifierFlags.Private) {
-                                                reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
-                                            }
-                                            else {
-                                                reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
-                                                    typeToString(sourcePropFlags & ModifierFlags.Private ? source : target),
-                                                    typeToString(sourcePropFlags & ModifierFlags.Private ? target : source));
-                                            }
+                                    return Ternary.False;
+                                }
+                                if (sourceProp.valueDeclaration !== targetProp.valueDeclaration) {
+                                    if (reportErrors) {
+                                        if (sourcePropFlags & ModifierFlags.Private && targetPropFlags & ModifierFlags.Private) {
+                                            reportError(Diagnostics.Types_have_separate_declarations_of_a_private_property_0, symbolToString(targetProp));
                                         }
-                                        return Ternary.False;
+                                        else {
+                                            reportError(Diagnostics.Property_0_is_private_in_type_1_but_not_in_type_2, symbolToString(targetProp),
+                                                typeToString(sourcePropFlags & ModifierFlags.Private ? source : target),
+                                                typeToString(sourcePropFlags & ModifierFlags.Private ? target : source));
+                                        }
                                     }
+                                    return Ternary.False;
                                 }
                             }
-                            else if (targetPropFlags & ModifierFlags.Protected) { //check this later
+                            else if (targetPropFlags & ModifierFlags.Protected && !privatesCompatible()) {
                                 if (!isValidOverrideOf(sourceProp, targetProp)) {
                                     if (reportErrors) {
                                         reportError(Diagnostics.Property_0_is_protected_but_type_1_is_not_a_class_derived_from_2, symbolToString(targetProp),
@@ -9325,7 +9327,7 @@ namespace ts {
                                     return Ternary.False;
                                 }
                             }
-                            else if (sourcePropFlags & ModifierFlags.Protected) { //check this later
+                            else if (sourcePropFlags & ModifierFlags.Protected && !privatesCompatible()) {
                                 if (reportErrors) {
                                     reportError(Diagnostics.Property_0_is_protected_in_type_1_but_public_in_type_2,
                                         symbolToString(targetProp), typeToString(source), typeToString(target));
@@ -9573,67 +9575,6 @@ namespace ts {
                 }
 
                 return false;
-            }
-        }
-
-        //TODO: test for classes exported in different ways
-        /*
-        export class C { }
-        vs
-        export default class C {}
-        vs
-        declare class C {}
-        export = C;
-        */
-        //mv?
-        function areNominallyTheSame(a: Type, b: Type): boolean {
-            const sa = a.symbol;
-            const sb = b.symbol;
-
-            //Must both be classes (TEST)
-            const va = sa.valueDeclaration;
-            const vb = sb.valueDeclaration;
-
-            if (!va || !vb) return false;
-            //TODO: test with export default class expression too
-            if (!isClassDeclaration(va) || !isClassDeclaration(vb)) return false;
-
-            return haveSameNominalOrigin(va, vb);
-        }
-
-        function haveSameNominalOrigin<T extends ClassDeclaration | ModuleDeclaration>(a: T, b: T): boolean {
-            if (a.name.text !== b.name.text) {
-                return false;
-            }
-
-            const pa = a.parent;
-            const pb = b.parent;
-            if (pa.kind !== pb.kind) {
-                return false;
-            }
-
-            //Must be exported in identical ways.
-            if (ts.getModifierFlags(a) !== ts.getModifierFlags(b)) {
-                return false;
-            }
-
-            switch (pa.kind) {
-                case SyntaxKind.ModuleBlock: {
-                    const mda = (pa as ModuleBlock).parent;
-                    const mdb = (pb as ModuleBlock).parent
-                    if (mda.name.text !== mdb.name.text) return false;
-                    return haveSameNominalOrigin(mda, mdb);
-                }
-
-                case SyntaxKind.SourceFile:
-                    const { packageName: pna } = pa as SourceFile;
-                    const { packageName: pnb } = pb as SourceFile;
-                    return pna !== undefined && pnb !== undefined && pna === pnb;
-
-                default:
-                    //Class declaration in a random block can't be nominally equivalent to class declaration in a different block.
-                    //(TEST)
-                    return false;
             }
         }
 
@@ -24698,6 +24639,33 @@ namespace ts {
             default:
                 return isDeclarationName(name);
 
+        }
+    }
+
+    function classPrivatesAreCompatible(a: Type, b: Type): boolean {
+        const classA = a.symbol.valueDeclaration;
+        const classB = b.symbol.valueDeclaration;
+        return classA && classB && isClassDeclaration(classA) && isClassDeclaration(classB) && nodesHavePrivateCompatibleOrigins(classA, classB);
+    }
+
+    function nodesHavePrivateCompatibleOrigins<T extends ClassDeclaration | ModuleDeclaration>(a: T, b: T): boolean {
+        if (a.name.text !== b.name.text || a.parent.kind !== b.parent.kind || getModifierFlags(a) !== getModifierFlags(b)) {
+            return false;
+        }
+
+        switch (a.parent.kind) {
+            case SyntaxKind.ModuleBlock: {
+                const moduleA = (a.parent as ModuleBlock).parent;
+                const moduleB = (b.parent as ModuleBlock).parent;
+                return moduleA.name.text === moduleB.name.text && nodesHavePrivateCompatibleOrigins(moduleA, moduleB);
+            }
+            case SyntaxKind.SourceFile: {
+                const { packageName: nameA } = a.parent as SourceFile;
+                const { packageName: nameB } = b.parent as SourceFile;
+                return nameA !== undefined && nameB !== undefined && nameA === nameB;
+            }
+            default:
+                return false;
         }
     }
 }

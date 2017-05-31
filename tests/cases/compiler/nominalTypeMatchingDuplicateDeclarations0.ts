@@ -1,5 +1,3 @@
-// @noImplicitReferences: true
-
 // @Filename: /node_modules/a/index.d.ts
 import X from "x";
 export function a(x: X): void;

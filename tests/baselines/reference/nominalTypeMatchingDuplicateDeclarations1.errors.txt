@@ -4,24 +4,6 @@
   Types have separate declarations of a private property 'x'.
 
 
-==== /src/a.ts (2 errors) ====
-    import { an, useMX, useNX } from "a";
-    import { bm, bn } from "b";
-    
-    // Works:
-    useMX(bm);
-    useNX(bn);
-    
-    // Error:
-    useMX(an);
-          ~~
-!!! error TS2345: Argument of type 'G.N.X' is not assignable to parameter of type 'G.M.X'.
-!!! error TS2345:   Types have separate declarations of a private property 'x'.
-    useMX(bn);
-          ~~
-!!! error TS2345: Argument of type 'G.N.X' is not assignable to parameter of type 'G.M.X'.
-!!! error TS2345:   Types have separate declarations of a private property 'x'.
-    
 ==== /node_modules/a/index.d.ts (0 errors) ====
     import { G } from "x";
     export function useMX(x: G.M.X): void;
@@ -61,4 +43,22 @@
             }
         }
     }
+    
+==== /src/a.ts (2 errors) ====
+    import { an, useMX, useNX } from "a";
+    import { bm, bn } from "b";
+    
+    // Works:
+    useMX(bm);
+    useNX(bn);
+    
+    // Error:
+    useMX(an);
+          ~~
+!!! error TS2345: Argument of type 'G.N.X' is not assignable to parameter of type 'G.M.X'.
+!!! error TS2345:   Types have separate declarations of a private property 'x'.
+    useMX(bn);
+          ~~
+!!! error TS2345: Argument of type 'G.N.X' is not assignable to parameter of type 'G.M.X'.
+!!! error TS2345:   Types have separate declarations of a private property 'x'.
     
