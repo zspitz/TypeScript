@@ -2280,12 +2280,12 @@ namespace ts {
 
         fileName: string;
         /* @internal */ path: Path;
-        //This will be set if this is resolved by getting something from node_modules.
+        /** This will be set if the source file is resolved from an external library import. */
         /* @internal */ packageName: string | undefined;
         text: string;
 
         amdDependencies: AmdDependency[];
-        moduleName: string; //This is set by an `/// <amd-module name="foo" />` directive.
+        moduleName: string; // This is set by an `/// <amd-module name="foo" />` directive.
         referencedFiles: FileReference[];
         typeReferenceDirectives: FileReference[];
         languageVariant: LanguageVariant;
@@ -3851,8 +3851,11 @@ namespace ts {
          * This is optional for backwards-compatibility, but will be added if not provided.
          */
         extension: Extension;
-        //Note: this is a breaking change...
-        packageName: string | undefined;
+        /**
+         * Name of the external library that the resolution came from.
+         * For `node_modules/@types/foo/bar.d.ts`, the packageName should be `foo/bar`.
+         */
+        packageName?: string;
     }
 
     export enum Extension {
@@ -3870,6 +3873,7 @@ namespace ts {
         failedLookupLocations: string[];
     }
 
+    //packageName here?
     export interface ResolvedTypeReferenceDirective {
         // True if the type declaration file was found in a primary lookup location
         primary: boolean;

@@ -9675,7 +9675,6 @@ namespace ts {
                 return Ternary.False;
             }
             if (sourcePropAccessibility) {
-                //Hmm, this will have to take into account nominal equivalence?
                 if (getTargetSymbol(sourceProp) !== getTargetSymbol(targetProp)) {
                     return Ternary.False;
                 }

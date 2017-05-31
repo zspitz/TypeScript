@@ -12,7 +12,7 @@ namespace ts {
             };
         }
 
-       it("printFile", () => {
+        it("printFile", () => {
             const printsCorrectly = makePrintsCorrectly("printsFileCorrectly");
             const sourceFile = createSourceFile("source.ts", `
                 interface A<T> {

@@ -103,7 +103,7 @@ namespace ts {
                 text = "";
             }
 
-            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes, /*scriptKind*/ undefined) : undefined;
+            return text !== undefined ? createSourceFile(fileName, text, languageVersion, setParentNodes) : undefined;
         }
 
         function directoryExists(directoryPath: string): boolean {
@@ -449,7 +449,7 @@ namespace ts {
             resolveModuleNamesWorker = (moduleNames, containingFile) => host.resolveModuleNames(moduleNames, containingFile).map(resolved => {
                 // An older host may have omitted extension, in which case we should infer it from the file extension of resolvedFileName.
                 if (!resolved || (resolved as ResolvedModuleFull).extension !== undefined) {
-                    //Note: packageName may be undefined, I don't care
+                    // Host may not have set packageName, but it's OK to leave it as undefined.
                     return resolved as ResolvedModuleFull;
                 }
                 const withExtension = clone(resolved) as ResolvedModuleFull;
@@ -1527,19 +1527,19 @@ namespace ts {
         function findSourceFile(fileName: string, path: Path, packageName: string | undefined, isDefaultLib: boolean, refFile?: SourceFile, refPos?: number, refEnd?: number): SourceFile {
             if (filesByName.contains(path)) {
                 const file = filesByName.get(path);
+                if (!file) return undefined;
 
-                //TODO: we do if (file) too much...
-                if (file) setPackageName(file, packageName);
+                setPackageName(file, packageName);
 
                 // try to check if we've already seen this file but with a different casing in path
                 // NOTE: this only makes sense for case-insensitive file systems
-                if (file && options.forceConsistentCasingInFileNames && getNormalizedAbsolutePath(file.fileName, currentDirectory) !== getNormalizedAbsolutePath(fileName, currentDirectory)) {
+                if (options.forceConsistentCasingInFileNames && getNormalizedAbsolutePath(file.fileName, currentDirectory) !== getNormalizedAbsolutePath(fileName, currentDirectory)) {
                     reportFileNamesDifferOnlyInCasingError(fileName, file.fileName, refFile, refPos, refEnd);
                 }
 
                 // If the file was previously found via a node_modules search, but is now being processed as a root file,
                 // then everything it sucks in may also be marked incorrectly, and needs to be checked again.
-                if (file && sourceFilesFoundSearchingNodeModules.get(file.path) && currentNodeModulesDepth === 0) {
+                if (sourceFilesFoundSearchingNodeModules.get(file.path) && currentNodeModulesDepth === 0) {
                     sourceFilesFoundSearchingNodeModules.set(file.path, false);
                     if (!options.noResolve) {
                         processReferencedFiles(file, isDefaultLib);
@@ -1550,7 +1550,7 @@ namespace ts {
                     processImportedModules(file);
                 }
                 // See if we need to reprocess the imports due to prior skipped imports
-                else if (file && modulesWithElidedImports.get(file.path)) {
+                else if (modulesWithElidedImports.get(file.path)) {
                     if (currentNodeModulesDepth < maxNodeModuleJsDepth) {
                         modulesWithElidedImports.set(file.path, false);
                         processImportedModules(file);
@@ -1572,48 +1572,51 @@ namespace ts {
             });
 
             filesByName.set(path, file);
-            if (file) {
-                sourceFilesFoundSearchingNodeModules.set(path, currentNodeModulesDepth > 0);
-                setPackageName(file, packageName);
-                file.path = path;
+            if (!file) return undefined;
 
-                if (host.useCaseSensitiveFileNames()) {
-                    // for case-sensitive file systems check if we've already seen some file with similar filename ignoring case
-                    const existingFile = filesByNameIgnoreCase.get(path);
-                    if (existingFile) {
-                        reportFileNamesDifferOnlyInCasingError(fileName, existingFile.fileName, refFile, refPos, refEnd);
-                    }
-                    else {
-                        filesByNameIgnoreCase.set(path, file);
-                    }
-                }
+            sourceFilesFoundSearchingNodeModules.set(path, currentNodeModulesDepth > 0);
+            setPackageName(file, packageName);
+            file.path = path;
 
-                skipDefaultLib = skipDefaultLib || file.hasNoDefaultLib;
-
-                if (!options.noResolve) {
-                    processReferencedFiles(file, isDefaultLib);
-                    processTypeReferenceDirectives(file);
-                }
-
-                // always process imported modules to record module name resolutions
-                processImportedModules(file);
-
-                if (isDefaultLib) {
-                    files.unshift(file);
+            if (host.useCaseSensitiveFileNames()) {
+                // for case-sensitive file systems check if we've already seen some file with similar filename ignoring case
+                const existingFile = filesByNameIgnoreCase.get(path);
+                if (existingFile) {
+                    reportFileNamesDifferOnlyInCasingError(fileName, existingFile.fileName, refFile, refPos, refEnd);
                 }
                 else {
-                    files.push(file);
+                    filesByNameIgnoreCase.set(path, file);
                 }
+            }
+
+            skipDefaultLib = skipDefaultLib || file.hasNoDefaultLib;
+
+            if (!options.noResolve) {
+                processReferencedFiles(file, isDefaultLib);
+                processTypeReferenceDirectives(file);
+            }
+
+            // always process imported modules to record module name resolutions
+            processImportedModules(file);
+
+            if (isDefaultLib) {
+                files.unshift(file);
+            }
+            else {
+                files.push(file);
             }
 
             return file;
         }
-        //neater
-        function setPackageName(file: SourceFile, packageName: string | undefined) {
-            if (packageName === undefined) return;
-            if (file.packageName === undefined) {
+
+        function setPackageName(file: SourceFile, packageName: string | undefined): void {
+            if (packageName === undefined) {
+                return;
+            }
+            else if (file.packageName === undefined) {
                 file.packageName = packageName;
-            } else {
+            }
+            else {
                 Debug.assert(file.packageName === packageName, "Same source file loaded from two different packages", () =>
                     `Packages are ${file.packageName} and ${packageName}`);
             }
@@ -1652,6 +1655,7 @@ namespace ts {
             let saveResolution = true;
             if (resolvedTypeReferenceDirective) {
                 if (resolvedTypeReferenceDirective.primary) {
+                    //pass along resolvedTypeReferenceDirective.packageName?
                     // resolved from the primary path
                     processSourceFile(resolvedTypeReferenceDirective.resolvedFileName, /*isDefaultLib*/ false, refFile, refPos, refEnd);
                 }
