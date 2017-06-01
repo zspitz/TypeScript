@@ -6853,18 +6853,27 @@ namespace ts {
                     case "Null":
                         return nullType;
                     case "Object":
-                        return anyType;
+                    case "object":
+                        return !node.typeArguments || !node.typeArguments.length ? anyType : resolveGenericJSDocTypeReferenceType(node);
                     case "Function":
                     case "function":
                         return globalFunctionType;
                     case "Array":
                     case "array":
-                        return !node.typeArguments || !node.typeArguments.length ? createArrayType(anyType) : undefined;
+                        return !node.typeArguments || !node.typeArguments.length ? createArrayType(anyType) : resolveGenericJSDocTypeReferenceType(node);
                     case "Promise":
                     case "promise":
-                        return !node.typeArguments || !node.typeArguments.length ? createPromiseType(anyType) : undefined;
+                        return !node.typeArguments || !node.typeArguments.length ? createPromiseType(anyType) : resolveGenericJSDocTypeReferenceType(node);
                 }
             }
+        }
+
+        function resolveGenericJSDocTypeReferenceType(node: JSDocTypeReference) {
+            if ((<Identifier>node.name).text === "Object" || (<Identifier>node.name).text === "object") {
+                const stringIndexInfo = createIndexInfo(node.typeArguments.length >= 2 ? getTypeFromTypeNode(node.typeArguments[1]) : anyType, /*isReadonly*/ false);
+                return createAnonymousType(node.symbol, /*members*/ createMap<Symbol>(), emptyArray, emptyArray, stringIndexInfo, /*numberIndexInfo*/ undefined);
+            }
+            return getTypeReferenceType(node, resolveTypeReferenceName(getTypeReferenceName(node)));
         }
 
         function getTypeFromJSDocNullableTypeNode(node: JSDocNullableType) {
@@ -6879,11 +6888,6 @@ namespace ts {
                 let type: Type;
                 if (node.kind === SyntaxKind.JSDocTypeReference) {
                     type = getPrimitiveTypeFromJSDocTypeReference(<JSDocTypeReference>node);
-                    if (!type) {
-                        const typeReferenceName = getTypeReferenceName(node);
-                        symbol = resolveTypeReferenceName(typeReferenceName);
-                        type = getTypeReferenceType(node, symbol);
-                    }
                 }
                 else {
                     // We only support expressions that are simple qualified names. For other expressions this produces undefined.
