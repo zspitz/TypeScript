@@ -668,9 +668,9 @@ namespace Harness.LanguageService {
             return ts.sys.getEnvironmentVariable(name);
         }
 
-        readDirectory(_path: string, _extension?: string[], _exclude?: string[], _include?: string[]): string[] {
-            return ts.notImplemented();
-        }
+        readdir() { return ts.notImplemented(); }
+
+        readDirectory() { return ts.notImplemented(); }
 
         watchFile(): ts.FileWatcher {
             return { close: ts.noop };

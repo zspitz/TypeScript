@@ -84,6 +84,8 @@ namespace ts {
         getCurrentDirectory(): string;
         getDirectories(path: string): string;
 
+        readdir?(dirpath: string): string[]; //TODO: make required?
+
         /**
          * Returns a JSON-encoded value of the type: string[]
          *
@@ -467,7 +469,7 @@ namespace ts {
         }
     }
 
-    export class CoreServicesShimHostAdapter implements ParseConfigHost, ModuleResolutionHost {
+    export class CoreServicesShimHostAdapter implements ParseConfigHost, ModuleResolutionHost, JsTyping.TypingResolutionHost {
 
         public directoryExists: (directoryName: string) => boolean;
         public realpath: (path: string) => string;
@@ -483,7 +485,19 @@ namespace ts {
             }
         }
 
+        public readdir(dirpath: string): string[] {
+            if (this.shimHost.readdir) {
+                return this.shimHost.readdir(dirpath);
+            }
+            //!!!
+            //I'm not sure if this would actually work. We want to get everything regardless of extension.
+            //(In our use case we are getting the list of folders in `node_modules`, so none should have extensions.)
+            return this.readDirectory(dirpath, [""], /*exclude*/ [], /*include*/ [], /*depth*/ 1);
+        }
+
+        //"depth" doesn't appear in any other "readDirectory" implementation.
         public readDirectory(rootDir: string, extensions: string[], exclude: string[], include: string[], depth?: number): string[] {
+            //TODO: below
             // Wrap the API changes for 2.0 release. This try/catch
             // should be removed once TypeScript 2.0 has shipped.
             try {

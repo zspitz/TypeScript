@@ -12,7 +12,7 @@ namespace ts.JsTyping {
         directoryExists: (path: string) => boolean;
         fileExists: (fileName: string) => boolean;
         readFile: (path: string, encoding?: string) => string;
-        readDirectory: (rootDir: string, extensions: string[], excludes: string[], includes: string[], depth?: number) => string[];
+        readdir: (dirpath: string) => string[];
     }
 
     interface PackageJson {
@@ -212,15 +212,21 @@ namespace ts.JsTyping {
             }
 
             const typingNames: string[] = [];
-            const fileNames = host.readDirectory(packagesFolderPath, [".json"], /*excludes*/ undefined, /*includes*/ undefined, /*depth*/ 2);
-            for (const fileName of fileNames) {
-                const normalizedFileName = normalizePath(fileName);
-                const baseFileName = getBaseFileName(normalizedFileName);
-                if (baseFileName !== "package.json" && baseFileName !== "bower.json") {
-                    continue;
+
+            for (const nodeModulesName of host.readdir(packagesFolderPath)) {
+                const nodeModulesPackagePath = ts.combinePaths(packagesFolderPath, nodeModulesName);
+
+                let baseFileName = "package.json";
+                let configFilePath = ts.combinePaths(nodeModulesPackagePath, baseFileName);
+                if (!host.fileExists(configFilePath)) {
+                    baseFileName = "bower.json";
+                    configFilePath = ts.combinePaths(nodeModulesPackagePath, "bower.json");
+                    if (!host.fileExists(configFilePath))
+                        continue;
                 }
-                const result = readConfigFile(normalizedFileName, (path: string) => host.readFile(path));
-                const packageJson: PackageJson = result.config;
+
+                //Uh, isn't this *not* a PackageJson if it's bower.json?
+                const packageJson: PackageJson = readConfigFile(configFilePath, path => host.readFile(path)).config;
 
                 // npm 3's package.json contains a "_requiredBy" field
                 // we should include all the top level module names for npm 2, and only module names whose
@@ -236,13 +242,14 @@ namespace ts.JsTyping {
                     continue;
                 }
                 if (packageJson.typings) {
-                    const absolutePath = getNormalizedAbsolutePath(packageJson.typings, getDirectoryPath(normalizedFileName));
+                    const absolutePath = getNormalizedAbsolutePath(packageJson.typings, getDirectoryPath(configFilePath));
                     inferredTypings.set(packageJson.name, absolutePath);
                 }
                 else {
                     typingNames.push(packageJson.name);
                 }
             }
+
             mergeTypings(typingNames);
         }
 

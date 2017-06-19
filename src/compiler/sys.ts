@@ -33,6 +33,7 @@ namespace ts {
         getExecutingFilePath(): string;
         getCurrentDirectory(): string;
         getDirectories(path: string): string[];
+        readdir(path: string): string[];
         readDirectory(path: string, extensions?: string[], exclude?: string[], include?: string[]): string[];
         getModifiedTime?(path: string): Date;
         /**
@@ -397,6 +398,7 @@ namespace ts {
                 getEnvironmentVariable(name: string) {
                     return process.env[name] || "";
                 },
+                readdir: path => _fs.readdirSync(path),
                 readDirectory,
                 getModifiedTime(path) {
                     try {
@@ -475,6 +477,7 @@ namespace ts {
                 getCurrentDirectory: () => ChakraHost.currentDirectory,
                 getDirectories: ChakraHost.getDirectories,
                 getEnvironmentVariable: ChakraHost.getEnvironmentVariable || (() => ""),
+                readdir: _path => { throw new Error("TODO"); }, //How to implement this in chakra?
                 readDirectory: (path: string, extensions?: string[], excludes?: string[], includes?: string[]) => {
                     const pattern = getFileMatcherPatterns(path, excludes, includes, !!ChakraHost.useCaseSensitiveFileNames, ChakraHost.currentDirectory);
                     return ChakraHost.readDirectory(path, extensions, pattern.basePaths, pattern.excludePattern, pattern.includeFilePattern, pattern.includeDirectoryPattern);

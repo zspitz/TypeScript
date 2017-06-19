@@ -35,6 +35,7 @@ namespace ts {
             getCurrentDirectory: () => "",
             getDirectories: () => [],
             getEnvironmentVariable: () => "",
+            readdir: notImplemented,
             readDirectory: notImplemented,
             exit: noop,
             watchFile: () => ({
