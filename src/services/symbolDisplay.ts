@@ -96,7 +96,8 @@ namespace ts.SymbolDisplay {
         const displayParts: SymbolDisplayPart[] = [];
         let documentation: SymbolDisplayPart[];
         let tags: JSDocTagInfo[];
-        const symbolFlags = symbol.exportSymbol ? symbol.exportSymbol.flags : symbol.flags; //helper ffn
+        //Use *all* flags, to get all meanings.
+        const symbolFlags = symbol.exportSymbol ? symbol.exportSymbol.flags | symbol.flags : symbol.flags; //helper fn
         let symbolKind = getSymbolKindOfConstructorPropertyMethodAccessorFunctionOrVar(typeChecker, symbol, location);
         let hasAddedSymbolInfo: boolean;
         const isThisExpression = location.kind === SyntaxKind.ThisKeyword && isExpression(location);

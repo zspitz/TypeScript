@@ -805,18 +805,17 @@ namespace ts.Completions {
 
         function symbolCanbeReferencedAtTypeLocation(symbol: Symbol): boolean { //CanBe
             symbol = symbol.exportSymbol || symbol; //fn
-            const flags = symbol.flags; //fn
 
             // This is an alias, follow what it aliases
-            if (symbol && flags & SymbolFlags.Alias) {
+            if (symbol && symbol.flags & SymbolFlags.Alias) {
                 symbol = typeChecker.getAliasedSymbol(symbol);
             }
 
-            if (flags & SymbolFlags.Type) {
+            if (symbol.flags & SymbolFlags.Type) {
                 return true;
             }
 
-            if (flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule)) {
+            if (symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule)) {
                 const exportedSymbols = typeChecker.getExportsOfModule(symbol);
                 // If the exported symbols contains type,
                 // symbol can be referenced at locations where type is allowed
