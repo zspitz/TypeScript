@@ -22226,12 +22226,6 @@ namespace ts {
                     }
 
                     switch (location.kind) {
-                        case SyntaxKind.SourceFile:
-                            if (!isExternalOrCommonJsModule(<SourceFile>location)) {
-                                break;
-                            }
-                            break;
-                            //falls through -- not!
                         case SyntaxKind.ModuleDeclaration:
                             copySymbols(getSymbolOfNode(location).exports, meaning & SymbolFlags.ModuleMember);
                             break;
@@ -22283,8 +22277,7 @@ namespace ts {
              * @param meaning meaning of symbol to filter by before adding to symbol table
              */
             function copySymbol(symbol: Symbol, meaning: SymbolFlags): void {
-                //We copy the local symbol, not the export symbol.
-                if (symbol.flags & meaning || symbol.exportSymbol && symbol.exportSymbol.flags & meaning) {
+                if (getCombinedLocalAndExportSymbolFlags(symbol) & meaning) {
                     const id = symbol.name;
                     // We will copy all symbol regardless of its reserved name because
                     // symbolsToArray will check whether the key is a reserved name and

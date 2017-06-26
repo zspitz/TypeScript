@@ -608,7 +608,7 @@ namespace ts.Completions {
                     // Extract module or enum members
                     const exportedSymbols = typeChecker.getExportsOfModule(symbol);
                     const isValidValueAccess = (symbol: Symbol) => typeChecker.isValidPropertyAccess(<PropertyAccessExpression>(node.parent), symbol.name);
-                    const isValidTypeAccess = (symbol: Symbol) => symbolCanbeReferencedAtTypeLocation(symbol);
+                    const isValidTypeAccess = (symbol: Symbol) => symbolCanBeReferencedAtTypeLocation(symbol);
                     const isValidAccess = isRhsOfImportDeclaration ?
                         // Any kind is allowed when dotting off namespace in internal import equals declaration
                         (symbol: Symbol) => isValidTypeAccess(symbol) || isValidValueAccess(symbol) :
@@ -768,12 +768,12 @@ namespace ts.Completions {
                         (!isContextTokenValueLocation(contextToken) &&
                             (isPartOfTypeNode(location) || isContextTokenTypeLocation(contextToken)))) {
                         // Its a type, but you can reach it by namespace.type as well
-                        return symbolCanbeReferencedAtTypeLocation(symbol);
+                        return symbolCanBeReferencedAtTypeLocation(symbol);
                     }
                 }
 
                 // expressions are value space (which includes the value namespaces)
-                return !!(symbol.flags & SymbolFlags.Value || symbol.exportSymbol && symbol.exportSymbol.flags & SymbolFlags.Value);
+                return getCombinedLocalAndExportSymbolFlags(symbol) & SymbolFlags.Value;
             });
         }
 
@@ -803,8 +803,8 @@ namespace ts.Completions {
             }
         }
 
-        function symbolCanbeReferencedAtTypeLocation(symbol: Symbol): boolean { //CanBe
-            symbol = symbol.exportSymbol || symbol; //fn
+        function symbolCanBeReferencedAtTypeLocation(symbol: Symbol): boolean {
+            symbol = symbol.exportSymbol || symbol;
 
             // This is an alias, follow what it aliases
             if (symbol && symbol.flags & SymbolFlags.Alias) {
@@ -819,7 +819,7 @@ namespace ts.Completions {
                 const exportedSymbols = typeChecker.getExportsOfModule(symbol);
                 // If the exported symbols contains type,
                 // symbol can be referenced at locations where type is allowed
-                return forEach(exportedSymbols, symbolCanbeReferencedAtTypeLocation);
+                return forEach(exportedSymbols, symbolCanBeReferencedAtTypeLocation);
             }
         }
 

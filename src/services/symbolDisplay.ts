@@ -2,7 +2,7 @@
 namespace ts.SymbolDisplay {
     // TODO(drosen): use contextual SemanticMeaning.
     export function getSymbolKind(typeChecker: TypeChecker, symbol: Symbol, location: Node): ScriptElementKind {
-        const { flags } = symbol.exportSymbol || symbol; //helper fn
+        const flags = getCombinedLocalAndExportSymbolFlags(symbol);
 
         if (flags & SymbolFlags.Class) {
             return getDeclarationOfKind(symbol, SyntaxKind.ClassExpression) ?
@@ -34,7 +34,7 @@ namespace ts.SymbolDisplay {
         if (location.kind === SyntaxKind.ThisKeyword && isExpression(location)) {
             return ScriptElementKind.parameterElement;
         }
-        const { flags } = symbol.exportSymbol || symbol; //helper fn
+        const flags = getCombinedLocalAndExportSymbolFlags(symbol);
         if (flags & SymbolFlags.Variable) {
             if (isFirstDeclarationOfSymbolParameter(symbol)) {
                 return ScriptElementKind.parameterElement;
@@ -96,8 +96,7 @@ namespace ts.SymbolDisplay {
         const displayParts: SymbolDisplayPart[] = [];
         let documentation: SymbolDisplayPart[];
         let tags: JSDocTagInfo[];
-        //Use *all* flags, to get all meanings.
-        const symbolFlags = symbol.exportSymbol ? symbol.exportSymbol.flags | symbol.flags : symbol.flags; //helper fn
+        const symbolFlags = ts.getCombinedLocalAndExportSymbolFlags(symbol);
         let symbolKind = getSymbolKindOfConstructorPropertyMethodAccessorFunctionOrVar(typeChecker, symbol, location);
         let hasAddedSymbolInfo: boolean;
         const isThisExpression = location.kind === SyntaxKind.ThisKeyword && isExpression(location);
@@ -111,7 +110,6 @@ namespace ts.SymbolDisplay {
             }
 
             let signature: Signature;
-            //! If I change 'getTypeOfSymbol' in checker.ts to use symbol.exportSymbol there will be compiler crashes
             type = isThisExpression ? typeChecker.getTypeAtLocation(location) : typeChecker.getTypeOfSymbolAtLocation(symbol.exportSymbol || symbol, location);
             if (type) {
                 if (location.parent && location.parent.kind === SyntaxKind.PropertyAccessExpression) {
