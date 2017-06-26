@@ -803,17 +803,20 @@ namespace ts.Completions {
             }
         }
 
-        function symbolCanbeReferencedAtTypeLocation(symbol: Symbol): boolean {
+        function symbolCanbeReferencedAtTypeLocation(symbol: Symbol): boolean { //CanBe
+            symbol = symbol.exportSymbol || symbol; //fn
+            const flags = symbol.flags; //fn
+
             // This is an alias, follow what it aliases
-            if (symbol && symbol.flags & SymbolFlags.Alias) {
+            if (symbol && flags & SymbolFlags.Alias) {
                 symbol = typeChecker.getAliasedSymbol(symbol);
             }
 
-            if (symbol.flags & SymbolFlags.Type) {
+            if (flags & SymbolFlags.Type) {
                 return true;
             }
 
-            if (symbol.flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule)) {
+            if (flags & (SymbolFlags.ValueModule | SymbolFlags.NamespaceModule)) {
                 const exportedSymbols = typeChecker.getExportsOfModule(symbol);
                 // If the exported symbols contains type,
                 // symbol can be referenced at locations where type is allowed
