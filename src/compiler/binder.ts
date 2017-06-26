@@ -414,6 +414,7 @@ namespace ts {
                 }
             }
             else {
+                //!
                 // Exported module members are given 2 symbols: A local symbol that is classified with an ExportValue,
                 // ExportType, or ExportContainer flag, and an associated export symbol with all the correct flags set
                 // on it. There are 2 main reasons:
