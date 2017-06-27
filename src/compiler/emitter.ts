@@ -2345,6 +2345,9 @@ namespace ts {
 
         function emitParameters(parentNode: Node, parameters: NodeArray<ParameterDeclaration>) {
             emitList(parentNode, parameters, ListFormat.Parameters);
+            if (!nodeIsSynthesized(parameters)) {
+                emitTrailingCommentsOfPosition(parameters.end + 1);
+            }   
         }
 
         function canEmitSimpleArrowHead(parentNode: FunctionTypeNode | ArrowFunction, parameters: NodeArray<ParameterDeclaration>) {
