@@ -2718,8 +2718,7 @@ namespace ts {
         getESSymbolType(): Type;
         getNeverType(): Type;
         getUnknownType(): Type;
-        getStringLiteralType(text: string): LiteralType;
-        getNumberLiteralType(text: string): LiteralType;
+        getLiteralType(content: string | number): LiteralType;
         getFalseType(): Type;
         getTrueType(): Type;
 

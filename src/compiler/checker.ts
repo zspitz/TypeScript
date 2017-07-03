@@ -264,22 +264,15 @@ namespace ts {
             getESSymbolType: () => esSymbolType,
             getNeverType: () => neverType,
             getUnknownType: () => unknownType,
-            getStringLiteralType: (text: string) => {
+            getLiteralType: (literal: string | number) => {
                 /* tslint:disable:no-null-keyword */
-                Debug.assert(text !== undefined && text !== null);
+                Debug.assert(literal !== undefined && literal !== null);
                 /* tslint:enable:no-null-keyword */
-                return getLiteralTypeForText(TypeFlags.StringLiteral, "" + text);
-            },
-            getNumberLiteralType: (text: string) => {
-                /* tslint:disable:no-null-keyword */
-                Debug.assert(text !== undefined && text !== null);
-                /* tslint:enable:no-null-keyword */
-                Debug.assert(typeof text === "string" || typeof text === "number"); // While not formally part of the function signature, allow coercions from numbers
-                return getLiteralTypeForText(TypeFlags.NumberLiteral, "" + text);
+                Debug.assert(typeof literal === "string" || typeof literal === "number");
+                return getLiteralType(literal);
             },
             getFalseType: () => falseType,
             getTrueType: () => trueType,
->>>>>>> Add type relationship functions to checker api
         };
 
         const tupleTypes: GenericType[] = [];
