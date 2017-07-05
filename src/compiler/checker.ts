@@ -266,9 +266,9 @@ namespace ts {
             getUnknownType: () => unknownType,
             getLiteralType: (literal: string | number) => {
                 /* tslint:disable:no-null-keyword */
-                Debug.assert(literal !== undefined && literal !== null);
+                Debug.assert(literal !== undefined && literal !== null, "Argument to getLiteralType was null or undefined");
                 /* tslint:enable:no-null-keyword */
-                Debug.assert(typeof literal === "string" || typeof literal === "number");
+                Debug.assert(typeof literal === "string" || typeof literal === "number", "Argument to getLiteralType was not a string or number");
                 return getLiteralType(literal);
             },
             getFalseType: () => falseType,
