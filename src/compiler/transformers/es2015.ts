@@ -3579,7 +3579,7 @@ namespace ts {
             // Map spans of spread expressions into their expressions and spans of other
             // expressions into an array literal.
             const numElements = elements.length;
-            const segments = flatten(
+            const segments = flatten<Expression>(
                 spanMap(elements, partitionSpread, (partition, visitPartition, _start, end) =>
                     visitPartition(partition, multiLine, hasTrailingComma && end === numElements)
                 )
@@ -3621,7 +3621,7 @@ namespace ts {
             return map(chunk, visitExpressionOfSpread);
         }
 
-        function visitSpanOfNonSpreads(chunk: Expression[], multiLine: boolean, hasTrailingComma: boolean): VisitResult<Expression> {
+        function visitSpanOfNonSpreads(chunk: ReadonlyArray<Expression>, multiLine: boolean, hasTrailingComma: boolean): VisitResult<Expression> {
             return createArrayLiteral(
                 visitNodes(createNodeArray(chunk, hasTrailingComma), visitor, isExpression),
                 multiLine

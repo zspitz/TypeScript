@@ -24,7 +24,7 @@ namespace ts {
     /**
      * Make `elements` into a `NodeArray<T>`. If `elements` is `undefined`, returns an empty `NodeArray<T>`.
      */
-    export function createNodeArray<T extends Node>(elements?: T[], hasTrailingComma?: boolean): NodeArray<T> {
+    export function createNodeArray<T extends Node>(elements?: ReadonlyArray<T> | NodeArray<T>, hasTrailingComma?: boolean): NodeArray<T> {
         if (elements) {
             if (isNodeArray(elements)) {
                 return elements;

@@ -2323,10 +2323,10 @@ namespace ts {
         /* @internal */ path: Path;
         text: string;
 
-        amdDependencies: AmdDependency[];
+        amdDependencies: ReadonlyArray<AmdDependency>;
         moduleName: string;
-        referencedFiles: FileReference[];
-        typeReferenceDirectives: FileReference[];
+        referencedFiles: ReadonlyArray<FileReference>;
+        typeReferenceDirectives: ReadonlyArray<FileReference>;
         languageVariant: LanguageVariant;
         isDeclarationFile: boolean;
 

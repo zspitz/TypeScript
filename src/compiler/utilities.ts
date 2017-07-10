@@ -3341,7 +3341,7 @@ namespace ts {
             }
         }
 
-        return stableSort(result, (x, y) => compareValues(x[0], y[0]));
+        return stableSort<[number, string]>(result, (x, y) => compareValues(x[0], y[0]));
     }
 
     export function formatSyntaxKind(kind: SyntaxKind): string {
@@ -4781,7 +4781,7 @@ namespace ts {
     // Node Arrays
 
     /* @internal */
-    export function isNodeArray<T extends Node>(array: T[]): array is NodeArray<T> {
+    export function isNodeArray<T extends Node>(array: ReadonlyArray<T>): array is NodeArray<T> {
         return array.hasOwnProperty("pos")
             && array.hasOwnProperty("end");
     }

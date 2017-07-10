@@ -100,7 +100,7 @@ namespace ts {
         readFile(path: string): string;
         writeFile(path: string, contents: string): void;
         getDirectories(path: string): string[];
-        readDirectory(path: string, extensions?: string[], basePaths?: string[], excludeEx?: string, includeFileEx?: string, includeDirEx?: string): string[];
+        readDirectory(path: string, extensions?: string[], basePaths?: ReadonlyArray<string>, excludeEx?: string, includeFileEx?: string, includeDirEx?: string): string[];
         watchFile?(path: string, callback: FileWatcherCallback): FileWatcher;
         watchDirectory?(path: string, callback: DirectoryWatcherCallback, recursive?: boolean): FileWatcher;
         realpath(path: string): string;

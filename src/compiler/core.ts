@@ -53,7 +53,7 @@ namespace ts {
     }
 
     /* @internal */
-    export function createSymbolTable(symbols?: Symbol[]): SymbolTable {
+    export function createSymbolTable(symbols?: ReadonlyArray<Symbol>): SymbolTable {
         const result = createMap<Symbol>() as SymbolTable;
         if (symbols) {
             for (const symbol of symbols) {
@@ -88,7 +88,7 @@ namespace ts {
 
         class MapIterator<T, U extends (string | T | [string, T])> {
             private data: MapLike<T>;
-            private keys: string[];
+            private keys: ReadonlyArray<string>;
             private index = 0;
             private selector: (data: MapLike<T>, key: string) => U;
             constructor(data: MapLike<T>, selector: (data: MapLike<T>, key: string) => U) {
@@ -175,7 +175,7 @@ namespace ts {
         GreaterThan = 1
     }
 
-    export function length(array: any[]) {
+    export function length(array: ReadonlyArray<any>) {
         return array ? array.length : 0;
     }
 
@@ -423,7 +423,7 @@ namespace ts {
      *
      * @param array The array to flatten.
      */
-    export function flatten<T>(array: (T | T[])[]): T[] {
+    export function flatten<T>(array: ReadonlyArray<T | ReadonlyArray<T>>): T[] {
         let result: T[];
         if (array) {
             result = [];
@@ -448,7 +448,7 @@ namespace ts {
      * @param array The array to map.
      * @param mapfn The callback used to map the result into one or more values.
      */
-    export function flatMap<T, U>(array: T[] | undefined, mapfn: (x: T, i: number) => U | U[] | undefined): U[] | undefined {
+    export function flatMap<T, U>(array: ReadonlyArray<T> | undefined, mapfn: (x: T, i: number) => U | ReadonlyArray<U> | undefined): U[] | undefined {
         let result: U[];
         if (array) {
             result = [];
@@ -474,7 +474,9 @@ namespace ts {
      * @param array The array to map.
      * @param mapfn The callback used to map the result into one or more values.
      */
-    export function sameFlatMap<T>(array: T[], mapfn: (x: T, i: number) => T | T[]): T[] {
+    export function sameFlatMap<T>(array: T[], mapfn: (x: T, i: number) => T | ReadonlyArray<T>): T[];
+    export function sameFlatMap<T>(array: ReadonlyArray<T>, mapfn: (x: T, i: number) => T | T[]): ReadonlyArray<T>;
+    export function sameFlatMap<T>(array: T[], mapfn: (x: T, i: number) => T | ReadonlyArray<T>): T[] {
         let result: T[];
         if (array) {
             for (let i = 0; i < array.length; i++) {
@@ -512,7 +514,7 @@ namespace ts {
      * Computes the first matching span of elements and returns a tuple of the first span
      * and the remaining elements.
      */
-    export function span<T>(array: T[], f: (x: T, i: number) => boolean): [T[], T[]] {
+    export function span<T>(array: ReadonlyArray<T>, f: (x: T, i: number) => boolean): [T[], T[]] {
         if (array) {
             for (let i = 0; i < array.length; i++) {
                 if (!f(array[i], i)) {
@@ -532,7 +534,7 @@ namespace ts {
      * @param keyfn A callback used to select the key for an element.
      * @param mapfn A callback used to map a contiguous chunk of values to a single value.
      */
-    export function spanMap<T, K, U>(array: T[], keyfn: (x: T, i: number) => K, mapfn: (chunk: T[], key: K, start: number, end: number) => U): U[] {
+    export function spanMap<T, K, U>(array: ReadonlyArray<T>, keyfn: (x: T, i: number) => K, mapfn: (chunk: ReadonlyArray<T>, key: K, start: number, end: number) => U): U[] {
         let result: U[];
         if (array) {
             result = [];
@@ -667,7 +669,7 @@ namespace ts {
     /**
      * Compacts an array, removing any falsey elements.
      */
-    export function compact<T>(array: T[]): T[] {
+    export function compact<T>(array: ReadonlyArray<T>): ReadonlyArray<T> {
         let result: T[];
         if (array) {
             for (let i = 0; i < array.length; i++) {
@@ -706,7 +708,7 @@ namespace ts {
         return result;
     }
 
-    export function sum<K extends string>(array: { [x in K]: number }[], prop: K): number {
+    export function sum<K extends string>(array: ReadonlyArray<{ [x in K]: number }>, prop: K): number {
         let result = 0;
         for (const v of array) {
             result += v[prop];
@@ -764,7 +766,7 @@ namespace ts {
     /**
      * Stable sort of an array. Elements equal to each other maintain their relative position in the array.
      */
-    export function stableSort<T>(array: T[], comparer: (x: T, y: T) => Comparison = compareValues) {
+    export function stableSort<T>(array: ReadonlyArray<T>, comparer: (x: T, y: T) => Comparison = compareValues) {
         return array
             .map((_, i) => i) // create array of indices
             .sort((x, y) => comparer(array[x], array[y]) || compareValues(x, y)) // sort indices by value then position
@@ -1066,9 +1068,9 @@ namespace ts {
      * the same key with the given 'makeKey' function, then the element with the higher
      * index in the array will be the one associated with the produced key.
      */
-    export function arrayToMap<T>(array: T[], makeKey: (value: T) => string): Map<T>;
-    export function arrayToMap<T, U>(array: T[], makeKey: (value: T) => string, makeValue: (value: T) => U): Map<U>;
-    export function arrayToMap<T, U>(array: T[], makeKey: (value: T) => string, makeValue?: (value: T) => U): Map<T | U> {
+    export function arrayToMap<T>(array: ReadonlyArray<T>, makeKey: (value: T) => string): Map<T>;
+    export function arrayToMap<T, U>(array: ReadonlyArray<T>, makeKey: (value: T) => string, makeValue: (value: T) => U): Map<U>;
+    export function arrayToMap<T, U>(array: ReadonlyArray<T>, makeKey: (value: T) => string, makeValue?: (value: T) => U): Map<T | U> {
         const result = createMap<T | U>();
         for (const value of array) {
             result.set(makeKey(value), makeValue ? makeValue(value) : value);
@@ -1081,9 +1083,9 @@ namespace ts {
      *
      * @param array the array of input elements.
      */
-    export function arrayToSet(array: string[]): Map<true>;
-    export function arrayToSet<T>(array: T[], makeKey: (value: T) => string): Map<true>;
-    export function arrayToSet(array: any[], makeKey?: (value: any) => string): Map<true> {
+    export function arrayToSet(array: ReadonlyArray<string>): Map<true>;
+    export function arrayToSet<T>(array: ReadonlyArray<T>, makeKey: (value: T) => string): Map<true>;
+    export function arrayToSet(array: ReadonlyArray<any>, makeKey?: (value: any) => string): Map<true> {
         return arrayToMap<any, true>(array, makeKey || (s => s), () => true);
     }
 
@@ -1166,7 +1168,7 @@ namespace ts {
     /**
      * Tests whether a value is an array.
      */
-    export function isArray(value: any): value is any[] {
+    export function isArray(value: any): value is ReadonlyArray<any> {
         return Array.isArray ? Array.isArray(value) : value instanceof Array;
     }
 
@@ -1636,7 +1638,7 @@ namespace ts {
         return getNormalizedPathFromPathComponents(getNormalizedPathComponents(fileName, currentDirectory));
     }
 
-    export function getNormalizedPathFromPathComponents(pathComponents: string[]) {
+    export function getNormalizedPathFromPathComponents(pathComponents: ReadonlyArray<string>) {
         if (pathComponents && pathComponents.length) {
             return pathComponents[0] + pathComponents.slice(1).join(directorySeparator);
         }
@@ -1838,7 +1840,7 @@ namespace ts {
     }
 
     /* @internal */
-    export function fileExtensionIsOneOf(path: string, extensions: string[]): boolean {
+    export function fileExtensionIsOneOf(path: string, extensions: ReadonlyArray<string>): boolean {
         for (const extension of extensions) {
             if (fileExtensionIs(path, extension)) {
                 return true;
@@ -1863,7 +1865,7 @@ namespace ts {
     const singleAsteriskRegexFragmentFiles = "([^./]|(\\.(?!min\\.js$))?)*";
     const singleAsteriskRegexFragmentOther = "[^/]*";
 
-    export function getRegularExpressionForWildcard(specs: string[], basePath: string, usage: "files" | "directories" | "exclude"): string | undefined {
+    export function getRegularExpressionForWildcard(specs: ReadonlyArray<string>, basePath: string, usage: "files" | "directories" | "exclude"): string | undefined {
         const patterns = getRegularExpressionsForWildcards(specs, basePath, usage);
         if (!patterns || !patterns.length) {
             return undefined;
@@ -1875,7 +1877,7 @@ namespace ts {
         return `^(${pattern})${terminator}`;
     }
 
-    function getRegularExpressionsForWildcards(specs: string[], basePath: string, usage: "files" | "directories" | "exclude"): string[] | undefined {
+    function getRegularExpressionsForWildcards(specs: ReadonlyArray<string>, basePath: string, usage: "files" | "directories" | "exclude"): string[] | undefined {
         if (specs === undefined || specs.length === 0) {
             return undefined;
         }
@@ -1980,21 +1982,21 @@ namespace ts {
     }
 
     export interface FileSystemEntries {
-        files: string[];
-        directories: string[];
+        files: ReadonlyArray<string>;
+        directories: ReadonlyArray<string>;
     }
 
     export interface FileMatcherPatterns {
         /** One pattern for each "include" spec. */
-        includeFilePatterns: string[];
+        includeFilePatterns: ReadonlyArray<string>;
         /** One pattern matching one of any of the "include" specs. */
         includeFilePattern: string;
         includeDirectoryPattern: string;
         excludePattern: string;
-        basePaths: string[];
+        basePaths: ReadonlyArray<string>;
     }
 
-    export function getFileMatcherPatterns(path: string, excludes: string[], includes: string[], useCaseSensitiveFileNames: boolean, currentDirectory: string): FileMatcherPatterns {
+    export function getFileMatcherPatterns(path: string, excludes: ReadonlyArray<string>, includes: ReadonlyArray<string>, useCaseSensitiveFileNames: boolean, currentDirectory: string): FileMatcherPatterns {
         path = normalizePath(path);
         currentDirectory = normalizePath(currentDirectory);
         const absolutePath = combinePaths(currentDirectory, path);
@@ -2008,7 +2010,15 @@ namespace ts {
         };
     }
 
-    export function matchFiles(path: string, extensions: string[], excludes: string[], includes: string[], useCaseSensitiveFileNames: boolean, currentDirectory: string, depth: number | undefined, getFileSystemEntries: (path: string) => FileSystemEntries): string[] {
+    export function matchFiles(
+        path: string,
+        extensions: ReadonlyArray<string>,
+        excludes: ReadonlyArray<string>,
+        includes: ReadonlyArray<string>,
+        useCaseSensitiveFileNames: boolean,
+        currentDirectory: string,
+        depth: number | undefined,
+        getFileSystemEntries: (path: string) => FileSystemEntries): string[] {
         path = normalizePath(path);
         currentDirectory = normalizePath(currentDirectory);
 
@@ -2028,7 +2038,7 @@ namespace ts {
             visitDirectory(basePath, combinePaths(currentDirectory, basePath), depth);
         }
 
-        return flatten(results);
+        return flatten<string>(results);
 
         function visitDirectory(path: string, absolutePath: string, depth: number | undefined) {
             let { files, directories } = getFileSystemEntries(path);
@@ -2072,7 +2082,7 @@ namespace ts {
     /**
      * Computes the unique non-wildcard base paths amongst the provided include patterns.
      */
-    function getBasePaths(path: string, includes: string[], useCaseSensitiveFileNames: boolean) {
+    function getBasePaths(path: string, includes: ReadonlyArray<string>, useCaseSensitiveFileNames: boolean) {
         // Storage for our results in the form of literal paths (e.g. the paths as written by the user).
         const basePaths: string[] = [path];
 
@@ -2150,7 +2160,7 @@ namespace ts {
     export const supportedJavascriptExtensions: ReadonlyArray<Extension> = [Extension.Js, Extension.Jsx];
     const allSupportedExtensions: ReadonlyArray<Extension> = [...supportedTypeScriptExtensions, ...supportedJavascriptExtensions];
 
-    export function getSupportedExtensions(options?: CompilerOptions, extraFileExtensions?: JsFileExtensionInfo[]): ReadonlyArray<string> {
+    export function getSupportedExtensions(options?: CompilerOptions, extraFileExtensions?: ReadonlyArray<JsFileExtensionInfo>): ReadonlyArray<string> {
         const needAllExtensions = options && options.allowJs;
         if (!extraFileExtensions || extraFileExtensions.length === 0 || !needAllExtensions) {
             return needAllExtensions ? allSupportedExtensions : supportedTypeScriptExtensions;
@@ -2172,7 +2182,7 @@ namespace ts {
         return forEach(supportedTypeScriptExtensions, extension => fileExtensionIs(fileName, extension));
     }
 
-    export function isSupportedSourceFileName(fileName: string, compilerOptions?: CompilerOptions, extraFileExtensions?: JsFileExtensionInfo[]) {
+    export function isSupportedSourceFileName(fileName: string, compilerOptions?: CompilerOptions, extraFileExtensions?: ReadonlyArray<JsFileExtensionInfo>) {
         if (!fileName) { return false; }
 
         for (const extension of getSupportedExtensions(compilerOptions, extraFileExtensions)) {
@@ -2414,7 +2424,7 @@ namespace ts {
      * (These are verified by verifyCompilerOptions to have 0 or 1 "*" characters.)
      */
     /* @internal */
-    export function matchPatternOrExact(patternStrings: string[], candidate: string): string | Pattern | undefined {
+    export function matchPatternOrExact(patternStrings: ReadonlyArray<string>, candidate: string): string | Pattern | undefined {
         const patterns: Pattern[] = [];
         for (const patternString of patternStrings) {
             const pattern = tryParsePattern(patternString);
@@ -2447,7 +2457,7 @@ namespace ts {
 
     /** Return the object corresponding to the best pattern to match `candidate`. */
     /* @internal */
-    export function findBestPatternMatch<T>(values: T[], getPattern: (value: T) => Pattern, candidate: string): T | undefined {
+    export function findBestPatternMatch<T>(values: ReadonlyArray<T>, getPattern: (value: T) => Pattern, candidate: string): T | undefined {
         let matchedValue: T | undefined = undefined;
         // use length of prefix as betterness criteria
         let longestMatchPrefixLength = -1;
