@@ -330,13 +330,13 @@ namespace ts {
     }
 
     /* @internal */
-    export function computePositionOfLineAndCharacter(lineStarts: number[], line: number, character: number): number {
+    export function computePositionOfLineAndCharacter(lineStarts: ReadonlyArray<number>, line: number, character: number): number {
         Debug.assert(line >= 0 && line < lineStarts.length);
         return lineStarts[line] + character;
     }
 
     /* @internal */
-    export function getLineStarts(sourceFile: SourceFileLike): number[] {
+    export function getLineStarts(sourceFile: SourceFileLike): ReadonlyArray<number> {
         return sourceFile.lineMap || (sourceFile.lineMap = computeLineStarts(sourceFile.text));
     }
 
@@ -344,7 +344,7 @@ namespace ts {
     /**
      * We assume the first line starts at position 0 and 'position' is non-negative.
      */
-    export function computeLineAndCharacterOfPosition(lineStarts: number[], position: number) {
+    export function computeLineAndCharacterOfPosition(lineStarts: ReadonlyArray<number>, position: number) {
         let lineNumber = binarySearch(lineStarts, position);
         if (lineNumber < 0) {
             // If the actual position was not found,

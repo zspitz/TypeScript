@@ -184,7 +184,7 @@ namespace ts {
      * returns a truthy value, then returns that value.
      * If no such value is found, the callback is applied to each element of array and undefined is returned.
      */
-    export function forEach<T, U>(array: T[] | undefined, callback: (element: T, index: number) => U | undefined): U | undefined {
+    export function forEach<T, U>(array: ReadonlyArray<T> | undefined, callback: (element: T, index: number) => U | undefined): U | undefined {
         if (array) {
             for (let i = 0; i < array.length; i++) {
                 const result = callback(array[i], i);
@@ -217,14 +217,14 @@ namespace ts {
         return undefined;
     }
 
-    export function zipWith<T, U>(arrayA: T[], arrayB: U[], callback: (a: T, b: U, index: number) => void): void {
+    export function zipWith<T, U>(arrayA: ReadonlyArray<T>, arrayB: ReadonlyArray<U>, callback: (a: T, b: U, index: number) => void): void {
         Debug.assert(arrayA.length === arrayB.length);
         for (let i = 0; i < arrayA.length; i++) {
             callback(arrayA[i], arrayB[i], i);
         }
     }
 
-    export function zipToMap<T>(keys: string[], values: T[]): Map<T> {
+    export function zipToMap<T>(keys: ReadonlyArray<string>, values: ReadonlyArray<T>): Map<T> {
         Debug.assert(keys.length === values.length);
         const map = createMap<T>();
         for (let i = 0; i < keys.length; ++i) {
@@ -238,7 +238,7 @@ namespace ts {
      * returns a falsey value, then returns false.
      * If no such value is found, the callback is applied to each element of array and `true` is returned.
      */
-    export function every<T>(array: T[], callback: (element: T, index: number) => boolean): boolean {
+    export function every<T>(array: ReadonlyArray<T>, callback: (element: T, index: number) => boolean): boolean {
         if (array) {
             for (let i = 0; i < array.length; i++) {
                 if (!callback(array[i], i)) {
@@ -251,7 +251,7 @@ namespace ts {
     }
 
     /** Works like Array.prototype.find, returning `undefined` if no element satisfying the predicate is found. */
-    export function find<T>(array: T[], predicate: (element: T, index: number) => boolean): T | undefined {
+    export function find<T>(array: ReadonlyArray<T>, predicate: (element: T, index: number) => boolean): T | undefined {
         for (let i = 0; i < array.length; i++) {
             const value = array[i];
             if (predicate(value, i)) {
@@ -262,7 +262,7 @@ namespace ts {
     }
 
     /** Works like Array.prototype.findIndex, returning `-1` if no element satisfying the predicate is found. */
-    export function findIndex<T>(array: T[], predicate: (element: T, index: number) => boolean): number {
+    export function findIndex<T>(array: ReadonlyArray<T>, predicate: (element: T, index: number) => boolean): number {
         for (let i = 0; i < array.length; i++) {
             if (predicate(array[i], i)) {
                 return i;
@@ -275,7 +275,7 @@ namespace ts {
      * Returns the first truthy result of `callback`, or else fails.
      * This is like `forEach`, but never returns undefined.
      */
-    export function findMap<T, U>(array: T[], callback: (element: T, index: number) => U | undefined): U {
+    export function findMap<T, U>(array: ReadonlyArray<T>, callback: (element: T, index: number) => U | undefined): U {
         for (let i = 0; i < array.length; i++) {
             const result = callback(array[i], i);
             if (result) {
@@ -285,7 +285,7 @@ namespace ts {
         Debug.fail();
     }
 
-    export function contains<T>(array: T[], value: T): boolean {
+    export function contains<T>(array: ReadonlyArray<T>, value: T): boolean {
         if (array) {
             for (const v of array) {
                 if (v === value) {
@@ -296,7 +296,7 @@ namespace ts {
         return false;
     }
 
-    export function indexOf<T>(array: T[], value: T): number {
+    export function indexOf<T>(array: ReadonlyArray<T>, value: T): number {
         if (array) {
             for (let i = 0; i < array.length; i++) {
                 if (array[i] === value) {
@@ -307,7 +307,7 @@ namespace ts {
         return -1;
     }
 
-    export function indexOfAnyCharCode(text: string, charCodes: number[], start?: number): number {
+    export function indexOfAnyCharCode(text: string, charCodes: ReadonlyArray<number>, start?: number): number {
         for (let i = start || 0; i < text.length; i++) {
             if (contains(charCodes, text.charCodeAt(i))) {
                 return i;
@@ -316,7 +316,7 @@ namespace ts {
         return -1;
     }
 
-    export function countWhere<T>(array: T[], predicate: (x: T, i: number) => boolean): number {
+    export function countWhere<T>(array: ReadonlyArray<T>, predicate: (x: T, i: number) => boolean): number {
         let count = 0;
         if (array) {
             for (let i = 0; i < array.length; i++) {
@@ -335,7 +335,9 @@ namespace ts {
      */
     export function filter<T, U extends T>(array: T[], f: (x: T) => x is U): U[];
     export function filter<T>(array: T[], f: (x: T) => boolean): T[];
-    export function filter<T>(array: T[], f: (x: T) => boolean): T[] {
+    export function filter<T, U extends T>(array: ReadonlyArray<T>, f: (x: T) => x is U): ReadonlyArray<U>;
+    export function filter<T>(array: ReadonlyArray<T>, f: (x: T) => boolean): ReadonlyArray<T>;
+    export function filter<T>(array: ReadonlyArray<T>, f: (x: T) => boolean): ReadonlyArray<T> {
         if (array) {
             const len = array.length;
             let i = 0;
@@ -382,7 +384,7 @@ namespace ts {
         array.length = outIndex;
     }
 
-    export function map<T, U>(array: T[], f: (x: T, i: number) => U): U[] {
+    export function map<T, U>(array: ReadonlyArray<T>, f: (x: T, i: number) => U): U[] {
         let result: U[];
         if (array) {
             result = [];
@@ -394,6 +396,8 @@ namespace ts {
     }
 
     // Maps from T to T and avoids allocation if all elements map to themselves
+    export function sameMap<T>(array: T[], f: (x: T, i: number) => T): T[];
+    export function sameMap<T>(array: ReadonlyArray<T>, f: (x: T, i: number) => T): ReadonlyArray<T>;
     export function sameMap<T>(array: T[], f: (x: T, i: number) => T): T[] {
         let result: T[];
         if (array) {
@@ -581,7 +585,7 @@ namespace ts {
         return result;
     }
 
-    export function some<T>(array: T[], predicate?: (value: T) => boolean): boolean {
+    export function some<T>(array: ReadonlyArray<T>, predicate?: (value: T) => boolean): boolean {
         if (array) {
             if (predicate) {
                 for (const v of array) {
@@ -597,6 +601,8 @@ namespace ts {
         return false;
     }
 
+    export function concatenate<T>(array1: T[], array2: T[]): T[];
+    export function concatenate<T>(array1: ReadonlyArray<T>, array2: ReadonlyArray<T>): ReadonlyArray<T>;
     export function concatenate<T>(array1: T[], array2: T[]): T[] {
         if (!some(array2)) return array1;
         if (!some(array1)) return array2;
@@ -604,7 +610,7 @@ namespace ts {
     }
 
     // TODO: fixme (N^2) - add optional comparer so collection can be sorted before deduplication.
-    export function deduplicate<T>(array: T[], areEqual?: (a: T, b: T) => boolean): T[] {
+    export function deduplicate<T>(array: ReadonlyArray<T>, areEqual?: (a: T, b: T) => boolean): T[] {
         let result: T[];
         if (array) {
             result = [];
@@ -727,7 +733,7 @@ namespace ts {
      * Gets the actual offset into an array for a relative offset. Negative offsets indicate a
      * position offset from the end of the array.
      */
-    function toOffset(array: any[], offset: number) {
+    function toOffset(array: ReadonlyArray<any>, offset: number) {
         return offset < 0 ? array.length + offset : offset;
     }
 
@@ -741,7 +747,7 @@ namespace ts {
      * @param start The offset in `from` at which to start copying values.
      * @param end The offset in `from` at which to stop copying values (non-inclusive).
      */
-    export function addRange<T>(to: T[] | undefined, from: T[] | undefined, start?: number, end?: number): T[] | undefined {
+    export function addRange<T>(to: T[] | undefined, from: ReadonlyArray<T> | undefined, start?: number, end?: number): T[] | undefined {
         if (from === undefined) return to;
         if (to === undefined) return from.slice(start, end);
         start = start === undefined ? 0 : toOffset(from, start);
@@ -765,7 +771,7 @@ namespace ts {
             .map(i => array[i]); // get sorted array
     }
 
-    export function rangeEquals<T>(array1: T[], array2: T[], pos: number, end: number) {
+    export function rangeEquals<T>(array1: ReadonlyArray<T>, array2: ReadonlyArray<T>, pos: number, end: number) {
         while (pos < end) {
             if (array1[pos] !== array2[pos]) {
                 return false;
@@ -779,7 +785,7 @@ namespace ts {
      * Returns the element at a specific offset in an array if non-empty, `undefined` otherwise.
      * A negative offset indicates the element should be retrieved from the end of the array.
      */
-    export function elementAt<T>(array: T[] | undefined, offset: number): T | undefined {
+    export function elementAt<T>(array: ReadonlyArray<T> | undefined, offset: number): T | undefined {
         if (array) {
             offset = toOffset(array, offset);
             if (offset < array.length) {
@@ -792,21 +798,21 @@ namespace ts {
     /**
      * Returns the first element of an array if non-empty, `undefined` otherwise.
      */
-    export function firstOrUndefined<T>(array: T[]): T | undefined {
+    export function firstOrUndefined<T>(array: ReadonlyArray<T>): T | undefined {
         return elementAt(array, 0);
     }
 
     /**
      * Returns the last element of an array if non-empty, `undefined` otherwise.
      */
-    export function lastOrUndefined<T>(array: T[]): T | undefined {
+    export function lastOrUndefined<T>(array: ReadonlyArray<T>): T | undefined {
         return elementAt(array, -1);
     }
 
     /**
      * Returns the only element of an array if it contains only one element, `undefined` otherwise.
      */
-    export function singleOrUndefined<T>(array: T[]): T | undefined {
+    export function singleOrUndefined<T>(array: ReadonlyArray<T>): T | undefined {
         return array && array.length === 1
             ? array[0]
             : undefined;
@@ -816,13 +822,15 @@ namespace ts {
      * Returns the only element of an array if it contains only one element; otheriwse, returns the
      * array.
      */
+    export function singleOrMany<T>(array: T[]): T | T[];
+    export function singleOrMany<T>(array: ReadonlyArray<T>): T | ReadonlyArray<T>;
     export function singleOrMany<T>(array: T[]): T | T[] {
         return array && array.length === 1
             ? array[0]
             : array;
     }
 
-    export function replaceElement<T>(array: T[], index: number, value: T): T[] {
+    export function replaceElement<T>(array: ReadonlyArray<T>, index: number, value: T): T[] {
         const result = array.slice(0);
         result[index] = value;
         return result;
@@ -835,7 +843,7 @@ namespace ts {
      * @param array A sorted array whose first element must be no larger than number
      * @param number The value to be searched for in the array.
      */
-    export function binarySearch<T>(array: T[], value: T, comparer?: (v1: T, v2: T) => number, offset?: number): number {
+    export function binarySearch<T>(array: ReadonlyArray<T>, value: T, comparer?: (v1: T, v2: T) => number, offset?: number): number {
         if (!array || array.length === 0) {
             return -1;
         }
@@ -864,9 +872,9 @@ namespace ts {
         return ~low;
     }
 
-    export function reduceLeft<T, U>(array: T[], f: (memo: U, value: T, i: number) => U, initial: U, start?: number, count?: number): U;
-    export function reduceLeft<T>(array: T[], f: (memo: T, value: T, i: number) => T): T;
-    export function reduceLeft<T>(array: T[], f: (memo: T, value: T, i: number) => T, initial?: T, start?: number, count?: number): T {
+    export function reduceLeft<T, U>(array: ReadonlyArray<T>, f: (memo: U, value: T, i: number) => U, initial: U, start?: number, count?: number): U;
+    export function reduceLeft<T>(array: ReadonlyArray<T>, f: (memo: T, value: T, i: number) => T): T;
+    export function reduceLeft<T>(array: ReadonlyArray<T>, f: (memo: T, value: T, i: number) => T, initial?: T, start?: number, count?: number): T {
         if (array && array.length > 0) {
             const size = array.length;
             if (size > 0) {
@@ -890,9 +898,9 @@ namespace ts {
         return initial;
     }
 
-    export function reduceRight<T, U>(array: T[], f: (memo: U, value: T, i: number) => U, initial: U, start?: number, count?: number): U;
-    export function reduceRight<T>(array: T[], f: (memo: T, value: T, i: number) => T): T;
-    export function reduceRight<T>(array: T[], f: (memo: T, value: T, i: number) => T, initial?: T, start?: number, count?: number): T {
+    export function reduceRight<T, U>(array: ReadonlyArray<T>, f: (memo: U, value: T, i: number) => U, initial: U, start?: number, count?: number): U;
+    export function reduceRight<T>(array: ReadonlyArray<T>, f: (memo: T, value: T, i: number) => T): T;
+    export function reduceRight<T>(array: ReadonlyArray<T>, f: (memo: T, value: T, i: number) => T, initial?: T, start?: number, count?: number): T {
         if (array) {
             const size = array.length;
             if (size > 0) {
@@ -2136,13 +2144,13 @@ namespace ts {
     /**
      *  List of supported extensions in order of file resolution precedence.
      */
-    export const supportedTypeScriptExtensions = [Extension.Ts, Extension.Tsx, Extension.Dts];
+    export const supportedTypeScriptExtensions: ReadonlyArray<Extension> = [Extension.Ts, Extension.Tsx, Extension.Dts];
     /** Must have ".d.ts" first because if ".ts" goes first, that will be detected as the extension instead of ".d.ts". */
-    export const supportedTypescriptExtensionsForExtractExtension = [Extension.Dts, Extension.Ts, Extension.Tsx];
-    export const supportedJavascriptExtensions = [Extension.Js, Extension.Jsx];
-    const allSupportedExtensions = supportedTypeScriptExtensions.concat(supportedJavascriptExtensions);
+    export const supportedTypescriptExtensionsForExtractExtension: ReadonlyArray<Extension> = [Extension.Dts, Extension.Ts, Extension.Tsx];
+    export const supportedJavascriptExtensions: ReadonlyArray<Extension> = [Extension.Js, Extension.Jsx];
+    const allSupportedExtensions: ReadonlyArray<Extension> = [...supportedTypeScriptExtensions, ...supportedJavascriptExtensions];
 
-    export function getSupportedExtensions(options?: CompilerOptions, extraFileExtensions?: JsFileExtensionInfo[]): string[] {
+    export function getSupportedExtensions(options?: CompilerOptions, extraFileExtensions?: JsFileExtensionInfo[]): ReadonlyArray<string> {
         const needAllExtensions = options && options.allowJs;
         if (!extraFileExtensions || extraFileExtensions.length === 0 || !needAllExtensions) {
             return needAllExtensions ? allSupportedExtensions : supportedTypeScriptExtensions;
@@ -2188,7 +2196,7 @@ namespace ts {
         Lowest = DeclarationAndJavaScriptFiles,
     }
 
-    export function getExtensionPriority(path: string, supportedExtensions: string[]): ExtensionPriority {
+    export function getExtensionPriority(path: string, supportedExtensions: ReadonlyArray<string>): ExtensionPriority {
         for (let i = supportedExtensions.length - 1; i >= 0; i--) {
             if (fileExtensionIs(path, supportedExtensions[i])) {
                 return adjustExtensionPriority(<ExtensionPriority>i, supportedExtensions);
@@ -2203,7 +2211,7 @@ namespace ts {
     /**
      * Adjusts an extension priority to be the highest priority within the same range.
      */
-    export function adjustExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: string[]): ExtensionPriority {
+    export function adjustExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: ReadonlyArray<string>): ExtensionPriority {
         if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) {
             return ExtensionPriority.TypeScriptFiles;
         }
@@ -2217,7 +2225,7 @@ namespace ts {
     /**
      * Gets the next lowest extension priority for a given priority.
      */
-    export function getNextLowestExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: string[]): ExtensionPriority {
+    export function getNextLowestExtensionPriority(extensionPriority: ExtensionPriority, supportedExtensions: ReadonlyArray<string>): ExtensionPriority {
         if (extensionPriority < ExtensionPriority.DeclarationAndJavaScriptFiles) {
             return ExtensionPriority.DeclarationAndJavaScriptFiles;
         }
