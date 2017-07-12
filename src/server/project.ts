@@ -173,8 +173,7 @@ namespace ts.server {
             log(`Loading ${moduleName} from ${initialDir} (resolved to ${resolvedPath})`);
             const result = host.require(resolvedPath, moduleName);
             if (result.error) {
-                const err = result.error.stack || JSON.stringify(result.error);
-                log(`Failed to load module ${resolvedPath}: ${err}`);
+                log(`Failed to load module: ${JSON.stringify(result.error)}`);
                 return undefined;
             }
             return result.module;
@@ -1012,11 +1011,6 @@ namespace ts.server {
             };
 
             for (const searchPath of searchPaths) {
-                try {
-                    Debug.assert(!!pluginConfigEntry.name);
-                } catch (e) {
-                    console.error(e.stack);
-                }
                 const resolvedModule = <PluginModuleFactory>Project.resolveModule(pluginConfigEntry.name, searchPath, this.projectService.host, log);
                 if (resolvedModule) {
                     this.enableProxy(resolvedModule, pluginConfigEntry);

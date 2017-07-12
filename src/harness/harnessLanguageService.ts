@@ -795,7 +795,7 @@ namespace Harness.LanguageService {
                 default:
                     return {
                         module: undefined,
-                        error: new Error("Could not resolve module")
+                        error: "Could not resolve module"
                     };
             }
 
