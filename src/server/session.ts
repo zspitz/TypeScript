@@ -340,8 +340,15 @@ namespace ts.server {
 
         private defaultEventHandler(event: ProjectServiceEvent) {
             switch (event.eventName) {
+                case TypingsInstalledEvent: {
+                    const { project } = event.data;
+                    this.projectService.logger.info(`new typings installed, updating diagnostics`);
+                    const files = project.getFileNames(); //TODO: only open files
+                    this.errorCheck.startNew(next => this.getDiagnostics(next, /*delay*/ 0, files));
+                    break;
+                }
                 case ContextEvent:
-                    const { project, fileName } = event.data;
+                    const { project, fileName } = event.data;//!
                     this.projectService.logger.info(`got context event, updating diagnostics for ${fileName}`);
                     this.errorCheck.startNew(next => this.updateErrorCheck(next, [{ fileName, project }], this.changeSeq, (n) => n === this.changeSeq, 100));
                     break;

@@ -116,8 +116,6 @@ namespace ts.server {
         birthtime: Date;
     }
 
-    type RequireResult = { module: {}, error: undefined } | { module: undefined, error: {} };
-
     const readline: {
         createInterface(options: ReadLineOptions): NodeJS.EventEmitter;
     } = require("readline");
@@ -333,62 +331,59 @@ namespace ts.server {
                 this.logger.info(`Received response: ${JSON.stringify(response)}`);
             }
 
-            if (response.kind === EventInitializationFailed) {
-                if (!this.eventSender) {
-                    return;
-                }
-                const body: protocol.TypesInstallerInitializationFailedEventBody = {
-                    message: response.message
-                };
-                const eventName: protocol.TypesInstallerInitializationFailedEventName = "typesInstallerInitializationFailed";
-                this.eventSender.event(body, eventName);
-                return;
-            }
+            switch (response.kind) {
+                case EventInitializationFailed:
+                    if (this.eventSender) {
+                        const body: protocol.TypesInstallerInitializationFailedEventBody = {
+                            message: response.message
+                        };
+                        const eventName: protocol.TypesInstallerInitializationFailedEventName = "typesInstallerInitializationFailed";
+                        this.eventSender.event(body, eventName);
+                    }
+                    break;
 
-            if (response.kind === EventBeginInstallTypes) {
-                if (!this.eventSender) {
-                    return;
-                }
-                const body: protocol.BeginInstallTypesEventBody = {
-                    eventId: response.eventId,
-                    packages: response.packagesToInstall,
-                };
-                const eventName: protocol.BeginInstallTypesEventName = "beginInstallTypes";
-                this.eventSender.event(body, eventName);
+                case EventBeginInstallTypes:
+                    if (this.eventSender) {
+                        const body: protocol.BeginInstallTypesEventBody = {
+                            eventId: response.eventId,
+                            packages: response.packagesToInstall,
+                        };
+                        const eventName: protocol.BeginInstallTypesEventName = "beginInstallTypes";
+                        this.eventSender.event(body, eventName);
+                    }
+                    break;
 
-                return;
-            }
-
-            if (response.kind === EventEndInstallTypes) {
-                if (!this.eventSender) {
-                    return;
-                }
-                if (this.telemetryEnabled) {
-                    const body: protocol.TypingsInstalledTelemetryEventBody = {
-                        telemetryEventName: "typingsInstalled",
-                        payload: {
-                            installedPackages: response.packagesToInstall.join(","),
-                            installSuccess: response.installSuccess,
-                            typingsInstallerVersion: response.typingsInstallerVersion
+                case EventEndInstallTypes:
+                    debugger; //kill
+                    if (this.eventSender) {
+                        if (this.telemetryEnabled) {
+                            const body: protocol.TypingsInstalledTelemetryEventBody = {
+                                telemetryEventName: "typingsInstalled",
+                                payload: {
+                                    installedPackages: response.packagesToInstall.join(","),
+                                    installSuccess: response.installSuccess,
+                                    typingsInstallerVersion: response.typingsInstallerVersion
+                                }
+                            };
+                            const eventName: protocol.TelemetryEventName = "telemetry";
+                            this.eventSender.event(body, eventName);
                         }
-                    };
-                    const eventName: protocol.TelemetryEventName = "telemetry";
-                    this.eventSender.event(body, eventName);
-                }
 
-                const body: protocol.EndInstallTypesEventBody = {
-                    eventId: response.eventId,
-                    packages: response.packagesToInstall,
-                    success: response.installSuccess,
-                };
-                const eventName: protocol.EndInstallTypesEventName = "endInstallTypes";
-                this.eventSender.event(body, eventName);
-                return;
-            }
+                        const body: protocol.EndInstallTypesEventBody = {
+                            eventId: response.eventId,
+                            packages: response.packagesToInstall,
+                            success: response.installSuccess,
+                        };
+                        const eventName: protocol.EndInstallTypesEventName = "endInstallTypes";
+                        this.eventSender.event(body, eventName);
+                    }
+                    break;
 
-            this.projectService.updateTypingsForProject(response);
-            if (response.kind === ActionSet && this.socket) {
-                this.sendEvent(0, "setTypings", response);
+                default:
+                    this.projectService.updateTypingsForProject(response);//uh, when does this happen?
+                    if (response.kind === ActionSet && this.socket) {
+                        this.sendEvent(0, "setTypings", response);
+                    }
             }
         }
     }

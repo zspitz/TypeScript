@@ -2374,7 +2374,7 @@ namespace ts.projectSystem {
             });
             projectService.checkNumberOfProjects({ externalProjects: 1 });
             const typeAcquisition = projectService.externalProjects[0].getTypeAcquisition();
-            assert.isTrue(typeAcquisition.enable, "Typine acquisition should be enabled");
+            assert.isTrue(typeAcquisition.enable, "Type acquisition should be enabled");
         });
     });
 
@@ -2738,7 +2738,7 @@ namespace ts.projectSystem {
     });
 
     describe("watching @types", () => {
-        it("works correctly when typings are added or removed", () => {
+        it("works correctly when typings are added or removed", () => { //!
             const f1 = {
                 path: "/a/b/app.ts",
                 content: "let x = 1;"

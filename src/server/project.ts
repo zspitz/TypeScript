@@ -5,6 +5,9 @@
 /// <reference path="typingsCache.ts"/>
 /// <reference path="builder.ts"/>
 
+interface Console { [x: string]: any; }
+declare var console: Console;
+
 namespace ts.server {
 
     export enum ProjectKind {
@@ -115,7 +118,7 @@ namespace ts.server {
         // wrapper over the real language service that will suppress all semantic operations
         protected languageService: LanguageService;
 
-        public languageServiceEnabled = true;
+        public languageServiceEnabled = true; //If this is false, why even have a Project?
 
         protected lsHost: LSHost;
 
@@ -170,7 +173,8 @@ namespace ts.server {
             log(`Loading ${moduleName} from ${initialDir} (resolved to ${resolvedPath})`);
             const result = host.require(resolvedPath, moduleName);
             if (result.error) {
-                log(`Failed to load module: ${JSON.stringify(result.error)}`);
+                const err = result.error.stack || JSON.stringify(result.error);
+                log(`Failed to load module ${resolvedPath}: ${err}`);
                 return undefined;
             }
             return result.module;
@@ -530,7 +534,7 @@ namespace ts.server {
          * Updates set of files that contribute to this project
          * @returns: true if set of files in the project stays the same and false - otherwise.
          */
-        updateGraph(): boolean {
+        updateGraph(): boolean { //!
             this.lsHost.startRecordingFilesWithChangedResolutions();
 
             let hasChanges = this.updateGraphWorker();
@@ -566,7 +570,7 @@ namespace ts.server {
             // update builder only if language service is enabled
             // otherwise tell it to drop its internal state
             if (this.languageServiceEnabled) {
-                this.builder.onProjectUpdateGraph();
+                this.builder.onProjectUpdateGraph(); //important?
             }
             else {
                 this.builder.clear();
@@ -963,7 +967,7 @@ namespace ts.server {
             return this.getProjectName();
         }
 
-        enablePlugins() {
+        private enablePlugins() {
             const host = this.projectService.host;
             const options = this.getCompilerOptions();
 
@@ -995,6 +999,7 @@ namespace ts.server {
                     // Skip already-locally-loaded plugins
                     if (options.plugins && options.plugins.some(p => p.name === globalPluginName)) continue;
 
+                    //For some reason,  we have global plugins...
                     // Provide global: true so plugins can detect why they can't find their config
                     this.enablePlugin({ name: globalPluginName, global: true } as PluginImport, searchPaths);
                 }
@@ -1007,6 +1012,11 @@ namespace ts.server {
             };
 
             for (const searchPath of searchPaths) {
+                try {
+                    Debug.assert(!!pluginConfigEntry.name);
+                } catch (e) {
+                    console.error(e.stack);
+                }
                 const resolvedModule = <PluginModuleFactory>Project.resolveModule(pluginConfigEntry.name, searchPath, this.projectService.host, log);
                 if (resolvedModule) {
                     this.enableProxy(resolvedModule, pluginConfigEntry);

@@ -10,10 +10,16 @@
 namespace ts.server {
     export const maxProgramSizeForNonTsFiles = 20 * 1024 * 1024;
 
+    export const TypingsInstalledEvent = "typingsInstalled";
     export const ContextEvent = "context";
     export const ConfigFileDiagEvent = "configFileDiag";
     export const ProjectLanguageServiceStateEvent = "projectLanguageServiceState";
     export const ProjectInfoTelemetryEvent = "projectInfo";
+
+    export interface TypingsInstalledEvent {
+        eventName: typeof TypingsInstalledEvent;
+        data: { project: Project };
+    }
 
     export interface ContextEvent {
         eventName: typeof ContextEvent;
@@ -77,7 +83,7 @@ namespace ts.server {
         readonly dts: number;
     }
 
-    export type ProjectServiceEvent = ContextEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent;
+    export type ProjectServiceEvent = TypingsInstalledEvent | ContextEvent | ConfigFileDiagEvent | ProjectLanguageServiceStateEvent | ProjectInfoTelemetryEvent;
 
     export interface ProjectServiceEventHandler {
         (event: ProjectServiceEvent): void;
@@ -405,6 +411,7 @@ namespace ts.server {
             this.throttleWaitMilliseconds = opts.throttleWaitMilliseconds;
             this.eventHandler = opts.eventHandler;
             this.globalPlugins = opts.globalPlugins || emptyArray;
+            this.logger.info(`GLOBAL PLUGINS: ${opts.globalPlugins}`);
             this.pluginProbeLocations = opts.pluginProbeLocations || emptyArray;
             this.allowLocalPluginLoads = !!opts.allowLocalPluginLoads;
 
@@ -450,7 +457,9 @@ namespace ts.server {
             });
         }
 
+        //!
         updateTypingsForProject(response: SetTypings | InvalidateCachedTypings): void {
+            debugger; //!
             const project = this.findProject(response.projectName);
             if (!project) {
                 return;
@@ -463,7 +472,14 @@ namespace ts.server {
                     this.typingsCache.deleteTypingsForProject(response.projectName);
                     break;
             }
+
+            //Also send new errors...
             project.updateGraph();
+
+            //this.eventHandler(<ContextEvent>{
+            //    eventName: ContextEvent,
+            //    data: { project, fileName: response.proje }
+            //});
         }
 
         setCompilerOptionsForInferredProjects(projectCompilerOptions: protocol.ExternalProjectCompilerOptions): void {
