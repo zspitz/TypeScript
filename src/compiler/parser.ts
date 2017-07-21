@@ -1158,7 +1158,14 @@ namespace ts {
             }
 
             const result = createNode(kind, scanner.getStartPos());
-            (<Identifier>result).escapedText = "" as __String;
+            switch (kind) {
+                case SyntaxKind.Identifier:
+                    (result as Identifier).escapedText = "" as __String;
+                    break;
+                default: // TODO: GH#17346
+                    (result as LiteralLikeNode).text = "";
+                    break;
+            }
             return finishNode(result);
         }
 

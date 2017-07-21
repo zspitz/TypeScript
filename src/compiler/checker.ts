@@ -18195,8 +18195,9 @@ namespace ts {
                 if (member.kind === SyntaxKind.Constructor) {
                     for (const param of (member as ConstructorDeclaration).parameters) {
                         if (isParameterPropertyDeclaration(param)) {
-                            if (isBindingName(param.name)) Debug.fail(); //!
-                            else addName(instanceNames, param.name, getEscapedTextOfIdentifierOrLiteral(param.name), Declaration.Property);
+                            if (!isBindingName(param.name)) { //!
+                                addName(instanceNames, param.name, getEscapedTextOfIdentifierOrLiteral(param.name), Declaration.Property);
+                            }
                         }
                     }
                 }
@@ -18758,9 +18759,11 @@ namespace ts {
                 if (subsequentNode && subsequentNode.pos === node.end) {
                     if (subsequentNode.kind === node.kind) {
                         const errorNode: Node = (<FunctionLikeDeclaration>subsequentNode).name || subsequentNode;
-                        // TODO(jfreeman): These are methods, so handle computed name case
+                        // TODO: GH#17345: These are methods, so handle computed name case. (`Always allowing computed property names is *not* the correct behavior!)
                         const subsequentName = (<FunctionLikeDeclaration>subsequentNode).name;
-                        if (node.name && subsequentName && node.name.kind !== SyntaxKind.ComputedPropertyName && subsequentName.kind !== SyntaxKind.ComputedPropertyName && getTextOfIdentifierOrLiteral(node.name) === getTextOfIdentifierOrLiteral(subsequentName)) {
+                        if (node.name && subsequentName &&
+                            (isComputedPropertyName(node.name) && isComputedPropertyName(subsequentName) ||
+                                !isComputedPropertyName(node.name) && !isComputedPropertyName(subsequentName) && getEscapedTextOfIdentifierOrLiteral(node.name) === getEscapedTextOfIdentifierOrLiteral(subsequentName))) {
                             const reportError =
                                 (node.kind === SyntaxKind.MethodDeclaration || node.kind === SyntaxKind.MethodSignature) &&
                                 (getModifierFlags(node) & ModifierFlags.Static) !== (getModifierFlags(subsequentNode) & ModifierFlags.Static);
@@ -21524,6 +21527,7 @@ namespace ts {
                                         const x = (<ElementAccessExpression>expr).argumentExpression;
                                         Debug.assert(!isIdentifier(x)); //!
                                         name = (x as LiteralExpression).text as __String; //TODO: this cast is not right.
+                                        break;
                                     default:
                                         Debug.fail();
                                 }

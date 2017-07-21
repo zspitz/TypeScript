@@ -391,6 +391,11 @@ namespace ts {
             ((<ModuleDeclaration>node).name.kind === SyntaxKind.StringLiteral || isGlobalScopeAugmentation(<ModuleDeclaration>node));
     }
 
+    /* @internal */
+    export function isNonGlobalAmbientModule(node: Node): node is ModuleDeclaration & { name: StringLiteral } {
+        return isModuleDeclaration(node) && isStringLiteral(node.name);
+    }
+
     /** Given a symbol for a module, checks that it is a shorthand ambient module. */
     export function isShorthandAmbientModuleSymbol(moduleSymbol: Symbol): boolean {
         return isShorthandAmbientModule(moduleSymbol.valueDeclaration);
