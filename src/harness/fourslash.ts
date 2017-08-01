@@ -2736,6 +2736,12 @@ namespace FourSlash {
             }
         }
 
+        public getApplicableRefactors(markerName: string): any[] {
+            const marker = this.getMarkerByName(markerName);
+            const applicableRefactors = this.languageService.getApplicableRefactors(this.activeFile.fileName, marker.position);
+            return applicableRefactors;
+        }
+
         public verifyApplicableRefactorAvailableForRange(negative: boolean) {
             const ranges = this.getRanges();
             if (!(ranges && ranges.length === 1)) {
@@ -3612,6 +3618,10 @@ namespace FourSlashInterface {
 
         public applicableRefactorAvailableAtMarker(markerName: string) {
             this.state.verifyApplicableRefactorAvailableAtMarker(this.negative, markerName);
+        }
+
+        public getApplicableRefactors(markerName: string): any[] {
+            return this.state.getApplicableRefactors(markerName);
         }
 
         public applicableRefactorAvailableForRange() {

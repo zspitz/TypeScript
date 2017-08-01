@@ -10652,7 +10652,7 @@ namespace ts {
                 if (constraint) {
                     const instantiatedConstraint = instantiateType(constraint, context);
                     if (!isTypeAssignableTo(inferredType, getTypeWithThisArgument(instantiatedConstraint, inferredType))) {
-                        inference.inferredType = inferredType = instantiatedConstraint;
+                        inference.inferredType = inferredType = instantiatedConstraint; //TODO: just move `inference.inferredType` to below here to avoid setting twice?
                     }
                 }
             }
