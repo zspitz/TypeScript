@@ -262,7 +262,7 @@ namespace ts {
 
         const emptyTypeLiteralSymbol = createSymbol(SymbolFlags.TypeLiteral, InternalSymbolName.Type);
         emptyTypeLiteralSymbol.members = createSymbolTable();
-        const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined);
+        const emptyTypeLiteralType = createAnonymousType(emptyTypeLiteralSymbol, emptySymbols, emptyArray, emptyArray, undefined, undefined); //Why both this and emptyObjectType?
 
         const emptyGenericType = <GenericType><ObjectType>createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         emptyGenericType.instantiations = createMap<TypeReference>();
@@ -8073,7 +8073,7 @@ namespace ts {
                 }
             }
             if (signature.typePredicate) {
-                freshTypePredicate = cloneTypePredicate(signature.typePredicate, mapper);
+                freshTypePredicate = cloneTypePredicate(signature.typePredicate, mapper); //Doesn't just clone, also instantiates it!
             }
             const result = createSignature(signature.declaration, freshTypeParameters,
                 signature.thisParameter && instantiateSymbol(signature.thisParameter, mapper),
@@ -15629,7 +15629,7 @@ namespace ts {
             // For a decorator, no arguments are susceptible to contextual typing due to the fact
             // decorators are applied to a declaration by the emitter, and not to an expression.
             let excludeArgument: boolean[];
-            let excludeCount = 0;
+            let excludeCount = 0; //= # of context sensitive arguments
             if (!isDecorator) {
                 // We do not need to call `getEffectiveArgumentCount` here as it only
                 // applies when calculating the number of arguments for a decorator.
@@ -16776,7 +16776,7 @@ namespace ts {
                     links.flags |= NodeCheckFlags.ContextChecked;
                     if (contextualSignature) {
                         const signature = getSignaturesOfType(type, SignatureKind.Call)[0];
-                        if (isContextSensitive(node)) {
+                        if (isContextSensitive(node)) { //when would this not be true?
                             const contextualMapper = getContextualMapper(node);
                             if (checkMode === CheckMode.Inferential) {
                                 inferFromAnnotatedParameters(signature, contextualSignature, contextualMapper);
