@@ -312,6 +312,9 @@ interface Date {
     getVarDate: () => VarDate;
 }
 
+/**
+ * Automation SafeArray (VT_SAFEARRAY)
+ */
 declare class SafeArray<T=any> {
     private as: SafeArray<T>;
 }
