@@ -300,12 +300,18 @@ declare var VBArray: VBArrayConstructor;
 /**
  * Automation date (VT_DATE)
  */
-interface VarDate { }
-
+declare class VarDate {
+    private as: VarDate;
+}
+                        
 interface DateConstructor {
     new (vd: VarDate): Date;
 }
 
 interface Date {
     getVarDate: () => VarDate;
+}
+
+declare class SafeArray<T=any> {
+    private as: SafeArray<T>;
 }
